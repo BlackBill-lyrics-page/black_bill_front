@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# LyricsPage
-2025 UNI-CON
-=======
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -71,4 +67,4 @@ export default tseslint.config([
   },
 ])
 ```
->>>>>>> 7f1c9e4 (initial setup)
+ 7f1c9e4 (initial setup)
