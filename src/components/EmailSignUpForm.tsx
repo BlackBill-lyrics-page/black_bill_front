@@ -1,6 +1,6 @@
 import { useSignUpVM } from '../viewmodels/useSignUpVM'
 
-const SignUpForm = () => {
+const EmailSignUpForm = () => {
     const {
         email, setEmail,
         password, setPassword,
@@ -49,4 +49,4 @@ const SignUpForm = () => {
   )
 }
 
-export default SignUpForm
+export default EmailSignUpForm

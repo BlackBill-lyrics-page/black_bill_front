@@ -1,11 +1,17 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import EmailSignUpPage from './pages/EmailSignUpPage'
 import SignUpPage from './pages/SignUpPage'
+import OAuthCallbackPage from './pages/OAuthCallbackPage'
+import SetProfileArtist from './pages/SetProfileArtist'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/sign-up_email" element={<EmailSignUpPage />} />
+        <Route path="/oauth-callback" element={<OAuthCallbackPage />} />
+        <Route path="/set-profile-artist" element={<SetProfileArtist />} />
       </Routes>
     </BrowserRouter>
   )

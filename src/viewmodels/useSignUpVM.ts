@@ -16,10 +16,6 @@ export const useSignUpVM = () => {
 
         const {data, error} = await signupwithEmail(email, password)
 
-        console.log("🔥 Supabase signup result")
-        console.log("data:", data)
-        console.log("error:", error)  // 전체 error 객체 확인 가능
-
         if (error){
             setError(error.message)
         }
