@@ -8,7 +8,6 @@ export const useSetProfileArtistVM = () => {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [label, setLabel] = useState('');
-  const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
   const [instruments, setInstruments] = useState('');
   const [snsLinks, setSnsLinks] = useState([{ platform: 'instagram', url: '' }]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -26,7 +25,7 @@ export const useSetProfileArtistVM = () => {
   }, [photoFile]);
 
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (selectedGenres: number[]) => {
     const user = (await supabase.auth.getUser()).data.user; // const {data. error} = await supabase.auth.getUser(); 
     if (!user) return alert('로그인이 필요합니다.');
 
@@ -41,7 +40,7 @@ export const useSetProfileArtistVM = () => {
       return alert('장르는 최대 3개까지만 선택 가능합니다.');
     }
 
-    
+
     const uploadedUrl = await uploadArtistPhoto(photoFile, user.id);
     if (!uploadedUrl) return alert('Uploading failed');
 
@@ -78,19 +77,30 @@ export const useSetProfileArtistVM = () => {
     }
 
 
-    const linksToInsert = snsLinks.map((link) => ({ //making tables
-      artist_id: artist.id,
-      platform: link.platform,
-      url: link.url,
-      icon_url: null, // 아이콘이미지 추후 구현
-    }));
+    const linksToInsert = snsLinks
+      .filter((link)=>link.url.trim()!=='') // "" URL avoidance
+      .map((link) => ({ 
+        artist_id: artist.id,
+        platform: link.platform,
+        url: link.url,
+        icon_url: null, // 아이콘이미지 추후 구현
+      }));
 
-    const { error: linksError } = await supabase.from('artist_links').insert(linksToInsert); //inserting tables into DB
+    console.log('🧩 linksToInsert:', linksToInsert);//debug
+
+    const { data : insertedLinks, error: linksError } = await supabase
+      .from('artist_links')
+      .insert(linksToInsert)
+      .select(); //inserting tables into DB
+
     if (linksError) {
+      console.error("❌ Insert Error:", linksError.message);
+      console.error("📄 Details:", linksError.details);
       console.error(linksError);
       return;
     }
-
+    
+    console.log('Inserted SNS Links:', insertedLinks);
     alert('Setting artist profile complete!');
   };
 
@@ -99,7 +109,6 @@ export const useSetProfileArtistVM = () => {
     name, setName,
     bio, setBio,
     label, setLabel,
-    selectedGenres, setSelectedGenres,
     instruments, setInstruments,
     snsLinks, setSnsLinks,
     photoFile, setPhotoFile,
