@@ -18,17 +18,7 @@ const OAuthCallbackPage = () => {
         return
       }
 
-      const { data, error } = await supabase //checking DB for duplicated signup
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (error && error.code === 'PGRST116') {  //no rows found
-        navigate('/complete-profile') //***complete로할지 추후 수정
-      } else {
-        navigate('/')
-      }
+      navigate('/') //추후에 홈화면 경로로 변경 
     }
 
     checkUser()

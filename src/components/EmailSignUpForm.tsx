@@ -4,7 +4,6 @@ const EmailSignUpForm = () => {
     const {
         email, setEmail,
         password, setPassword,
-        nickname, setNickname,
         loading, error, handleSignup,
     } = useSignUpVM()
 
@@ -25,14 +24,6 @@ const EmailSignUpForm = () => {
         placeholder="비밀번호 입력"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="border p-2 rounded"
-      />
-
-      <input
-        type="text"
-        placeholder="닉네임/활동명 입력"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
         className="border p-2 rounded"
       />
 

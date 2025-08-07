@@ -1,8 +1,13 @@
 import { supabase } from '../lib/supabaseClient'
 
 const SignUpPage = () => {
-  const handleOAuthLogin = async (provider: 'google' | 'kakao') => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider })
+  const handleOAuthLogin = async (provider: 'google') => {
+    const { error } = await supabase.auth.signInWithOAuth({ 
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/oauth/callback`,  //window.location.origin -> return current web page's protocol, host, port
+      },   
+    })
     if (error) console.error(`${provider} 로그인 실패:`, error.message)
   }
 
@@ -23,14 +28,8 @@ const SignUpPage = () => {
       >
         구글 회원가입
       </button>
-
-      <button
-        onClick={() => handleOAuthLogin('kakao')}
-        className="border p-2 w-60 rounded"
-      >
-        카카오 회원가입
-      </button>
     </div>
   )
 }
+
 export default SignUpPage

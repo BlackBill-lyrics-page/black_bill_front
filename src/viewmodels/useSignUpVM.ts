@@ -5,7 +5,7 @@ import { signupwithEmail } from '../lib/authService'
 export const useSignUpVM = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [nickname, setNickname] = useState('')
+
 
     const [error, setError] = useState<string | null>(null)  //explicit type=string or null
     const [loading, setLoading] = useState(false)
@@ -23,7 +23,6 @@ export const useSignUpVM = () => {
             if (data.user){
                 const {error: inserError}=await supabase.from('users').insert({
                 id :data.user.id,
-                username: nickname,
                 email:data.user.email,
             })
 
@@ -47,7 +46,6 @@ export const useSignUpVM = () => {
     return {
         email, setEmail,
         password, setPassword,
-        nickname, setNickname,
         loading, error, handleSignup
     }
 }
