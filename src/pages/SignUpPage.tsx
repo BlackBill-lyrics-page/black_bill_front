@@ -24,7 +24,7 @@ const SignUpPage = () => {
 
       <button
         onClick={() => handleOAuthLogin('google')}
-        className="border p-2 w-60 rounded"
+        className="border p-2 w-60 rounded bg-red-500 text-white text-3xl"
       >
         구글 회원가입
       </button>

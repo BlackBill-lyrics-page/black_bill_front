@@ -1,9 +1,7 @@
 import { useSetProfileArtistVM } from '../viewmodels/useSetProfileArtistVM';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient'
-import { useMemo } from 'react';
-import clsx from 'clsx';
-import styles from './SetProfileArtist.module.css';
+
 
 const SetProfileArtist = () => {
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
@@ -40,7 +38,7 @@ const SetProfileArtist = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">아티스트 프로필 설정</h1>
+      <h1 className="text-xl font-bold mb-4">아티스트 회원가입</h1>
 
       <div className="mb-4">
         <label className="block text-sm font-medium mb-2">
@@ -86,26 +84,30 @@ const SetProfileArtist = () => {
             const genreId = Number(genre.id);
             const isSelected = selectedGenres.includes(genreId);
 
-            console.log(
-              `🎯 Button Render | genreId: ${genreId} | isSelected: ${isSelected} | selectedGenres: [${selectedGenres.join(', ')}]`
-            );
 
             return (
               <button
                 key={genre.id}
                 type="button"
-                
-                className={`${styles['genre-button']} ${isSelected ? styles['selected'] : ''}`} //tailwind 안되서 css씀
-
+                aria-pressed={isSelected}
+                className={[
+                  // 기본 스타일 (.genre-button 대체)
+                  "py-1 px-3 text-sm rounded-full border border-gray-300",
+                  "bg-white text-gray-700 cursor-pointer",
+                  "transition-colors duration-200",
+                  "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                  // 선택 상태 (.selected 대체)
+                  isSelected ? "bg-blue-600 border-blue-600 text-white hover:bg-blue-600" : ""
+                ].join(" ")}
                 onClick={() => {
                   const genreId = Number(genre.id);
-
-                  setSelectedGenres((prev)=>{
+                
+                  setSelectedGenres((prev) => {
                     const isSelected = prev.includes(genreId);
-
+                  
                     if (isSelected) {
                       setGenreError('');
-                      return prev.filter((id)=>id!==genreId);       
+                      return prev.filter((id) => id !== genreId);
                     } else {
                       if (prev.length >= 3) {
                         setGenreError('장르는 최대 3개까지만 선택 가능합니다.');
@@ -114,7 +116,7 @@ const SetProfileArtist = () => {
                       setGenreError('');
                       return [...prev, genreId];
                     }
-                  });    
+                  });
                 }}
               >
                 {genre.name}

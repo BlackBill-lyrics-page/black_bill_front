@@ -2,13 +2,8 @@ import { supabase } from '../lib/supabaseClient'
 import { useState } from 'react'
 import { signupwithEmail } from '../lib/authService'
 
-export const useSignUpVM = () => {
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState<string | null>(null)  //explicit type=string or null
-    const [loading, setLoading] = useState(false)
 
-    const validatePassword = (pw: string): boolean => { //password validifying function
+export const validatePassword = (pw: string): boolean => { //password validifying function
       const isLengthValid = pw.length >= 8 && pw.length <= 20
 
       const hasLetter = /[a-zA-Z]/.test(pw)
@@ -20,20 +15,32 @@ export const useSignUpVM = () => {
       return isLengthValid && typesCount >= 2
     }
 
-    const handleSignup = async () => {
+
+export const useSignUpVM = () => {
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [error, setError] = useState<string | null>(null)  //explicit type=string or null
+    const [passwordError, setPasswordError] = useState<boolean>(false)
+    const [loading, setLoading] = useState(false)
+
+    
+    const handleSignup = async (): Promise<boolean>=> {
         setLoading(true)
         setError(null)
 
         if (!validatePassword(password)) {
-          setError('비밀번호는 8~20자이며, 영문/숫자/특수문자 중 2가지 이상을 포함해야 합니다.')
+          setPasswordError(true)
           setLoading(false)
-          return
+          return false
         }
+        setPasswordError(false)
 
         const {data, error} = await signupwithEmail(email, password)
 
         if (error){
             setError(error.message)
+            setLoading(false)
+            return false
         }
         else{
             if (data.user){
@@ -42,26 +49,31 @@ export const useSignUpVM = () => {
                 email:data.user.email,
             })
 
-            if (inserError){
-                console.error('DB saving failure', inserError.message)
-                setError('saving error occurs')
+                if (inserError){
+                    console.error('DB saving failure', inserError.message)
+                    setError('saving error occurs')
+                    setLoading(false)
+                    return false
+                }
+                else{
+                    setLoading(false)
+                    return true
+                } 
             }
-            else{
-                alert('successful signup')
-            }
-            } 
             else{
                 setError('user information is missing')
+                setLoading(false)
+                return false
             }
 
         }
 
-        setLoading(false)
     }
 
     return {
         email, setEmail,
         password, setPassword,
-        loading, error, handleSignup
+        loading, error, handleSignup,
+        passwordError, setPasswordError,
     }
 }

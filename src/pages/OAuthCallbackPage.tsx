@@ -1,9 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import WelcomeModal from '../components/WelcomeModal'
 
 const OAuthCallbackPage = () => {
   const navigate = useNavigate()
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false) 
+  const [username, setUsername] = useState('') 
 
   useEffect(() => {
     const checkUser = async () => {
@@ -42,6 +45,10 @@ const OAuthCallbackPage = () => {
           console.error('Error inserting user:', insertError.message)
           return
         }
+        if (!user.email) return
+        setUsername(user.email.split('@')[0])
+        setShowWelcomeModal(true)
+        return
       }
 
       navigate('/') // 홈으로 이동 추후 구현
@@ -52,7 +59,14 @@ const OAuthCallbackPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p>로그인 확인...</p>
+      {showWelcomeModal ? (
+        <WelcomeModal
+          username={username} 
+          onClose={() => setShowWelcomeModal(false)} 
+        />
+      ) : (
+        <p>로그인 확인...</p>
+      )}
     </div>
   )
 }
