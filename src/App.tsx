@@ -4,7 +4,7 @@ import SignUpPage from './pages/SignUpPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
 import SetProfileArtist from './pages/SetProfileArtist'
 import SignInPage from './pages/SignInPage'
-
+import MyAudience from './pages/MyAudiencePage'
 
 function App() {
   return (
@@ -15,6 +15,8 @@ function App() {
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/set-profile-artist" element={<SetProfileArtist />} />
         <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/my_audience" element={<MyAudience />} />
+        
       </Routes>
     </BrowserRouter>
   )

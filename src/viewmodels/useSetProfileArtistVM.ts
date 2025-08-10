@@ -86,7 +86,6 @@ export const useSetProfileArtistVM = () => {
         icon_url: null, // 아이콘이미지 추후 구현
       }));
 
-    console.log('🧩 linksToInsert:', linksToInsert);//debug
 
     const { data : insertedLinks, error: linksError } = await supabase
       .from('artist_links')
@@ -94,8 +93,8 @@ export const useSetProfileArtistVM = () => {
       .select(); //inserting tables into DB
 
     if (linksError) {
-      console.error("❌ Insert Error:", linksError.message);
-      console.error("📄 Details:", linksError.details);
+      console.error(" Insert Error:", linksError.message);
+      console.error(" Details:", linksError.details);
       console.error(linksError);
       return;
     }
