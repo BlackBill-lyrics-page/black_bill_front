@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { uploadArtistPhoto } from "../utility/uploadArtistPhoto";
+import { useArtistStore } from "../store/useArtistStore";
 
 export interface Artist {
   id: number;
   user_id: string;
-  photo_url?: string;
+  photoUrl?: string;
   name?: string;
   type?: string;
   instruments?: string;
@@ -17,7 +18,7 @@ export interface Artist {
 }
 
 export const useEditArtistProfileVM = (artist : Artist) => {
-  const [photoUrl, setPhotoUrl] = useState(artist?.photo_url || "");
+  const [photoUrl, setPhotoUrl] = useState(artist?.photoUrl || "");
   const [name, setName] = useState(artist?.name || "");
   const [bio, setBio] = useState(artist?.bio || "");
   const [label, setLabel] = useState(artist?.label || "");
@@ -33,7 +34,7 @@ export const useEditArtistProfileVM = (artist : Artist) => {
   
   useEffect(() => {
     if (artist) {
-      setPhotoUrl(artist.photo_url || "");
+      setPhotoUrl(artist.photoUrl || "");
       setName(artist.name || "");
       setBio(artist.bio || "");
       setLabel(artist.label || "");
@@ -84,7 +85,7 @@ export const useEditArtistProfileVM = (artist : Artist) => {
       return alert("장르는 최대 3개까지만 선택 가능합니다.");
     }
 
-    let finalPhotoUrl = artist.photo_url;
+    let finalPhotoUrl = artist.photoUrl;
 
     // 새 사진 업로드
     if (photoFile) {
@@ -155,10 +156,33 @@ export const useEditArtistProfileVM = (artist : Artist) => {
       }
     }
 
+    const cacheBusted = (finalPhotoUrl ?? artist.photoUrl ?? "")
+    ? `${finalPhotoUrl ?? artist.photoUrl}?v=${Date.now()}`
+    : "";
+
+  //store
+  useArtistStore.getState().setArtist({ 
+    id: artist.id,
+    userId: artist.user_id,
+    name,
+    photoUrl: cacheBusted,
+    bio,
+    label,
+    instruments,
+    genres: [...new Set(selectedGenres)]
+    .map((id) => {
+      const found = genres.find((g) => g.id === id);
+      return found ? { id: found.id, name: found.name } : { id, name: "" };
+    }),
+    links: snsLinks.filter(l => l.url.trim() !== ""),
+  });
+
     alert("아티스트 정보가 수정되었습니다!");
     return true
   };
 
+  
+  
   return {
     photoUrl,
     setPhotoFile,

@@ -1,7 +1,7 @@
 import { useSetProfileArtistVM } from '../viewmodels/useSetProfileArtistVM';
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient'
-
+import { supabase } from '../lib/supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 const SetProfileArtist = () => {
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
@@ -16,8 +16,39 @@ const SetProfileArtist = () => {
     handleSubmit
   } = useSetProfileArtistVM();
 
-  const [genreList, setGenreList] = useState<{ id: number; name: string }[]>([]); // fetch는 VM에서 X
+  const [genreList, setGenreList] = useState<{ id: number; name: string }[]>([]);
   const [genreError, setGenreError] = useState('');
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+    const checkArtistRegistered = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/sign-in'); 
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('artists')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      if (data) {
+        navigate(`/my_artist`);
+      } else {
+        setLoading(false); 
+      }
+    };
+
+    checkArtistRegistered();
+  }, [navigate]);
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -28,138 +59,73 @@ const SetProfileArtist = () => {
       }
       setGenreList(data || []);
     };
-
     fetchGenres();
   }, []);
 
-  useEffect(() => {
-    
-  }, [selectedGenres]);
+  if (loading) return <p>Loading...</p>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">아티스트 회원가입</h1>
+    <div className="max-w-lg mx-auto bg-white rounded-lg shadow p-6">
+      <h1 className="text-lg font-bold mb-4">아티스트 회원가입</h1>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">
-          아티스트 프로필 사진 <span className="text-red-500">필수</span>
-        </label>
-
-        <div className="relative w-32 h-32 mx-auto">
-          <img
-            src={photoUrl || '/default-user-icon.png'}
-            alt="preview"
-            className="w-full h-full rounded-full object-cover border border-gray-300"
-          />
-
-          <label
-            htmlFor="photo-upload"
-            className="absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-300 cursor-pointer hover:bg-gray-100"
-          >
-            <span className="text-xl leading-none">＋</span>
-          </label>
-
-          <input
-            id="photo-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) setPhotoFile(file);
-            }}
-          />
-        </div>
-      </div>
-
-      <input placeholder="활동명" value={name} onChange={(e) => setName(e.target.value)} />
-      <textarea placeholder="아티스트 설명" value={bio} onChange={(e) => setBio(e.target.value)} />
-      <input placeholder="소속사" value={label} onChange={(e) => setLabel(e.target.value)} />
-
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">장르 선택</label>
-
-        <div className="flex flex-wrap gap-2">
-          {genreList.map((genre) => {
-            const genreId = Number(genre.id);
-            const isSelected = selectedGenres.includes(genreId);
-
-
-            return (
-              <button
-                key={genre.id}
-                type="button"
-                aria-pressed={isSelected}
-                className={[
-                  // 기본 스타일 (.genre-button 대체)
-                  "py-1 px-3 text-sm rounded-full border border-gray-300",
-                  "bg-white text-gray-700 cursor-pointer",
-                  "transition-colors duration-200",
-                  "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500",
-                  // 선택 상태 (.selected 대체)
-                  isSelected ? "bg-blue-600 border-blue-600 text-white hover:bg-blue-600" : ""
-                ].join(" ")}
-                onClick={() => {
-                  const genreId = Number(genre.id);
-                
-                  setSelectedGenres((prev) => {
-                    const isSelected = prev.includes(genreId);
-                  
-                    if (isSelected) {
-                      setGenreError('');
-                      return prev.filter((id) => id !== genreId);
-                    } else {
-                      if (prev.length >= 3) {
-                        setGenreError('장르는 최대 3개까지만 선택 가능합니다.');
-                        return prev;
-                      }
-                      setGenreError('');
-                      return [...prev, genreId];
-                    }
-                  });
-                }}
-              >
-                {genre.name}
-              </button>
-            );
-          })}
-        </div>
-
-        {selectedGenres.length > 0 && genreList.length > 0 && (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {selectedGenres.map((id) => {
-              const genre = genreList.find((g) => g.id === id);
-              if (!genre) {
-                console.warn('[selectedGenres] ID not found in genreList:', id);
-                return null;
-              }
-              return (
-                <span
-                  key={id}
-                  className="flex items-center bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
-                >
-                  {genre.name}
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {genreError && (
-          <p className="text-red-500 text-sm mt-2">{genreError}</p>
-        )}
-      </div>
-
-      <input placeholder="밴드 구성" value={instruments} onChange={(e) => setInstruments(e.target.value)} />
-
-      {photoUrl && (
+      {/* 프로필 사진 */}
+      <div className="relative w-32 h-32 mx-auto mb-4">
         <img
-          src={photoUrl}
-          alt="미리보기"
-          className="w-40 h-40 object-cover rounded-full my-4 border"
+          src={photoUrl || '/default-profile.svg'}
+          alt="default profile"
+          className="w-full h-full rounded-full object-cover border border-gray-300"
         />
-      )}
+        <label
+          htmlFor="photo-upload"
+          className="absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-300 cursor-pointer hover:bg-gray-100"
+        >
+          <span className="text-xl leading-none">＋</span>
+        </label>
+        <input
+          id="photo-upload"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) setPhotoFile(file);
+          }}
+        />
+      </div>
 
+      {/* 활동명 */}
+      <input
+        placeholder="활동명"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full border p-2 mb-3 rounded"
+      />
+
+      {/* 아티스트 설명 */}
+      <textarea
+        placeholder="아티스트 설명"
+        value={bio}
+        onChange={(e) => setBio(e.target.value)}
+        className="w-full border p-2 mb-3 rounded"
+      />
+
+      {/* 소속사 */}
+      <input
+        placeholder="소속사"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        className="w-full border p-2 mb-3 rounded"
+      />
+
+      {/* 밴드 구성 */}
+      <input
+        placeholder="밴드 구성"
+        value={instruments}
+        onChange={(e) => setInstruments(e.target.value)}
+        className="w-full border p-2 mb-3 rounded"
+      />
+
+      {/* SNS Links */}
       {snsLinks.map((link, idx) => (
         <div key={idx} className="flex items-center gap-2 mb-2">
           <select
@@ -169,8 +135,9 @@ const SetProfileArtist = () => {
               updated[idx].platform = e.target.value;
               setSnsLinks(updated);
             }}
+            className="border p-1 rounded"
           >
-            <option value="instagram">instagram</option>
+            <option value="instagram">Instagram</option>
             <option value="youtube">YouTube</option>
             <option value="soundcloud">Soundcloud</option>
             <option value="bandcamp">Bandcamp</option>
@@ -188,6 +155,7 @@ const SetProfileArtist = () => {
               updated[idx].url = e.target.value;
               setSnsLinks(updated);
             }}
+            className="flex-1 border p-1 rounded"
           />
 
           <button
@@ -204,11 +172,68 @@ const SetProfileArtist = () => {
         </div>
       ))}
 
-      <button onClick={() => setSnsLinks([...snsLinks, { platform: 'instagram', url: '' }])}>
-        SNS 링크 추가
+      <button
+        type="button"
+        onClick={() => setSnsLinks([...snsLinks, { platform: 'instagram', url: '' }])}
+        className="text-blue-500 mb-4"
+      >
+        + SNS 링크 추가
       </button>
 
-      <button onClick={()=>handleSubmit(selectedGenres)}>가입하기</button>
+      {/* 장르 선택 */}
+      <div className="mb-3">
+        <label className="block font-medium mb-1">장르 (최대 3개)</label>
+        <div className="flex flex-wrap gap-2">
+          {genreList.map((g) => {
+            const isSelected = selectedGenres.includes(g.id);
+            return (
+              <button
+                type="button"
+                key={g.id}
+                onClick={() => {
+                  if (isSelected) {
+                    setGenreError('');
+                    setSelectedGenres(selectedGenres.filter((id) => id !== g.id));
+                  } else {
+                    if (selectedGenres.length >= 3) {
+                      setGenreError('장르는 최대 3개까지만 선택 가능합니다.');
+                      return;
+                    }
+                    setGenreError('');
+                    setSelectedGenres([...selectedGenres, g.id]);
+                  }
+                }}
+                className={`px-3 py-1 rounded border ${
+                  isSelected
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-300'
+                }`}
+              >
+                {g.name}
+              </button>
+            );
+          })}
+        </div>
+        {genreError && (
+          <p className="text-red-500 text-sm mt-2">{genreError}</p>
+        )}
+      </div>
+
+      {/* 버튼 */}
+      <div className="flex justify-end gap-2">
+        <button
+          className="px-4 py-2 bg-gray-300 rounded"
+          onClick={() => window.history.back()}
+        >
+          취소
+        </button>
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+          onClick={() => handleSubmit(selectedGenres)}
+        >
+          가입하기
+        </button>
+      </div>
     </div>
   );
 };

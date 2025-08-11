@@ -3,18 +3,21 @@ import { useMyArtistVM } from "../viewmodels/useMyArtistVM";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ArtistProfileEditModal from "../components/ArtistProfileEditModal";
+import { useArtistStore } from "../store/useArtistStore";
 
 export default function MyArtistPage() {
-  const { artist, loading } = useMyArtistVM();
+  const { artist : vmArtist, loading } = useMyArtistVM();
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const sArtist = useArtistStore((s) => s.artist);
+  const finalArtist = sArtist?.id ? sArtist : vmArtist;  //기기 변경 시 로컬 데이터가 db덮어씀 : 추후 구현
+
 
   if (loading) return <div className="p-6">로딩중...</div>;
 
 
-  if (!artist) {
-    
-
+  if (!finalArtist) {
     return (
       <div className="flex flex-col items-center justify-center p-6">
         <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
@@ -35,25 +38,89 @@ export default function MyArtistPage() {
     );
   }
 
+  const selectedLink = finalArtist.links?.[selectedIndex] || null;
+
   return (
       <>
         <div className="flex items-center gap-4 p-6">
           <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-            {artist.photo_url ? (
+            {finalArtist.photoUrl ? (
               <img
-                src={artist.photo_url}
-                alt={artist.name}
+                src={finalArtist.photoUrl}
+                alt={finalArtist.name}
                 className="w-full h-full object-cover"
               />
             ) : (
               <span>No Photo</span>
             )}
           </div>
-          <h2 className="text-xl font-semibold">{artist.name}</h2>
+          <h2 className="text-xl font-semibold">{finalArtist.name}</h2>
           <FiSettings
             className="w-6 h-6 text-gray-500 cursor-pointer"
             onClick={() => setIsModalOpen(true)}
           />
+        </div>
+
+        {/* 아티스트 상세 정보 */}
+        <div className="px-6 space-y-1 text-gray-600 text-sm">
+          <div>
+            <span className="font-semibold">장르:</span>{" "}
+            {finalArtist.genres.length > 0
+              ? finalArtist.genres.map((g: any) => g.name).join(", ")
+              : "-"}
+          </div>
+          <div>
+            <span className="font-semibold">소속사:</span>{" "}
+            {finalArtist.label || "-"}
+          </div>
+          <div>
+            <span className="font-semibold">구성:</span>{" "}
+            {finalArtist.instruments || "-"}
+          </div>
+        </div>
+            
+        {/* SNS 링크 */}
+        <div className="px-6 mt-4 space-y-2">
+          {finalArtist.links?.length > 0 ? (
+            (() => {    
+              return (
+                <div className="flex items-center gap-2 text-sm">
+                  {/* 플랫폼 선택 */}
+                  <select
+                    value={selectedIndex}
+                    onChange={(e) => setSelectedIndex(Number(e.target.value))}
+                    className="border rounded px-2 py-1"
+                  >
+                    {finalArtist.links.map((link: any, idx: number) => (
+                      <option key={idx} value={idx}>
+                        {link.platform}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {/* URL */}
+                  <a
+                    href={selectedLink.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline truncate max-w-[200px]"
+                  >
+                    {selectedLink.url}
+                  </a>
+                  
+                  {/* 복사 버튼 */}
+                  <button
+                    onClick={() => navigator.clipboard.writeText(selectedLink.url)}
+                    className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    복사
+                  </button>
+                </div>
+              );
+            })()
+          ) : (
+            <div className="text-sm text-gray-500">등록된 SNS 링크 없음</div>
+          )}
         </div>
         
         {/* 모달 */}
@@ -61,7 +128,7 @@ export default function MyArtistPage() {
           <ArtistProfileEditModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
-            artist={artist}
+            artist={finalArtist}
           />
         )}
       </>
