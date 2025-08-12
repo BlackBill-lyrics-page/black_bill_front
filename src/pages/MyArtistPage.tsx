@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ArtistProfileEditModal from "../components/ArtistProfileEditModal";
 import { useArtistStore } from "../store/useArtistStore";
+import { FiPlus } from "react-icons/fi";
 
 export default function MyArtistPage() {
   const { artist : vmArtist, loading } = useMyArtistVM();
@@ -13,6 +14,8 @@ export default function MyArtistPage() {
   const sArtist = useArtistStore((s) => s.artist);
   const finalArtist = sArtist?.id ? sArtist : vmArtist;  //기기 변경 시 로컬 데이터가 db덮어씀 : 추후 구현
 
+  const [activeTab, setActiveTab] =
+  useState<"songs" | "books" | "stages">("songs");
 
   if (loading) return <div className="p-6">로딩중...</div>;
 
@@ -123,6 +126,51 @@ export default function MyArtistPage() {
           )}
         </div>
         
+        <div className="px-6 mt-6">
+          {/* 탭 헤더 */}
+          <div className="flex items-center justify-between">
+            <div className="flex gap-4 text-sm">
+              <TabButton
+                active={activeTab === "songs"}
+                onClick={() => setActiveTab("songs")}
+                label="곡"
+              />
+              <TabButton
+                active={activeTab === "books"}
+                onClick={() => setActiveTab("books")}
+                label="가사집"
+              />
+              <TabButton
+                active={activeTab === "stages"}
+                onClick={() => setActiveTab("stages")}
+                label="무대"
+              />
+            </div>
+
+            {/* 탭별 추가하기 버튼 (원하는 경로로 바꾸세요) */}
+            <button
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
+              onClick={() => {
+                if (activeTab === "songs") navigate("/add-song");      // 곡 추가 페이지
+                else if (activeTab === "books") navigate("/add-lyric"); // 가사집 추가 페이지
+                else navigate("/add-stage");                            // 무대/공연 추가 페이지
+              }}
+            >
+              <FiPlus />
+              {activeTab === "songs"
+                ? "곡 추가하기"
+                : activeTab === "books"
+                ? "가사집 추가하기"
+                : "무대 추가하기"}
+            </button>
+          </div>
+
+  {/* 콘텐츠는 아직 미구현이므로 빈 공간만 */}
+  <div className="py-8 text-sm text-gray-400">
+    (콘텐츠 예정)
+  </div>
+</div>
+
         {/* 모달 */}
         {isModalOpen && (
           <ArtistProfileEditModal
@@ -135,3 +183,26 @@ export default function MyArtistPage() {
     );
 
 }
+
+function TabButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`pb-2 transition ${
+        active ? "text-black border-b-2 border-black"
+               : "text-gray-500 hover:text-black"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
