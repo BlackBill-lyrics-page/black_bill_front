@@ -1,6 +1,7 @@
 import { useSearchVM } from "../viewmodels/useSearchVM";
 import { UserIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 
 export default function SearchPage() {
   const navigate = useNavigate();
@@ -15,14 +16,27 @@ export default function SearchPage() {
     loading,
     noResult,
     result,
-    resetSearch
+    resetSearch,
+    selectedNames,
+    handleRecentClick,
+    recentSearches,
+    saveRecentSearch,
+    deleteRecentSearch,
   } = useSearchVM();
-
-  if (genreLoading) return null;
 
 
   const showNameResults = mode === "name" && query.trim().length >= 2;
   const showGenreResults = mode === "genre" && selectedGenres.length > 0; 
+
+  const handleArtistClick = useCallback( //검색 결과 나온 아티스트 프로필 클릭시 -> naviage, 최근검색어 저장
+    (a: { artist_id: number; name: string }) => {
+      void saveRecentSearch(a.name);
+      navigate(`/artist/${a.artist_id}`);
+    },
+    [navigate, saveRecentSearch]
+  );
+
+  if (genreLoading) return null;
 
   return (
     <>
@@ -51,9 +65,8 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* 같은 자리에서 조건부 렌더링 */}
+
       <div className="max-w-5xl mx-auto px-6 mt-8">
-        {/* 1) name 모드 + 키워드 입력됨 → 결과 그리드 */}
         {showNameResults && (
           <>
             <div className="text-sm text-gray-500 mb-3">아티스트</div>
@@ -70,7 +83,7 @@ export default function SearchPage() {
                   <li
                     key={a.artist_id}
                     className="group cursor-pointer"
-                    onClick={() => navigate(`/artist/${a.artist_id}`)}
+                    onClick={() => handleArtistClick(a)} 
                   >
                     <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gray-200 overflow-hidden mx-auto">
                       {a.photo_url ? (
@@ -103,8 +116,26 @@ export default function SearchPage() {
         {!showNameResults && !showGenreResults && (
           <>
             <div className="text-sm text-gray-500 mb-2">최근 검색어</div>
-            {/* 최근 검색어 UI가 아직 없음*/}
-
+            <div className="flex flex-wrap gap-2">
+              {recentSearches.map((q, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleRecentClick(q)}
+                  className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200"
+                >
+                  <span>{q}</span>
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation(); // 검색 실행 막기
+                      deleteRecentSearch(q); // 삭제 실행
+                    }}
+                    className="text-gray-500 hover:text-red-700"
+                  >
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
             <div className="text-sm text-gray-500 mt-6 mb-2">장르 검색</div>
             <div className="flex flex-wrap gap-2">
               {allGenres.map((g) => {
@@ -136,7 +167,15 @@ export default function SearchPage() {
 
         {showGenreResults && (
           <>
-            <div className="text-sm text-gray-500 mb-3">아티스트</div>
+            {!loading && !noResult && result.length > 0 &&(
+              <>
+              <div className="text-sm text-gray-500 mb-3">장르</div>
+              <div className="w-27 h-15 mb-6 bg-gray-100 rounded-lg flex items-center justify-center">{selectedNames}</div>
+              <div className="w-full h-px bg-gray-300 mb-4"></div>
+              </>     
+              )}
+
+            {!loading && !noResult &&(<div className="text-sm text-gray-500 mb-3">아티스트</div>)}
 
             {loading && <div className="text-sm text-gray-500">검색중…</div>}
 
@@ -145,12 +184,14 @@ export default function SearchPage() {
             )}
 
             {!loading && result.length > 0 && (
+            <>
+
               <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8">
                 {result.map((a) => (
                   <li
                     key={a.artist_id}
                     className="group cursor-pointer"
-                    onClick={() => navigate(`/artist/${a.artist_id}`)}
+                    onClick={() => handleArtistClick(a)}
                   >
                     <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gray-200 overflow-hidden mx-auto">
                       {a.photo_url ? (
@@ -175,6 +216,7 @@ export default function SearchPage() {
                   </li>
                 ))}
               </ul>
+            </> 
             )}
           </>
         )}

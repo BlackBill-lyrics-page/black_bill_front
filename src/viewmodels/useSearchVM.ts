@@ -22,6 +22,7 @@ export function useSearchVM(){
     const collator = useMemo(() => new Intl.Collator("ko", { sensitivity: "base" }), []); //useMemo 복잡도 낮추기
     const [allGenres, setAllGenres] = useState<{id : number; name:string}[]>([])
     const [genreLoading, setGenreLoading]=useState(false);
+    const [recentSearches, setrecentSearches]=useState<string[]>([]);
 
     const setMode = useCallback((m: SearchMode) => {
       setModeState(m);
@@ -52,6 +53,71 @@ export function useSearchVM(){
             return prev;
         });
     };
+
+    const selectedNames = useMemo( //이름만 가져오기
+      () =>
+        allGenres
+          .filter(g => selectedGenres.includes(g.id))
+          .map(g => g.name), 
+      [allGenres, selectedGenres]
+    );
+
+    //최근 검색어 (5개)
+    const fetchRecentSearches = async () => {
+        const {data : {user}} = await supabase.auth.getUser();
+        if (!user) return;
+
+        const {data, error} = await supabase
+            .from("recent_searches")
+            .select("query_text")
+            .eq("user_id",user.id)
+            .order("searched_at", {ascending:false})
+            .limit(5); // 이미 db에서 5개 초과시 자동삭제긴함
+        
+        if (!error && data) {
+            setrecentSearches(data.map(item=>item.query_text));
+        }
+    }
+
+    const handleRecentClick = useCallback((q:string)=>{
+        const v = q.trim();
+        if (v.length<2) return;
+
+        setMode("name");
+        setSelectedGenres([]);
+        setQuery(v);
+    }, [setMode, setQuery, setSelectedGenres]);
+
+    const saveRecentSearch = useCallback(async (text:string)=>{
+        const q = text.trim();
+        if (q.length<2) return;
+        // const {data : {user}} = await supabase.auth.getUser()
+        // if (!user) return;
+
+        await supabase.rpc("save_recent_search", {
+            // p_user_id : user.id,
+            p_query_text : q,
+        });
+
+        fetchRecentSearches();
+    }, [fetchRecentSearches]);
+
+    const deleteRecentSearch = useCallback(async (text: string) => {
+      const q = text.trim();
+      if (q.length < 2) return;
+        
+      const { error } = await supabase.rpc("delete_recent_search", {
+        p_query_text: q,
+      });
+    
+      if (error) {
+        console.error("Failed to delete recent search:", error);
+        return;
+      }
+    
+      fetchRecentSearches(); // 삭제 후 목록 새로고침
+    }, [fetchRecentSearches]);
+
 
     const reqIdRef = useRef(0); // avoid the request competition 
 
@@ -185,6 +251,10 @@ export function useSearchVM(){
         }
     },[selectedGenres,mode,setMode]);
 
+    useEffect(() => {
+      fetchRecentSearches();
+    }, []);
+
     return {
       mode,
       setMode,
@@ -200,6 +270,12 @@ export function useSearchVM(){
       noResult,
       allGenres,
       genreLoading,
-      resetSearch
+      resetSearch,
+      selectedNames,
+      recentSearches,
+      fetchRecentSearches,
+      handleRecentClick,
+      saveRecentSearch,
+      deleteRecentSearch,
     };
 }
