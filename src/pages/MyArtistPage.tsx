@@ -1,14 +1,16 @@
 import { FiSettings } from "react-icons/fi";
 import { useMyArtistVM } from "../viewmodels/useMyArtistVM";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ArtistProfileEditModal from "../components/ArtistProfileEditModal";
 import { useArtistStore } from "../store/useArtistStore";
 import { FiPlus } from "react-icons/fi";
-import UploadSongsModal from "../components/uploadAndEditSongsModal.tsx";
+import UploadSongsModal from "../components/uploadAndEditSongsModal";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";
-import SongList from "../components/SongList.tsx";
-
+import SongList from "../components/SongList";
+import UploadAndEditAlbumsModal from "../components/uploadAndEditAlbumsModal";
+import { supabase } from "../lib/supabaseClient";
+import AlbumsList from "../components/AlbumList";
 
 export default function MyArtistPage() {
   const { artist: vmArtist, loading } = useMyArtistVM();
@@ -23,8 +25,22 @@ export default function MyArtistPage() {
 
   const [isSongModalOpen, setIsSongModalOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<VmSong | null>(null);
-  if (loading) return <div className="p-6">로딩중...</div>;
 
+
+  // ✅ 추가: 앨범(가사집) 모달 상태
+  const [isAlbumModalOpen, setIsAlbumModalOpen] = useState(false);
+  const [editingAlbumId, setEditingAlbumId] = useState<number | null>(null);
+
+  // ✅ 추가: Supabase userId (커버 업로드에 필요)
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setUserId(data.user?.id ?? null);
+    })();
+  }, []);
+
+  if (loading) return <div className="p-6">로딩중...</div>;
 
   if (!finalArtist) {
     return (
@@ -162,7 +178,9 @@ export default function MyArtistPage() {
                 setEditingSong(null);         // 추가 모드이므로 초기값 없음
                 setIsSongModalOpen(true);     // 모달 열기
               } else if (activeTab === "books") {
-                navigate("/add-lyric");
+                if (!userId) { alert("로그인 후 이용해주세요."); return; }
+                setEditingAlbumId(null);      // 생성 모드
+                setIsAlbumModalOpen(true);    // ✅ 모달 열기
               } else {
                 navigate("/add-stage");
               }
@@ -194,7 +212,16 @@ export default function MyArtistPage() {
               />
             </div>
           ) : activeTab === "books" ? (
-            <div className="text-gray-400">(가사집 콘텐츠 예정)</div>
+            <div className="text-gray-900">
+              <AlbumsList
+                artistId={finalArtist.id}
+                onEdit={(album) => {
+                  // 수정 모드로 모달 열기
+                  setEditingAlbumId(Number(album.id));
+                  setIsAlbumModalOpen(true);
+                }}
+              />
+            </div>
           ) : (
             <div className="text-gray-400">(무대 콘텐츠 예정)</div>
           )}
@@ -216,6 +243,20 @@ export default function MyArtistPage() {
           initialSong={editingSong} // 수정 모드가 필요하면 주석 해제
         />
       )}
+      {/* ✅ 가사집 모달 */}
+      {isAlbumModalOpen && userId && (
+        <UploadAndEditAlbumsModal
+          isOpen={isAlbumModalOpen}
+          onClose={() => {
+            setIsAlbumModalOpen(false);
+            setEditingAlbumId(null);          // 🔁 닫을 때 초기화(다음에 생성 모드로 열릴 수 있음)
+          }}
+          artistId={finalArtist.id}
+          albumId={editingAlbumId ?? undefined}  // ✅ 수정 모드일 땐 값 전달, 생성 모드면 undefined
+          userId={userId}
+        />
+      )}
+
     </>
   );
 

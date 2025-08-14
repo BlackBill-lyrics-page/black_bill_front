@@ -1,3 +1,5 @@
+// MyArtistPage에서 아티스트가 업로드한 곡의 리스트를 보여주는 컴포넌트
+
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
@@ -35,7 +37,6 @@ export default function SongList({
         const vm = useUploadSongsVM({
             id: Number(item.id),
             artist_id: null,
-            album_id: null,
             title: item.title,
             lyrics: "",
             bio: "",

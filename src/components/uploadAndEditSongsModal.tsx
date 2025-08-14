@@ -1,5 +1,4 @@
-// uploadSongsModal.tsx
-import React from "react";
+// MyArtistPage에서 아티스트가 곡을 업로드/수정하는 모달 컴포넌트
 import type { FormEvent } from "react";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";

@@ -16,7 +16,6 @@ export interface Songs {
     id?: number | null;          // ✅ 추가: songs.id (목록/업데이트 식별용)
     created_at?: string | null;  // ✅ 추가: songs.created_at (옵션, 서버 타임스탬프 보관용)
     artist_id: number | null;    // songs.artist_id
-    album_id: number | null;     // songs.album_id
     title: string;               // 곡 제목
     lyrics: string;              // 가사
     bio: string;                 // 곡 설명
@@ -30,7 +29,6 @@ const defaultSong: Songs = {
   id: null,                      // ✅ 추가: 초기값 null
   created_at: null,              // ✅ 추가: 초기값 null
   artist_id: null,
-  album_id: null,
   title: "",
   lyrics: "",
   bio: "",

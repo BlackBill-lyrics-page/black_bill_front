@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-import { uploadArtistSongsPhoto } from "../utility/uploadArtistSongsPhoto";
+import { uploadArtistSongsPhoto } from "../utility/uploadSongsPhoto";
 
 import { useSongStore } from "../store/useSongsStore";
 
@@ -11,7 +11,6 @@ import { useSongStore } from "../store/useSongsStore";
 export interface Songs {
     id: number | null;           // songs.id
     artist_id: number | null;    // songs.artist_id
-    album_id: number | null;     // songs.album_id
     title: string;               // songs.title
     lyrics: string;              // songs.lyrics
     bio: string;                 // songs.bio
@@ -45,7 +44,7 @@ const fetchFullSongById = async (songId: number) => {
     const { data, error } = await supabase
         .from("songs")
         .select(`
-      id, artist_id, album_id, title, lyrics, bio, song_photo, created_at, song_link,
+      id, artist_id,  title, lyrics, bio, song_photo, created_at, song_link,
       song_links ( platform, url )
     `)
         .eq("id", songId)
@@ -59,7 +58,6 @@ const fetchFullSongById = async (songId: number) => {
     return data as unknown as {
         id: number;
         artist_id: number | null;
-        album_id: number | null;
         title: string;
         lyrics: string | null;
         bio: string | null;
@@ -180,15 +178,15 @@ export const useUploadSongsVM = (song: Songs | null) => {
                 return false;
             }
 
-            // 3) 스토리지 이미지 삭제 (옵션)
-            if (opts?.alsoRemovePhoto && songPhoto) {
-                try {
-                    await deleteStorageByPublicURL(songPhoto);
-                } catch (e) {
-                    console.warn("이미지 삭제 중 경고:", e);
-                    // 이미지 삭제 실패는 곡 삭제 성공과 별개로 취급
-                }
-            }
+            // // 3) 스토리지 이미지 삭제 (옵션)
+            // if (opts?.alsoRemovePhoto && songPhoto) {
+            //     try {
+            //         await deleteStorageByPublicURL(songPhoto);
+            //     } catch (e) {
+            //         console.warn("이미지 삭제 중 경고:", e);
+            //         // 이미지 삭제 실패는 곡 삭제 성공과 별개로 취급
+            //     }
+            // }
 
             // 4) 전역 목록에서 제거
             removeSongFromStore?.(song.id);
@@ -258,7 +256,6 @@ export const useUploadSongsVM = (song: Songs | null) => {
                 // 신규 생성
                 const insertPayload = {
                     artist_id: artistId,
-                    album_id: song?.album_id ?? null,
                     title,
                     lyrics,
                     bio,
