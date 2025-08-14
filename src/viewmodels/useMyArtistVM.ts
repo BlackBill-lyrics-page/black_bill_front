@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useArtistStore } from "../store/useArtistStore";
 
+
 export function useMyArtistVM() {
   const [artist, setArtist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const {data: { user },} = await supabase.auth.getUser();
+      
       if (!user) {
         setLoading(false);
         return;

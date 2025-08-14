@@ -6,6 +6,7 @@ import SetProfileArtist from './pages/SetProfileArtist'
 import SignInPage from './pages/SignInPage'
 import MyAudience from './pages/MyAudiencePage'
 import MyArtistPage from './pages/MyArtistPage'
+import SearchPage from './pages/SearchPage'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/my_audience" element={<MyAudience />} />
         <Route path="/my_artist" element={<MyArtistPage />} />
+        <Route path="/search" element={<SearchPage />} />
 
       </Routes>
     </BrowserRouter>
