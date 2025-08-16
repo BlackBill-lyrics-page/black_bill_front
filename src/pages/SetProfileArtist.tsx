@@ -2,6 +2,8 @@ import { useSetProfileArtistVM } from '../viewmodels/useSetProfileArtistVM';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { useImageCropper } from '../hooks/useImageCropper';
+import Cropper from 'react-easy-crop';
 
 const SetProfileArtist = () => {
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
@@ -13,13 +15,25 @@ const SetProfileArtist = () => {
     instruments, setInstruments,
     snsLinks, setSnsLinks,
     photoFile, setPhotoFile,
-    handleSubmit
+    handleSubmit,
+    applyCroppedPhoto,
   } = useSetProfileArtistVM();
 
   const [genreList, setGenreList] = useState<{ id: number; name: string }[]>([]);
   const [genreError, setGenreError] = useState('');
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  const {
+    open: cropOpen,
+    src,
+    crop, setCrop,
+    zoom, setZoom,
+    setCroppedAreaPixels,
+    startFromFile,
+    apply: applyCrop,
+    cancel: cancelCrop,
+  } = useImageCropper();
 
     useEffect(() => {
     const checkArtistRegistered = async () => {
@@ -88,7 +102,8 @@ const SetProfileArtist = () => {
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) setPhotoFile(file);
+            e.currentTarget.value = ''; 
+            if (file) startFromFile(file); 
           }}
         />
       </div>
@@ -234,6 +249,57 @@ const SetProfileArtist = () => {
           가입하기
         </button>
       </div>
+      {cropOpen && src && (
+      <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center">
+        <div className="bg-white w-full max-w-xl rounded-xl overflow-hidden">
+          <div className="relative w-full h-[60vh] sm:h-[55vh]">
+            <Cropper
+              image={src}
+              crop={crop}
+              zoom={zoom}
+              minZoom={0.5}
+              maxZoom={3}
+              aspect={1}
+              cropShape="round"
+              showGrid={false}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(_, areaPixels) =>
+                setCroppedAreaPixels(areaPixels)
+              }
+            />
+          </div>
+          <div className="p-3 flex items-center justify-between">
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.01}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-40"
+            />
+            <div className="flex gap-2">
+              <button className="px-4 py-2 rounded border" onClick={cancelCrop}>
+                취소
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-blue-600 text-white"
+                onClick={async () => {
+                  const result = await applyCrop();
+                  if (result) {
+                    applyCroppedPhoto(result.file, result.previewUrl);
+                  }
+                }}
+              >
+                적용
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
     </div>
   );
 };

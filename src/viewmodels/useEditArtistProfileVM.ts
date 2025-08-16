@@ -50,6 +50,11 @@ export const useEditArtistProfileVM = (artist : Artist) => {
   );
   // 전체 장르 목록 상태
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
+
+  const applyCroppedPhoto = (file: File, previewUrl: string) => {
+      setPhotoFile(file);
+      setPhotoUrl(previewUrl);
+    };
   
   // 아티스트 변경 시 상태 재설정
   // artist prop이 변경될 때마다, 입력폼 상태를 최신 데이터로 덮어씀
@@ -238,5 +243,6 @@ export const useEditArtistProfileVM = (artist : Artist) => {
     selectedGenres,
     setSelectedGenres,
     genres,
+    applyCroppedPhoto,
   };
 };

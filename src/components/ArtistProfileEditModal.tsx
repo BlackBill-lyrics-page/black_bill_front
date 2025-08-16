@@ -1,6 +1,8 @@
 import { useEditArtistProfileVM } from "../viewmodels/useEditArtistProfileVM";
 import type { Artist } from "../viewmodels/useEditArtistProfileVM";
 import { useState } from 'react';
+import { useImageCropper } from "../hooks/useImageCropper";
+import Cropper from "react-easy-crop";
 
 interface ArtistProfileEditModalProps {
   isOpen: boolean;
@@ -30,10 +32,21 @@ export default function ArtistProfileEditModal({
     setSelectedGenres,
     genres,
     handleSubmit,
+    applyCroppedPhoto,
   } = useEditArtistProfileVM(artist);
 
   const [genreError, setGenreError] = useState("");
 
+  const {
+    open: cropOpen,
+    src,
+    crop, setCrop,
+    zoom, setZoom,
+    setCroppedAreaPixels,
+    startFromFile,
+    apply: applyCrop,
+    cancel: cancelCrop,
+  } = useImageCropper();
 
   if (!isOpen) return null;
 
@@ -62,7 +75,8 @@ export default function ArtistProfileEditModal({
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) setPhotoFile(file);
+              e.currentTarget.value = "";
+              if (file) startFromFile(file);
             }}
           />
         </div>
@@ -215,6 +229,64 @@ export default function ArtistProfileEditModal({
           </button>
         </div>
       </div>
+
+       {cropOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center">
+          <div className="bg-white w-full max-w-xl rounded-xl overflow-hidden">
+            <div className="relative w-full h-[60vh] sm:h-[55vh]">
+              {src && (
+                <Cropper
+                  image={src}
+                  crop={crop}
+                  zoom={zoom}
+                  minZoom={0.5}
+                  maxZoom={3}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={(_, areaPixels) =>
+                  setCroppedAreaPixels(areaPixels)
+              }
+                />
+              )}
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.01}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-40"
+                aria-label="zoom"
+              />
+              <div className="flex gap-2">
+                <button
+                  className="px-4 py-2 rounded border"
+                  onClick={cancelCrop}
+                >
+                  취소
+                </button>
+                <button
+                  className="px-4 py-2 rounded bg-blue-600 text-white"
+                  onClick={async () => {
+                    const result = await applyCrop(); // { blob, file, previewUrl }
+                    if (result) {
+                      applyCroppedPhoto(result.file, result.previewUrl);
+                    }
+                  }}
+                >
+                  적용
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}           
+
     </div>
   );
 }

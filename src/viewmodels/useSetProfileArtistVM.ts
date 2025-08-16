@@ -12,6 +12,12 @@ export const useSetProfileArtistVM = () => {
   const [snsLinks, setSnsLinks] = useState([{ platform: 'instagram', url: '' }]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
+  const applyCroppedPhoto = (file: File, previewUrl: string) => {
+    setPhotoFile(file);
+    setPhotoUrl(previewUrl);
+  };
+
+
   useEffect(() => {
     if (!photoFile) {
       setPhotoUrl('');
@@ -112,5 +118,6 @@ export const useSetProfileArtistVM = () => {
     snsLinks, setSnsLinks,
     photoFile, setPhotoFile,
     handleSubmit,
+    applyCroppedPhoto,
   };
 };
