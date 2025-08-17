@@ -1,6 +1,13 @@
 import { FiSettings, FiPlus } from "react-icons/fi";
 import AlbumsList from "./AlbumList";
 import SongList from "./SongList";
+import type { UISong } from "./SongList";
+import type { UIAlbum } from "./AlbumList";
+import { useState, useRef } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { FiChevronRight } from "react-icons/fi"; 
+import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
+import { SiApplemusic} from "react-icons/si";
 
 type Link = { platform: string; url: string };
 type Genre = { id: number; name: string };
@@ -21,8 +28,21 @@ type Props = {
   onAddSong?: () => void;
   onAddBook?: () => void;
   onAddStage?: () => void;
+  onEditSong?: (song: UISong) => void; 
+  onEditBook?: (album: UIAlbum) => void;
   activeTab : "songs" | "books" | "stages";
   setActiveTab : React.Dispatch<React.SetStateAction<"songs"|"books"|"stages">>;
+};
+
+type SongDetail = {
+  id: number;
+  title: string;
+  lyrics: string | null;
+  bio: string | null;
+  song_photo: string | null;
+  song_link: string | null;
+  created_at: string | null;
+  links?: {platform : string; url:string}[];
 };
 
 export default function ArtistProfileView({
@@ -34,7 +54,70 @@ export default function ArtistProfileView({
   onAddStage,
   activeTab,
   setActiveTab,
+  onEditBook,
+  onEditSong,
 }: Props) {
+
+    const [openSong, setOpenSong] = useState<SongDetail | null>(null);
+    const [openLoading, setOpenLoading] = useState(false);
+    const detailRef = useRef<HTMLDivElement | null>(null);
+
+    const platformMeta = (p: string) => {
+      const key = p.toLowerCase();
+      if (key.includes("youtube"))  return { label: "YouTube",   Icon: FaYoutube,    className: "bg-red-50 hover:bg-red-100 text-red-600" };
+      if (key.includes("spotify"))  return { label: "Spotify",   Icon: FaSpotify,    className: "bg-green-50 hover:bg-green-100 text-green-700" };
+      if (key.includes("apple"))    return { label: "Apple Music", Icon: SiApplemusic, className: "bg-gray-50 hover:bg-gray-100 text-gray-800" };
+      if (key.includes("sound"))    return { label: "SoundCloud", Icon: FaSoundcloud, className: "bg-orange-50 hover:bg-orange-100 text-orange-700" };
+      return { label: p || "Link",  Icon: FaLink,                className: "bg-blue-50 hover:bg-blue-100 text-blue-700" };
+    };
+
+
+    const handleOpenSong = async (ui: UISong) => {
+    
+    if (openSong?.id === Number(ui.id)) { // if reselected -> closed
+      setOpenSong(null);
+      return;
+    }
+
+    try {
+      setOpenLoading(true);
+      const { data, error } = await supabase
+        .from("songs")
+        .select(`
+            id,title,lyrics,bio,song_photo,song_link,created_at,
+            song_links (platform, url)
+        `)
+        .eq("id", ui.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      if (!data) {
+        setOpenSong(null);            
+        return;
+      }
+
+      const detail: SongDetail = {
+        id: data.id,
+        title: data.title ?? "",
+        lyrics: data.lyrics ?? null,
+        bio: data.bio ?? null,
+        song_photo: data.song_photo ?? null,
+        song_link: data.song_link ?? null,
+        created_at: data.created_at ?? null,
+        links: (data.song_links || [] as {platform:string; url:string}[])
+      };
+    
+      setOpenSong(detail);
+      // 패널로 스크롤
+      setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    } finally {
+      setOpenLoading(false);
+    }
+  };
   
   return (
     <>
@@ -120,29 +203,95 @@ export default function ArtistProfileView({
 
         {/* 리스트 영역 */}
         <div className="py-8 text-sm text-gray-400">
-          {activeTab === "songs" && (
-            <div className="text-gray-900">
-              <SongList 
-                artistId={artist.id} 
-                readOnly={!isOwner}/>
-            </div>
-          )}
-          {activeTab === "books" && (
-            <div className="text-gray-900">
-              <AlbumsList 
-                artistId={artist.id} 
-                readOnly={!isOwner}
-              />
-            </div>
-          )}
-          {activeTab === "stages" && (
-            <div className="text-gray-400">(무대 콘텐츠 예정)</div> //추후 구현
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
+            {activeTab === "songs" && (
+                <div className="text-gray-900">
+                  <SongList 
+                    artistId={artist.id} 
+                    readOnly={!isOwner}
+                    onEdit={onEditSong}
+                    onOpen={handleOpenSong}
+                  />
+
+                  {(openLoading || openSong) && (
+                    <div ref={detailRef} className="mt-6 rounded-xl bg-white">
+                      {/* 헤더 */}
+                      <div className="flex items-center gap-3 p-4">
+                        
+                        <div className="min-w-0 flex-1">
+                          {!!openSong?.bio && (
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {openSong.bio}
+                            </div>
+                          )}
+                        </div>
+
+                    {/* 접기 버튼 */}
+                    <button
+                      type="button"
+                      className="ml-2 text-gray-400 hover:text-black"
+                      onClick={() => setOpenSong(null)}
+                    >
+                      <FiChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* 본문 */}
+                  <div className="px-4 pb-4">
+                    {openLoading ? (
+                      <div className="text-sm text-gray-500 py-8">
+                        불러오는 중…
+                      </div>
+                    ) : (
+                      <>
+                        {openSong?.links && openSong.links.length > 0 && (
+                          <div className="mb-3 flex flex-wrap gap-2">
+                            {openSong.links.map((L, i) => {
+                              if (!L.url) return null;
+                              const { label, Icon, className } = platformMeta(L.platform);
+                              return (
+                                <a
+                                  key={i}
+                                  href={L.url}
+                                  target="_blank" //click ->new tab
+                                  rel="noopener noreferrer" //security 1)tabnabbing 2)Referer header
+                                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition ${className}`}
+                                  title={label}
+                                >
+                                  <Icon className="w-4 h-4" />
+                                  <span>{label}</span>
+                                </a>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-6 text-gray-800"> 
+                          {openSong?.lyrics || "가사가 비어 있습니다."}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+                    </div>
+                  )}
+                  {activeTab === "books" && (
+                    <div className="text-gray-900">
+                      <AlbumsList 
+                        artistId={artist.id} 
+                        readOnly={!isOwner}
+                        onEdit={onEditBook}
+                      />
+                    </div>
+                  )}
+                  {activeTab === "stages" && (
+                    <div className="text-gray-400">(무대 콘텐츠 예정)</div> //추후 구현
+                  )}
+                </div>
+              </div>
+            </>
+          );
+        }
 
 function TabButton({
   active, onClick, label,

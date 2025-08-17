@@ -15,10 +15,12 @@ export type UISong = {
 export default function SongList({
     artistId,
     onEdit,
+    onOpen,
     readOnly = true,
 }: {
     artistId: string | number;
     onEdit?: (song: UISong) => void;
+    onOpen?: (song: UISong) => void;
     readOnly? : boolean;
 }) {
     const [songs, setSongs] = useState<UISong[]>([]);
@@ -133,7 +135,10 @@ export default function SongList({
     return (
         <ul className="mt-4 grid gap-3">
             {songs.map((s) => (
-                <li key={s.id} className="flex items-center justify-between border rounded-lg p-3">
+                <li key={s.id} 
+                    className="flex items-center justify-between rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+                    onClick={()=>onOpen?.(s)}
+                >
                     {/* 왼쪽: 사진 + 제목/날짜 */}
                     <div className="flex items-center min-w-0 gap-3">
                         {s.photoUrl && (
@@ -155,12 +160,14 @@ export default function SongList({
 
                     {/* 오른쪽: 수정/삭제 버튼 */}
                     {!readOnly && (
-                      <RowActions
-                        item={s}
-                        onEdit={onEdit}
-                        onDeleted={(id) => setSongs((prev) => prev.filter((x) => x.id !== id))}
-                        readOnly={readOnly}
-                      />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <RowActions
+                          item={s}
+                          onEdit={onEdit}
+                          onDeleted={(id) => setSongs((prev) => prev.filter((x) => x.id !== id))}
+                          readOnly={readOnly}
+                        />
+                      </div>
                     )}
                 </li>
             ))}

@@ -82,6 +82,33 @@ export default function MyArtistPage() {
           setEditingAlbumId(null);
           setIsAlbumModalOpen(true);
         }}
+
+        onEditSong={(ui) => {
+          if (!isOwner) return;
+          setEditingSong({
+            id: Number(ui.id),
+            artist_id: finalArtist.id,
+            title: ui.title ?? "",
+            lyrics: "",
+            bio: "",
+            song_photo: ui.photoUrl ?? "",
+            created_at: ui.createdAt ?? null,
+            song_link: "",
+            links: [],
+          });
+          setIsSongModalOpen(true);
+        }}
+      
+        onEditBook={(album) => {
+          if (!isOwner) return;
+          if (!userId) {
+            alert("로그인 후 이용해주세요.");
+            return;
+          }
+          setEditingAlbumId(Number(album.id));
+          setIsAlbumModalOpen(true);
+        }}
+
         onAddStage={() => navigate("/add-stage")} // isowner 추가해야함 나중에 구현후
         activeTab={activeTab}
         setActiveTab={setActiveTab}
