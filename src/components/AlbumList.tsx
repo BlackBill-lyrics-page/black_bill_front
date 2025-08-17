@@ -16,9 +16,11 @@ export type UIAlbum = {
 export default function AlbumsList({
   artistId,
   onEdit,
+  readOnly =true,
 }: {
   artistId: string | number;
   onEdit?: (album: UIAlbum) => void; // 수정 버튼 클릭 시 부모(MyArtistPage)에서 모달 열도록
+  readOnly?: boolean;
 }) {
   const [albums, setAlbums] = useState<UIAlbum[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,11 +32,13 @@ export default function AlbumsList({
     artistId,
     onEdit,
     onDeleted,
+    readOnly,
   }: {
     item: UIAlbum;
     artistId: number | string;
     onEdit?: (album: UIAlbum) => void;
     onDeleted: (id: string) => void;
+    readOnly?: boolean;
   }) {
     // 앨범 삭제/상세 로드를 위해 VM 사용
     const vm = useUploadAlbumsVM();
@@ -49,6 +53,7 @@ export default function AlbumsList({
     }, [artistId, item.id]);
 
     const handleDelete = async () => {
+      if (readOnly) return;
       if (!confirm(`정말로 "${item.name || "제목 없음"}" 가사집을 삭제하시겠습니까?`)) return;
       try {
         setDeleting(true);
@@ -58,6 +63,8 @@ export default function AlbumsList({
         setDeleting(false);
       }
     };
+
+    if (readOnly) return null;
 
     return (
       <div className="flex items-center gap-2">
@@ -148,12 +155,15 @@ export default function AlbumsList({
           </div>
 
           {/* 오른쪽: 수정/삭제 버튼 */}
-          <RowActions
-            item={a}
-            artistId={artistId}
-            onEdit={onEdit}
-            onDeleted={(id) => setAlbums((prev) => prev.filter((x) => x.id !== id))}
-          />
+          {!readOnly && (
+            <RowActions
+              item={a}
+              artistId={artistId}
+              onEdit={onEdit}
+              onDeleted={(id) => setAlbums((prev) => prev.filter((x) => x.id !== id))}
+              readOnly={readOnly}
+            />
+          )}
         </li>
       ))}
     </ul>

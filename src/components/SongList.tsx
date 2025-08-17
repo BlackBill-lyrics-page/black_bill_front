@@ -15,9 +15,11 @@ export type UISong = {
 export default function SongList({
     artistId,
     onEdit,
+    readOnly = true,
 }: {
     artistId: string | number;
     onEdit?: (song: UISong) => void;
+    readOnly? : boolean;
 }) {
     const [songs, setSongs] = useState<UISong[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,10 +30,12 @@ export default function SongList({
         item,
         onEdit,
         onDeleted,
+        readOnly,
     }: {
         item: UISong;
         onEdit?: (song: UISong) => void;
         onDeleted: (id: string) => void;
+        readOnly?:boolean;
     }) {
         // useUploadSongsVM은 최소 필드만 줘도 내부에서 보완 fetch 가능
         const vm = useUploadSongsVM({
@@ -49,6 +53,7 @@ export default function SongList({
         const [deleting, setDeleting] = useState(false);
 
         const handleDelete = async () => {
+            if (readOnly) return;
             if (!confirm(`정말로 "${item.title || "제목 없음"}"을(를) 삭제하시겠습니까?`)) return;
             try {
                 setDeleting(true);
@@ -149,11 +154,14 @@ export default function SongList({
                     </div>
 
                     {/* 오른쪽: 수정/삭제 버튼 */}
-                    <RowActions
+                    {!readOnly && (
+                      <RowActions
                         item={s}
                         onEdit={onEdit}
                         onDeleted={(id) => setSongs((prev) => prev.filter((x) => x.id !== id))}
-                    />
+                        readOnly={readOnly}
+                      />
+                    )}
                 </li>
             ))}
         </ul>
