@@ -1,4 +1,6 @@
 import { FiSettings, FiPlus } from "react-icons/fi";
+import AlbumsList from "./AlbumList";
+import SongList from "./SongList";
 
 type Link = { platform: string; url: string };
 type Genre = { id: number; name: string };
@@ -118,9 +120,19 @@ export default function ArtistProfileView({
 
         {/* 리스트 영역 */}
         <div className="py-8 text-sm text-gray-400">
-          {activeTab === "songs" && <div className="text-gray-900">{/* <SongList ... readOnly={!isOwner} /> */}</div>}
-          {activeTab === "books" && <div className="text-gray-900">{/* <AlbumsList ... readOnly={!isOwner} /> */}</div>}
-          {activeTab === "stages" && <div className="text-gray-400">(무대 콘텐츠 예정)</div>}
+          {activeTab === "songs" && (
+            <div className="text-gray-900">
+              <SongList artistId={artist.id}/>
+            </div>
+          )}
+          {activeTab === "books" && (
+            <div className="text-gray-900">
+              <AlbumsList artistId={artist.id} onEdit={isOwner ? () => {} : undefined} />
+            </div>
+          )}
+          {activeTab === "stages" && (
+            <div className="text-gray-400">(무대 콘텐츠 예정)</div>
+          )}
         </div>
       </div>
     </>
