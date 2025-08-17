@@ -7,6 +7,7 @@ export function useMyArtistVM() {
   const [artist, setArtist] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
+  const { setArtist: setStoreArtist } = useArtistStore();
 
   useEffect(() => {
     const init = async () => {
@@ -21,6 +22,7 @@ export function useMyArtistVM() {
         .from("artists")
         .select(`
           id,
+          user_id,
           photo_url,
           name,
           bio,
@@ -48,27 +50,25 @@ export function useMyArtistVM() {
       }
 
       if (data) {
-        setArtist({
+        const formatted = {
           id: data.id,
-          photoUrl: data.photo_url ?? "", // camelCase 변환
+          userId: data.user_id,   
+          photoUrl: data.photo_url ?? "",
           name: data.name ?? "",
           bio: data.bio ?? "",
           label: data.label ?? "",
           instruments: data.instruments ?? "",
-          links: (data.artist_links || []).map((l: any) => ({
-            platform: l.platform,
-            url: l.url
-          })),
+          links: (data.artist_links || []).map((l: any) => ({ platform: l.platform, url: l.url })),
           genres: (data.artist_genres || [])
-            .filter((ag: any) => ag.genres) // genres가 null인 경우 제거
-            .map((ag: any) => ({
-              id: ag.genres.id,
-              name: ag.genres.name
-            })),
-        });
+            .filter((ag: any) => ag.genres)
+            .map((ag: any) => ({ id: ag.genres.id, name: ag.genres.name })),
+        };
+
+        setArtist(formatted);       
+        setStoreArtist(formatted);  
       }
 
-      setLoading(false); 
+      setLoading(false);
     };
 
     init();

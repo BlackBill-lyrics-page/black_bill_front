@@ -122,16 +122,21 @@ export default function ArtistProfileView({
         <div className="py-8 text-sm text-gray-400">
           {activeTab === "songs" && (
             <div className="text-gray-900">
-              <SongList artistId={artist.id}/>
+              <SongList 
+                artistId={artist.id} 
+                readOnly={!isOwner}/>
             </div>
           )}
           {activeTab === "books" && (
             <div className="text-gray-900">
-              <AlbumsList artistId={artist.id} onEdit={isOwner ? () => {} : undefined} />
+              <AlbumsList 
+                artistId={artist.id} 
+                readOnly={!isOwner}
+              />
             </div>
           )}
           {activeTab === "stages" && (
-            <div className="text-gray-400">(무대 콘텐츠 예정)</div>
+            <div className="text-gray-400">(무대 콘텐츠 예정)</div> //추후 구현
           )}
         </div>
       </div>

@@ -31,6 +31,13 @@ export default function MyArtistPage() {
     })();
   }, []);
 
+  const isOwner = !!(finalArtist && userId && finalArtist.userId === userId);
+
+  console.log("finalArtist", finalArtist);
+  console.log("finalArtist.userId", finalArtist?.userId);
+  console.log("userId", userId);
+  console.log("isOwner", isOwner);
+
   if (loading) return <div className="p-6">로딩중...</div>;
 
   if (!finalArtist) {
@@ -59,13 +66,15 @@ export default function MyArtistPage() {
       {/* UI usage from ArtistProfileView */}
       <ArtistProfileView
         artist={finalArtist}
-        isOwner={true}
+        isOwner={isOwner}
         onEditProfile={() => setIsModalOpen(true)}
         onAddSong={() => {
+          if (!isOwner) return;
           setEditingSong(null);
           setIsSongModalOpen(true);
         }}
         onAddBook={() => {
+          if (!isOwner) return;
           if (!userId) {
             alert("로그인 후 이용해주세요.");
             return;
@@ -73,7 +82,7 @@ export default function MyArtistPage() {
           setEditingAlbumId(null);
           setIsAlbumModalOpen(true);
         }}
-        onAddStage={() => navigate("/add-stage")}
+        onAddStage={() => navigate("/add-stage")} // isowner 추가해야함 나중에 구현후
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
