@@ -7,12 +7,15 @@ const SignInPage = () => {
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
 
+  const params = new URLSearchParams(location.search)
+  const redirect = params.get("redirect")||"/" //home 경로 추후 구현 '/'아님
+
   const handleEmailSignIn = async () => {
     const { error } = await signinwithEmail(email, password)
     if (error) {
       alert('로그인 실패: ' + error.message)
     } else {
-      navigate('/')
+      navigate(redirect)
     }
   }
 
@@ -20,6 +23,9 @@ const SignInPage = () => {
     const result = await signinwithGoogle();
     if (!result) {
         console.error('구글 로그인 실패');
+    }
+    else{
+      navigate(redirect)
     }
 };
 

@@ -8,6 +8,9 @@ import { supabase } from "../lib/supabaseClient";
 import { FiChevronRight } from "react-icons/fi"; 
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
 import { SiApplemusic} from "react-icons/si";
+import { useSongLikeVM } from "../viewmodels/useSongLikeVM";
+import { FaHeart, FaRegHeart } from "react-icons/fa"; 
+import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
 
 type Link = { platform: string; url: string };
 type Genre = { id: number; name: string };
@@ -61,6 +64,8 @@ export default function ArtistProfileView({
     const [openSong, setOpenSong] = useState<SongDetail | null>(null);
     const [openLoading, setOpenLoading] = useState(false);
     const detailRef = useRef<HTMLDivElement | null>(null);
+    const {likeCount, liked, loading, toggleLike} = useSongLikeVM(openSong?.id);
+    const { count } = useSongCommentVM(openSong?.id??null)
 
     const platformMeta = (p: string) => {
       const key = p.toLowerCase();
@@ -268,6 +273,27 @@ export default function ArtistProfileView({
                         <div className="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-6 text-gray-800"> 
                           {openSong?.lyrics || "가사가 비어 있습니다."}
                         </div>
+                        <div className="w-full h-px bg-gray-300 mt-4"></div> 
+                        <div className="mb-3 flex items-center gap-2 mt-4">
+                            <button
+                                type="button"
+                                onClick={toggleLike}
+                                disabled={loading||!openSong}
+                                className="flex item-center gap-1 text-sm focus:outline-none"
+                                aria-pressed={liked}
+                            >
+                                {liked?(
+                                    <FaHeart className="w-5 h-5 text-black"/>
+                                ):(
+                                    <FaRegHeart className="w-5 h-5 text-black"/>
+                                )}
+                                <div className="mb-3 flex items-center gap-4">
+                                    <span>좋아요 ({likeCount})</span>
+                                    <span>댓글 ({count})</span>
+                                </div>
+                            </button>
+                        </div>
+                        {openSong&&(<SongCommentsInline songId={openSong.id}/>)}
                       </>
                     )}
                   </div>
@@ -303,5 +329,107 @@ function TabButton({
     >
       {label}
     </button>
+  );
+}
+
+function SongCommentsInline({ songId }: { songId: number }) {
+  const { comments, loading, addComment, editComment, deleteComment, count } = useSongCommentVM(songId);
+  const [newComment, setNewComment] = useState("");
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState("");
+
+  const handleAdd = async () => {
+    if (!newComment.trim()) return;
+    await addComment(newComment);
+    setNewComment("");
+  };
+
+  const startEdit = (id: number, current: string) => {
+    setEditingId(id);
+    setEditingText(current);
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const text = editingText.trim();
+    if (!text) return;
+    await editComment(editingId, text);
+    cancelEdit();
+  };
+
+  return (
+    <div className="mt-4 w-full">
+      {/* 입력창 */}
+      <div className="flex gap-2 mb-3">
+        <input
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="댓글을 입력하세요"
+          className="flex-1 border rounded px-2 py-1 text-sm"
+        />
+        <button onClick={handleAdd} className="px-3 py-1 bg-black text-white rounded text-sm">
+          등록
+        </button>
+      </div>
+
+      {loading && <p className="text-xs text-gray-500">불러오는 중…</p>}
+
+      {/* 리스트 */}
+      <ul className="space-y-2">
+        {comments.map((c) => {
+          const isEditing = editingId === c.id; //editing
+          return (
+            <li key={c.id} className="flex gap-2 items-start">
+              <img
+                src={c.users?.photo_url || "/default-avatar.png"}
+                alt={c.users?.username}
+                className="w-6 h-6 rounded-full"
+              />
+              <div className="flex-1">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">{c.users?.username}</span>
+
+                  {/* 우측 액션 */}
+                  <div className="flex gap-2 text-xs text-gray-500">
+                    {!isEditing ? (
+                      <>
+                        <button onClick={() => startEdit(c.id, c.comment)}>수정</button>
+                        <button onClick={() => deleteComment(c.id)}>삭제</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={saveEdit} className="text-black">저장</button>
+                        <button onClick={cancelEdit}>취소</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* 본문: 보기 vs 편집 */}
+                {!isEditing ? (
+                  <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
+                ) : (
+                  <textarea
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    className="w-full border rounded px-2 py-1 text-sm"
+                    rows={3}
+                    autoFocus
+                  />
+                )}
+
+                <span className="text-xs text-gray-400">
+                  {new Date(c.updated_at).toLocaleString()} 
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
