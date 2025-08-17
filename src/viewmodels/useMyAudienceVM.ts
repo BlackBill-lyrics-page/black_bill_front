@@ -1,53 +1,81 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 export function useMyAudienceVM() {
   const [nickname, setNickname] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("/default-profile.svg"); // (기본프로필사진)
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>("/default-profile.svg"); 
   const [userId, setUserId] = useState("");
-  const [provider, setProvider] = useState("");  //social login 
+  const [provider, setProvider] = useState("");  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        setProvider(user.app_metadata?.provider || "");
+  const load = useCallback(async () => {
+    console.log("[load] 시작");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log("[load] getUser 결과:", { user, userError });
+
+      if (!user) {
+        console.log("[load] user 없음 → 초기화");
+        setUserId("");
+        setProvider("");
+        setNickname("");
+        setPhotoUrl(null);
+        return;
       }
-    };
-    getUser();
-  }, []);
 
+      setUserId(user.id);
+      setProvider(user.app_metadata?.provider || "");
 
-  useEffect(() => {
-    if (!userId) return;
-    const fetchUserInfo = async () => {
-      const { data, error } = await supabase
+      console.log("[load] users 쿼리 시작");
+      const { data: profile, error } = await supabase
         .from("users")
         .select("username, photo_url")
-        .eq("id", userId)
+        .eq("id", user.id)
         .single();
+      console.log("[load] users 쿼리 결과:", { profile, error });
 
-      if (!error && data) {
-        setNickname(data.username || "");
-        setPhotoUrl(data.photo_url || "/default-profile.svg");
-      }
-    };
+      if (error) throw error;
 
-    fetchUserInfo();
-  }, [userId]);
+      setNickname(profile?.username || "");
+      setPhotoUrl(profile?.photo_url || null);
+    } catch (e: any) {
+      console.error("[load] 에러 발생:", e);
+      setError(e?.message ?? "failed to load profile");
+    } finally {
+      console.log("[load] 종료");
+      setLoading(false);
+    }
+  }, []);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  useEffect(() => {
+    console.log("[useEffect] 실행됨"); 
+    load();
+  }, [load]);
+
+  const refresh = load;
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    await load();
+  }, [load]);
+
+  const deleteAccount = useCallback(async () => {
+    await signOut(); //추후구현
+  }, [signOut]);
 
   return {
     nickname,
     photoUrl,
-    isModalOpen,
-    openModal,
-    closeModal,
     userId,
     provider,
+    loading,
+    error,
+    refresh,
+    signOut,
+    deleteAccount,
   };
 }

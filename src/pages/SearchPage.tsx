@@ -40,13 +40,6 @@ export default function SearchPage() {
 
   return (
     <>
-      {/* 헤더 */}
-      <div className="flex justify-between items-center p-4">
-        <span className="text-xl font-bold">LOGO</span>
-        <button className="cursor-pointer" onClick={() => navigate("/my_audience")}>
-          <UserIcon className="w-6 h-6 text-gray-700" />
-        </button>
-      </div>
 
       {/* 검색창 */}
       <div className="max-w-3xl mx-auto px-4">
