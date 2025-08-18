@@ -1,3 +1,4 @@
+// MyArtistPage.tsx (발췌 + 수정)
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
@@ -8,6 +9,13 @@ import ArtistProfileEditModal from "../components/ArtistProfileEditModal";
 import UploadSongsModal from "../components/uploadAndEditSongsModal";
 import UploadAndEditAlbumsModal from "../components/uploadAndEditAlbumsModal";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";
+import UploadAndEditStageModal from "../components/stage/UploadAndEditStageModal";
+import type { StageFormValues } from "../components/stage/StageForm";
+import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
+
+
+// 🔧 title -> albumname 으로 교체
+type AlbumLite = { id: number; albumname?: string | null; created_at?: string | null };
 
 export default function MyArtistPage() {
   const { artist: vmArtist, loading } = useMyArtistVM();
@@ -23,6 +31,23 @@ export default function MyArtistPage() {
   const [isAlbumModalOpen, setIsAlbumModalOpen] = useState(false);
   const [editingAlbumId, setEditingAlbumId] = useState<number | null>(null);
 
+  const [isStageModalOpen, setIsStageModalOpen] = useState(false);
+  const [stageInitial, setStageInitial] = useState<Partial<StageFormValues> | null>(null);
+
+  function openCreateStage(selectedDate?: string) {
+    setActiveTab("stages");
+    setStageInitial({
+      date: selectedDate ?? new Date().toISOString().slice(0, 10),
+      time: "19:30",
+      duration_hours: 2,
+      title: "",
+      venue: null,
+      promotion_url: "",
+      address_detail: "",
+    });
+    setIsStageModalOpen(true);
+  }
+
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
@@ -33,10 +58,34 @@ export default function MyArtistPage() {
 
   const isOwner = !!(finalArtist && userId && finalArtist.userId === userId);
 
-  console.log("finalArtist", finalArtist);
-  console.log("finalArtist.userId", finalArtist?.userId);
-  console.log("userId", userId);
-  console.log("isOwner", isOwner);
+  // ✅ 가사집(앨범) 목록 & 선택 상태
+  const [albums, setAlbums] = useState<AlbumLite[]>([]);
+  const [selectedAlbumId, setSelectedAlbumId] = useState<number | "">("");
+
+  useEffect(() => {
+    (async () => {
+      if (!finalArtist?.id) return;
+      // 🔧 SELECT 수정: id, albumname, created_at
+      const { data, error } = await supabase
+        .from("albums")
+        .select("id, albumname, created_at")
+        .eq("artist_id", finalArtist.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("albums load error", error);
+        return;
+      }
+      if (data) {
+        setAlbums(data as AlbumLite[]);
+        if (data.length > 0) {
+          setSelectedAlbumId((prev) => (prev === "" ? Number(data[0].id) : prev));
+        } else {
+          setSelectedAlbumId("");
+        }
+      }
+    })();
+  }, [finalArtist?.id]);
 
   if (loading) return <div className="p-6">로딩중...</div>;
 
@@ -44,11 +93,7 @@ export default function MyArtistPage() {
     return (
       <div className="flex flex-col items-center justify-center p-6">
         <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-          <img
-            src="/default-profile.svg"
-            alt="기본 프로필"
-            className="w-10 h-10 object-cover"
-          />
+          <img src="/default-profile.svg" alt="기본 프로필" className="w-10 h-10 object-cover" />
         </div>
         <h2 className="mt-4 text-lg font-semibold">미등록 아티스트</h2>
         <button
@@ -63,7 +108,6 @@ export default function MyArtistPage() {
 
   return (
     <>
-      {/* UI usage from ArtistProfileView */}
       <ArtistProfileView
         artist={finalArtist}
         isOwner={isOwner}
@@ -82,7 +126,6 @@ export default function MyArtistPage() {
           setEditingAlbumId(null);
           setIsAlbumModalOpen(true);
         }}
-
         onEditSong={(ui) => {
           if (!isOwner) return;
           setEditingSong({
@@ -98,7 +141,6 @@ export default function MyArtistPage() {
           });
           setIsSongModalOpen(true);
         }}
-      
         onEditBook={(album) => {
           if (!isOwner) return;
           if (!userId) {
@@ -108,13 +150,29 @@ export default function MyArtistPage() {
           setEditingAlbumId(Number(album.id));
           setIsAlbumModalOpen(true);
         }}
-
-        onAddStage={() => navigate("/add-stage")} // isowner 추가해야함 나중에 구현후
+        onAddStage={() => {
+          if (!isOwner) return;
+          openCreateStage();           // ✅ 탭 전환 + 모달 오픈
+        }}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
 
-      {/* modal management */}
+      {/* === Stages 탭 콘텐츠 === */}
+      {activeTab === "stages" && (
+        <div className="p-4 flex flex-col gap-4">
+          <ArtistStagesCalendar
+            artistId={finalArtist.id}
+            onRequestCreate={(dateStr: string) => {
+              if (!isOwner) return;
+              openCreateStage(dateStr); // ✅ 선택 날짜로 초기화
+            }}
+          />
+        </div>
+      )}
+
+
+      {/* === 기존 모달들 === */}
       {isModalOpen && (
         <ArtistProfileEditModal
           isOpen={isModalOpen}
@@ -141,6 +199,19 @@ export default function MyArtistPage() {
           userId={userId}
         />
       )}
+      {isStageModalOpen && selectedAlbumId && (
+        <UploadAndEditStageModal
+          open={isStageModalOpen}
+          onClose={() => { setIsStageModalOpen(false); setStageInitial(null); }}
+          mode="create"
+          artistId={finalArtist.id}
+          albumId={Number(selectedAlbumId)}             // ✅ 필수
+          initialStage={null}
+          initialForm={stageInitial ?? undefined}       // ✅ 여기!
+        />
+      )}
+
+
     </>
   );
 }
