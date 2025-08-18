@@ -1,18 +1,23 @@
-import { FiSettings, FiPlus } from "react-icons/fi";
 import AlbumsList from "./AlbumList";
 import SongList from "./SongList";
 import type { UISong } from "./SongList";
 import type { UIAlbum } from "./AlbumList";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { FiChevronRight } from "react-icons/fi"; 
-import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
-import { SiApplemusic} from "react-icons/si";
+import AlbumTracksPanel from "./AlbumTracksPanel";
+
 import { useSongLikeVM } from "../viewmodels/useSongLikeVM";
-import { FaHeart, FaRegHeart } from "react-icons/fa"; 
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
 
+import { FiChevronRight, FiChevronDown, FiCopy, FiSettings, FiPlus, FiChevronLeft } from "react-icons/fi"; 
+import { FaYoutube, FaSpotify, FaSoundcloud, FaLink, FaHeart, FaRegHeart } from "react-icons/fa";
+import { SiApplemusic} from "react-icons/si";
+
+
+
+
 type Link = { platform: string; url: string };
+
 type Genre = { id: number; name: string };
 type Artist = {
   id: number;
@@ -22,6 +27,7 @@ type Artist = {
   instruments?: string | null;
   genres: Genre[];
   links: Link[];
+  bio : string | null;
 };
 
 type Props = {
@@ -35,6 +41,11 @@ type Props = {
   onEditBook?: (album: UIAlbum) => void;
   activeTab : "songs" | "books" | "stages";
   setActiveTab : React.Dispatch<React.SetStateAction<"songs"|"books"|"stages">>;
+  followerCount?: number;
+  following?: boolean;
+  followLoading?: boolean;
+  onToggleFollow?: ()=>void;
+  rightExtra?: React.ReactNode;
 };
 
 type SongDetail = {
@@ -59,6 +70,11 @@ export default function ArtistProfileView({
   setActiveTab,
   onEditBook,
   onEditSong,
+  followerCount = 0,
+  following = false,
+  followLoading = false,
+  onToggleFollow,
+  rightExtra,
 }: Props) {
 
     const [openSong, setOpenSong] = useState<SongDetail | null>(null);
@@ -66,6 +82,20 @@ export default function ArtistProfileView({
     const detailRef = useRef<HTMLDivElement | null>(null);
     const {likeCount, liked, loading, toggleLike} = useSongLikeVM(openSong?.id);
     const { count } = useSongCommentVM(openSong?.id??null)
+
+    const [selectedAlbum, setSelectedAlbum] = useState<UIAlbum | null>(null);
+
+    const [snsOpen, setSnsOpen] = useState(false);
+    const [selectedSNS, setSelectedSNS] = useState<Link | null>(
+      artist.links?.length ? artist.links[0] : null
+    );
+
+    useEffect(() => {
+      setSelectedSNS(artist.links?.length ? artist.links[0] : null);
+      setSnsOpen(false);
+    }, [artist]);
+
+
 
     const platformMeta = (p: string) => {
       const key = p.toLowerCase();
@@ -128,6 +158,7 @@ export default function ArtistProfileView({
     <>
       {/* 상단 프로필 */}
       <div className="flex items-center gap-4 p-6">
+
         <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
           {artist.photoUrl ? (
             <img src={artist.photoUrl} alt={artist.name} className="w-full h-full object-cover" />
@@ -135,14 +166,38 @@ export default function ArtistProfileView({
             <span>No Photo</span>
           )}
         </div>
-        <h2 className="text-xl font-semibold">{artist.name}</h2>
 
-        {isOwner && (
-          <FiSettings
-            className="w-6 h-6 text-gray-500 cursor-pointer"
-            onClick={onEditProfile}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">{artist.name}</h2>
+          {isOwner && (
+            <FiSettings
+              className="w-6 h-6 text-gray-500 cursor-pointer"
+              onClick={onEditProfile}
+            />
+          )}
+        </div>
+        
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-sm text-gray-600">
+            {followerCount} <span className="text-gray-400">팔로워</span>
+          </span>
+        </div>
+        
+        {rightExtra}
+
+        {!isOwner &&(
+          <button
+            type="button"
+            onClick={onToggleFollow}
+            disabled={followLoading}
+            className={`px-3 py-1.5 rounded-full text-sm border ${
+              following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
+            }`}
+          >
+            {following ? "팔로잉" : "팔로우"}
+          </button>
+        )}   
+
       </div>
 
       {/* 상세 */}
@@ -153,34 +208,77 @@ export default function ArtistProfileView({
         </div>
         <div><span className="font-semibold">소속사:</span> {artist.label || "-"}</div>
         <div><span className="font-semibold">구성:</span> {artist.instruments || "-"}</div>
+        <div><span className="font-semibold">소개:</span> {artist.bio || "-"}</div>
       </div>
 
       {/* SNS 링크 (공통) */}
-      <div className="px-6 mt-4 space-y-2">
-        {artist.links?.length > 0 ? (
-          artist.links.map((link, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-sm">
-              <span className="font-semibold">{link.platform}:</span>
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline truncate max-w-[200px]"
-              >
-                {link.url}
-              </a>
+      {/* SNS 링크 (드롭다운 + 오른쪽 링크/복사) */}
+      <div className="px-6 mt-4">
+        {artist.links?.length ? (
+          <div className="flex items-center gap-3">
+            {/* 왼쪽: 드롭다운 버튼 */}
+            <div className="relative">
               <button
-                onClick={() => navigator.clipboard.writeText(link.url)}
-                className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                type="button"
+                onClick={() => setSnsOpen((v) => !v)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200 text-sm"
               >
-                복사
+                {selectedSNS?.platform ?? "SNS"}
+                <FiChevronDown
+                  className={`transition-transform ${snsOpen ? "rotate-180" : ""}`}
+                />
               </button>
+        
+              {snsOpen && (
+                <div className="absolute left-0 mt-1 w-44 bg-white border rounded-md shadow-lg z-20">
+                  {artist.links.map((link, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSNS(link);
+                        setSnsOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                    >
+                      {link.platform}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          ))
+            
+            {/* 오른쪽: 선택된 링크 표시 + 복사 */}
+            {selectedSNS && (
+              <div className="flex items-center gap-2">
+
+                <a
+                  href={selectedSNS.url}
+                  target="_blank" //new tab open
+                  rel="noopener noreferrer"
+                  className="text-sm text-gray-800 hover:underline"
+                  title={selectedSNS.url}
+                >
+                  {selectedSNS.url}
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(selectedSNS.url)}
+                  className="p-1 rounded hover:bg-gray-200"
+                  title="링크 복사"
+                >
+                  <FiCopy className="w-4 h-4" />
+                </button>
+
+              </div>
+            )}
+          </div>
         ) : (
           <div className="text-sm text-gray-500">등록된 SNS 링크 없음</div>
         )}
       </div>
+
 
       {/* 탭 + (오너만) 추가 버튼 */}
       <div className="px-6 mt-6">
@@ -279,7 +377,7 @@ export default function ArtistProfileView({
                                 type="button"
                                 onClick={toggleLike}
                                 disabled={loading||!openSong}
-                                className="flex item-center gap-1 text-sm focus:outline-none"
+                                className="flex items-center gap-1 text-sm focus:outline-none"
                                 aria-pressed={liked}
                             >
                                 {liked?(
@@ -303,13 +401,56 @@ export default function ArtistProfileView({
                   )}
                   {activeTab === "books" && (
                     <div className="text-gray-900">
-                      <AlbumsList 
-                        artistId={artist.id} 
-                        readOnly={!isOwner}
-                        onEdit={onEditBook}
-                      />
+                      {!selectedAlbum ? (
+                        // 목록 뷰
+                        <AlbumsList
+                          artistId={artist.id}
+                          readOnly={!isOwner}
+                          onEdit={onEditBook}
+                          onOpen={(a) => setSelectedAlbum(a)} // 클릭 → 상세로 전환
+                        />
+                      ) : (
+                        // 상세(선택한 가사집 + 곡 리스트) 뷰
+                        <div className="mt-4">
+                          {/* 헤더(뒤로가기 + 커버/제목/아티스트) */}
+                          <div className="flex items-center gap-3 p-3">
+                            
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAlbum(null)}               // ← 뒤로: 목록으로 복귀
+                              className="p-1 rounded hover:bg-gray-100"
+                              aria-label="목록으로"
+                            >
+                              <FiChevronLeft className="w-5 h-5" />
+                            </button>
+                      
+                            <div className="flex items-start gap-3 p-3">
+                              {selectedAlbum?.photoUrl && (
+                                <img src={selectedAlbum.photoUrl} alt={selectedAlbum.name} className="w-20 h-20 rounded object-cover" />
+                              )}
+                              <div className="min-w-0">
+                                <div className="font-semibold leading-tight truncate">{selectedAlbum.name}</div>
+                                <div className="text-xs text-gray-500 mt-0.5">{artist.name}</div>
+                              </div>
+                            </div>
+                          </div>
+                            
+                          <div className="w-full h-px bg-gray-200" />
+                            
+                          {/* 곡 리스트 섹션 */}
+                          <div className="mt-2">
+                            <span className="text-sm font-semibold block mb-2">곡 리스트</span>
+                            <div className="bg-white rounded-xl p-4">
+                              <AlbumTracksPanel
+                                albumId={Number(selectedAlbum.id)}                 // string → number
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
+
                   {activeTab === "stages" && (
                     <div className="text-gray-400">(무대 콘텐츠 예정)</div> //추후 구현
                   )}

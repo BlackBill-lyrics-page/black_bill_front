@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ArtistProfileView from "../components/ArtistProfileView";
+import { useArtistFollowVM } from "../viewmodels/useArtistFollowVM";
 
 type Link = { platform: string; url: string };
 type Genre = { id: number; name: string };
@@ -13,6 +14,7 @@ type Artist = {
   instruments?: string | null;
   genres: Genre[];
   links: Link[];
+  bio : string | null;
 };
 
 export default function ArtistPage() {
@@ -21,6 +23,14 @@ export default function ArtistPage() {
   const [loading, setLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState<"songs" | "books" | "stages">("songs");
+
+  const artistIdNum = id ? Number(id) : undefined;
+  const {
+    count: followerCount,
+    following,
+    loading: followLoading,
+    toggle: onToggleFollow,
+  } = useArtistFollowVM(artistIdNum);
 
   useEffect(() => {
     const fetchArtist = async () => {
@@ -74,6 +84,7 @@ export default function ArtistPage() {
               id: ag.genres.id,
               name: ag.genres.name,
             })),
+            bio : data.bio ?? null,
         });
       }
 
@@ -99,6 +110,11 @@ export default function ArtistPage() {
       isOwner={false} // 관객이므로 추가/편집 버튼 없음
       activeTab={activeTab}
       setActiveTab={setActiveTab}
+
+      followerCount={followerCount}
+      following={following}
+      followLoading={followLoading}
+      onToggleFollow={onToggleFollow}
     />
   );
 }

@@ -4,6 +4,7 @@ import ProfileModal from "../components/ProfileModal";
 import { useMyAudienceVM } from "../viewmodels/useMyAudienceVM";
 import { useUserStore } from "../store/useUserStore";
 import { useNavigate } from "react-router-dom";
+import RoleSwitcher from "../components/RoleSwitcher";
 
 export default function MyAudiencePage() {
   const { userId, provider, nickname, photoUrl, loading, signOut, deleteAccount } =
@@ -112,6 +113,10 @@ export default function MyAudiencePage() {
               </button>
             </div>
           )}
+        </div>
+
+        <div className="ml-auto">
+            <RoleSwitcher align="right" label="관객"/> {/* 관객/아티스트 드롭다운 */}
         </div>
       </div>
 

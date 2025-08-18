@@ -38,10 +38,12 @@ export function useMyArtistVM() {
               id,
               name
             )
-          )
+          ),
+          artist_followed(count)
         `)
         .eq("user_id", user.id)
         .maybeSingle();
+    
 
       if (error) {
         console.error(error);
@@ -62,6 +64,7 @@ export function useMyArtistVM() {
           genres: (data.artist_genres || [])
             .filter((ag: any) => ag.genres)
             .map((ag: any) => ({ id: ag.genres.id, name: ag.genres.name })),
+          followerCount: data.artist_followed?.[0]?.count??0,
         };
 
         setArtist(formatted);       

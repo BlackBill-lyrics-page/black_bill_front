@@ -8,6 +8,7 @@ import ArtistProfileEditModal from "../components/ArtistProfileEditModal";
 import UploadSongsModal from "../components/uploadAndEditSongsModal";
 import UploadAndEditAlbumsModal from "../components/uploadAndEditAlbumsModal";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";
+import RoleSwitcher from "../components/RoleSwitcher";
 
 export default function MyArtistPage() {
   const { artist: vmArtist, loading } = useMyArtistVM();
@@ -67,6 +68,7 @@ export default function MyArtistPage() {
       <ArtistProfileView
         artist={finalArtist}
         isOwner={isOwner}
+        followerCount={finalArtist.followerCount ?? 0}
         onEditProfile={() => setIsModalOpen(true)}
         onAddSong={() => {
           if (!isOwner) return;
@@ -112,6 +114,12 @@ export default function MyArtistPage() {
         onAddStage={() => navigate("/add-stage")} // isowner 추가해야함 나중에 구현후
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+
+        rightExtra={
+          <div className="pl-2">
+            <RoleSwitcher align="right" label="아티스트" />
+          </div>
+        }
       />
 
       {/* modal management */}
