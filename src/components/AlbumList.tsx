@@ -38,7 +38,7 @@ export default function AlbumsList({
           <li
             key={a.id}
             onClick={() => onOpen?.(a)}
-            className={`flex items-center justify-between rounded-lg p-3 cursor-pointer ${
+            className={`flex items-center justify-between  p-3 cursor-pointer  border-b border-gray-50${
               active ? "bg-gray-50" : "hover:bg-gray-50"
             }`}
             role="button"

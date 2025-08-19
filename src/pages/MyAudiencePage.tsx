@@ -8,6 +8,7 @@ import RoleSwitcher from "../components/RoleSwitcher";
 import AlbumsList from "../components/AlbumList";
 import { supabase } from "../lib/supabaseClient";
 import type { UIAlbum } from "../components/AlbumList";
+import LikedAlbumDetail from "../components/LikedAlbumDetail";
 
 export default function MyAudiencePage() {
   const { userId, provider, nickname, photoUrl, loading, signOut, deleteAccount } =
@@ -44,24 +45,76 @@ export default function MyAudiencePage() {
   // album information fetch
   useEffect(() => {
     if (!userId) return;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("album_likes")                 // 좋아요 테이블
-        .select("albums(id, albumname, photo_url, created_at)")
+
+    (async () => {
+      // 1) 내가 좋아요한 앨범 id들
+      const { data: liked, error: e1 } = await supabase
+        .from("album_liked")
+        .select("album_id")
         .eq("user_id", userId);
 
-      if (!error && data) {
-        const rows = data as unknown as AlbumRow[];
-        const mapped: UIAlbum[] = rows.map((r) => ({
-          id: String(r.albums.id),          
-          name: r.albums.albumname,
-          photoUrl: r.albums.photo_url,
-          createdAt: r.albums.created_at,
-        }));
-        setAlbums(mapped);
+      if (e1) { console.error("[album_liked]", e1); setAlbums([]); return; }
+
+      const albumIds = (liked ?? []).map(l => l.album_id).filter(Boolean);
+      if (albumIds.length === 0) { setAlbums([]); return; }
+
+      // 2) 앨범 정보
+      const { data: albumRows, error: e2 } = await supabase
+        .from("albums")
+        .select("id, name:albumname, photo_url, created_at")
+        .in("id", albumIds);
+
+      if (e2) { console.error("[albums]", e2); setAlbums([]); return; }
+
+      // 일단 댓글수 0으로 세팅
+      const base = (albumRows ?? []).map((r: any) => ({
+        id: String(r.id),
+        name: r.name ?? "(제목 없음)",
+        photoUrl: r.photo_url ?? null,
+        createdAt: r.created_at ?? null,
+        commentCount: 0,
+      })) as UIAlbum[];
+      setAlbums(base);
+
+      // 3) 해당 앨범들의 stage 목록
+      const { data: stages, error: e3 } = await supabase
+        .from("stage_info")
+        .select("id, album_id")
+        .in("album_id", albumIds);
+
+      if (e3 || !stages?.length) {
+        if (e3) console.error("[stage_info]", e3);
+        return; // 무대가 없으면 0 유지
       }
-    };
-    load();
+
+      const stageIds = stages.map(s => s.id);
+
+      // 4) 그 stage들의 댓글들(아이디만 가져와서 개수만 셈)
+      const { data: cmts, error: e4 } = await supabase
+        .from("stage_comments")
+        .select("id, stage_id")
+        .in("stage_id", stageIds);
+
+      if (e4) { console.error("[stage_comments]", e4); return; }
+
+      // 5) album_id별로 댓글 수 집계
+      const stageToAlbum = new Map<number, number>();
+      stages.forEach(s => stageToAlbum.set(s.id, s.album_id));
+
+      const byAlbum: Record<number, number> = {};
+      (cmts ?? []).forEach(c => {
+        const aid = stageToAlbum.get(c.stage_id);
+        if (aid != null) byAlbum[aid] = (byAlbum[aid] ?? 0) + 1;
+      });
+
+      // 6) setAlbums에 반영
+      setAlbums(prev =>
+        prev.map(a => ({
+          ...a,
+          commentCount: byAlbum[Number(a.id)] ?? 0,
+        })),
+      );
+    })();
   }, [userId]);
 
   useEffect(() => {
@@ -188,9 +241,15 @@ export default function MyAudiencePage() {
         {/* 콘텐츠 영역 */}
         <div className="py-8 text-sm text-gray-400">
           {activeTab === "songs" && <div>(좋아하는 곡 리스트 예정)</div>}
+
           {activeTab === "books" && (
-            <AlbumsList albums={albums} readOnly={true} onOpen={(a)=>setSelectedAlbum(a)}/>
+            !selectedAlbum ? (
+              <AlbumsList albums={albums} readOnly onOpen={(a)=>setSelectedAlbum(a)} />
+            ) : (
+              <LikedAlbumDetail album={selectedAlbum} onBack={()=>setSelectedAlbum(null)} />
+            )
           )}
+          
           {activeTab === "artists" && <div>(내 아티스트 리스트 예정)</div>}
           {activeTab === "stages" && <div>(다녀온 무대 리스트 예정)</div>}
         </div>
