@@ -1,4 +1,4 @@
-import { memo } from "react"; // decreasing unnecessary rerendering
+import { memo } from "react"; 
 import { useAlbumTracksVM } from "../viewmodels/useAlbumTracksVM";
 import SongLikeButton from "./SongLikeButton";
 
@@ -12,7 +12,7 @@ type Track = {
 type Props = {
   albumId: number | null;
   albumName?: string;
-  onOpen?: (song: { id: number; title?: string }) => void;
+  onOpen?: (song: { id: number; title?: string }) => void; // only transfering variable
 };
 
 function AlbumTracksPanelBase({ albumId, albumName, onOpen }: Props) {
@@ -34,7 +34,7 @@ function AlbumTracksPanelBase({ albumId, albumName, onOpen }: Props) {
             <div className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-50">
               <button
                 type="button"
-                onClick={() => onOpen?.({ id: t.id, title: t.title })}
+                onClick={() => onOpen?.({ id: t.id, title: t.title })} //albumtrackspanel -> likedalbumdetail callback function
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();

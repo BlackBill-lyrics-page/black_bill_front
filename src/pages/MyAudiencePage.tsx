@@ -244,12 +244,12 @@ export default function MyAudiencePage() {
 
           {activeTab === "books" && (
             !selectedAlbum ? (
-              <AlbumsList albums={albums} readOnly onOpen={(a)=>setSelectedAlbum(a)} />
+              <AlbumsList albums={albums} readOnly onOpen={(a)=>setSelectedAlbum(a)} /> //onOpen : callback function
             ) : (
-              <LikedAlbumDetail album={selectedAlbum} onBack={()=>setSelectedAlbum(null)} />
+              <LikedAlbumDetail album={selectedAlbum} onBack={()=>setSelectedAlbum(null)} /> //onBack : callback function
             )
           )}
-          
+
           {activeTab === "artists" && <div>(내 아티스트 리스트 예정)</div>}
           {activeTab === "stages" && <div>(다녀온 무대 리스트 예정)</div>}
         </div>

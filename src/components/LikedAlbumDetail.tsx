@@ -142,7 +142,7 @@ export default function LikedAlbumDetail({
         <span className="text-sm font-semibold block mb-2">곡 리스트</span>
         <AlbumTracksPanel
           albumId={Number(album.id)}
-          onOpen={(s) => open(s.id)}
+          onOpen={(s) => open(s.id)} // onOpen?: (song: { id: number; title?: string }) => void;
         />
       </div>
 
