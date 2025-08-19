@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { signOut as authSignOut } from "../lib/auth";
 
 export function useMyAudienceVM() {
   const [nickname, setNickname] = useState("");
@@ -59,9 +60,8 @@ export function useMyAudienceVM() {
   const refresh = load;
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    await load();
-  }, [load]);
+    await authSignOut();
+  }, []);
 
   const deleteAccount = useCallback(async () => {
     await signOut(); //추후구현

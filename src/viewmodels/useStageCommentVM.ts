@@ -9,13 +9,37 @@ export type StageComment = {
   content: string;
   photo_url: string | null;
   created_at: string;
+  updated_at: string;
   users?: {
     username?: string | null;
     photo_url?: string | null;
   } | null;
 };
 
-const BUCKET = "stage-images";
+const BUCKET = "stage-images"; // 버킷 Id 정확히!
+
+// 파일명 안전화: 공백/한글/특수문자 → 제거/치환
+const sanitizeFilename = (name: string) => {
+  const i = name.lastIndexOf(".");
+  const base = (i >= 0 ? name.slice(0, i) : name)
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9._-]/g, "");
+  const ext = (i >= 0 ? name.slice(i + 1) : "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  return ext ? `${base || "file"}.${ext}` : (base || `${Date.now()}`);
+};
+
+// 확장자 기반 MIME 보정(.jfif → image/jpeg 등)
+const guessMime = (name: string, fallback?: string) => {
+  const n = name.toLowerCase();
+  if (n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".jfif")) return "image/jpeg";
+  if (n.endsWith(".png")) return "image/png";
+  if (n.endsWith(".gif")) return "image/gif";
+  if (n.endsWith(".webp")) return "image/webp";
+  return fallback || "application/octet-stream";
+};
 
 export function useStageCommentVM(stageId: number | null) {
   const [comments, setComments] = useState<StageComment[]>([]);
@@ -42,8 +66,8 @@ export function useStageCommentVM(stageId: number | null) {
       const { data, error } = await supabase
         .from("stage_comments")
         .select(`
-          id, stage_id, user_id, content, photo_url, created_at,
-          users:users!stage_comments_user_id_fkey ( username, photo_url )
+          id, stage_id, user_id, content, photo_url, created_at, updated_at,
+          users( username, photo_url )
         `)
         .eq("stage_id", stageId!)
         .order("id", { ascending: true });
@@ -75,30 +99,49 @@ export function useStageCommentVM(stageId: number | null) {
 
       const { data: u } = await supabase.auth.getUser();
       const userId = u?.user?.id;
+
+      console.log("👤 auth.getUser() →", u);
+      console.log("📂 userId for path →", userId);
+
       if (!userId) throw new Error("로그인이 필요합니다.");
 
       let photo_url: string | null = null;
 
       if (file) {
-        // (선택) 간단한 파일 가드
-        if (!file.type.startsWith("image/")) {
-          throw new Error("이미지 파일만 업로드할 수 있습니다.");
+        // 이미지 파일 가드 (MIME이 비어있을 때를 대비해 확장자도 체크)
+        const isImage =
+          file.type?.startsWith("image/") ||
+          /\.(jpe?g|jfif|png|gif|webp)$/i.test(file.name);
+        if (!isImage) throw new Error("이미지 파일만 업로드할 수 있습니다.");
+
+        const safe = sanitizeFilename(file.name || "image");
+        const path = `${userId}/${stageId}/${Date.now()}_${safe}`; // 앞에 '/' 금지
+        const mime = guessMime(safe, file.type); // jfif → image/jpeg
+
+        console.log("📂 Upload path:", path);
+        console.log("📄 File type:", file.type, "→ using mime:", mime);
+
+
+        const { error: upErr } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, file, {
+            upsert: true,
+            contentType: mime, 
+          });
+
+        if (upErr) {
+          console.error("Storage upload failed:", upErr);
+          throw upErr;
         }
-        // 경로 충돌 방지용 타임스탬프 prefix
 
-        const path = `${userId}/${stageId}/${Date.now()}_${file.name}`;
-
-        const up = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
-        if (up.error) throw up.error;
-
-        const pub = supabase.storage.from(BUCKET).getPublicUrl(path);
-        photo_url = pub.data.publicUrl;
+        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
+        photo_url = pub.publicUrl;
       }
 
       const { error } = await supabase.from("stage_comments").insert({
         stage_id: stageId!,
         user_id: userId,
-        content: content || "",  // 사진만 업로드 시 빈 문자열 허용
+        content: content || "", // 사진만 업로드 시 빈 문자열 허용
         photo_url,
       });
       if (error) throw error;

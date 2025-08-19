@@ -102,6 +102,8 @@ export default function ArtistProfileView({
 
     const [cmtText, setCmtText] = useState("");
     const [cmtFile, setCmtFile] = useState<File | undefined>(undefined);
+    const [cmtPreview, setCmtPreview] = useState<string | null>(null);
+    const [dragOver, setDragOver] = useState(false);
 
     
 
@@ -147,6 +149,14 @@ export default function ArtistProfileView({
         setSelectedStageId(data?.[0]?.id ?? null);    // 기본 선택: 첫 번째 무대
       })();
     }, [selectedAlbum]);
+
+    useEffect(() => { //stage photo upload preview
+      if (!cmtFile) { setCmtPreview(null); return; }
+      const url = URL.createObjectURL(cmtFile);
+      setCmtPreview(url);
+      return () => URL.revokeObjectURL(url); // 메모리 해제
+    }, [cmtFile]);
+
 
 
     const platformMeta = (p: string) => {
@@ -434,13 +444,17 @@ export default function ArtistProfileView({
                               />
 
                               {/* songdropdown */}
-                              {(openLoading || openSong) && songDetailJSX}
 
                             </div>
                           </div>
 
-                          {/* 무대 선택 드롭다운 */}
-                          {stages.length > 0 ? (
+                          
+                          {(openLoading||openSong)?(
+                            songDetailJSX
+                          ):(
+                            <>
+                              {/* 무대 선택 드롭다운 */}
+                              {stages.length > 0 ? (
                             <div className="mb-3 flex items-center gap-2 px-1">
                               <span className="text-sm text-gray-500">무대:</span>
                               <select
@@ -465,7 +479,18 @@ export default function ArtistProfileView({
                           <div className="mt-6 space-y-4">
                             {/* 이미지 업로드 + 썸네일 리스트 */}
                             {selectedStageId &&(
-                              <form onSubmit={handleSubmitStageComment} className="flex items-center gap-2 bg-white border rounded-3xl">
+                              <form 
+                                onSubmit={handleSubmitStageComment} 
+                                onDragOver={(e)=>{e.preventDefault(); setDragOver(true);}}
+                                onDragLeave={()=>setDragOver(false)}
+                                onDrop={(e)=>{
+                                  e.preventDefault(); setDragOver(false);
+                                  const f = Array.from(e.dataTransfer.files || []).find(f => f.type.startsWith("image/"));
+                                  if (f) setCmtFile(f);
+                                }}
+                                className={`flex items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""}`}
+
+                              >
                               {/* + 버튼 */}
                               <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
                                 <FiPlus className="w-5 h-5"/>
@@ -476,6 +501,28 @@ export default function ArtistProfileView({
                                   onChange={(e) => setCmtFile(e.target.files?.[0])}
                                 />
                               </label>
+
+                              {/* ✅ 미리보기 썸네일 */}
+                              {cmtPreview && (
+                                <div className="relative ml-1 shrink-0">
+                                  <img
+                                    src={cmtPreview}
+                                    alt="preview"
+                                    className="w-16 h-16 rounded-xl object-cover bg-gray-100"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setCmtFile(undefined)}
+                                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] leading-none"
+                                    aria-label="미리보기 제거"
+                                    title="미리보기 제거"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              )}
+
+
                               {/* 입력창 */}
                               <TextareaAutosize //UI 추후 개선 
                                 value={cmtText}
@@ -505,11 +552,39 @@ export default function ArtistProfileView({
                             {/* 댓글 리스트 */}
                             <ul className="space-y-3">
                               {comments.map((c) => (
-                                <li key={c.id} className="border-b pb-3">
-                                  <div className="text-sm text-gray-700 whitespace-pre-wrap">{c.content}</div>
+                                <li key={c.id} className="border-b pb-4">
+                                  {/* 헤더: 좌측 닉네임, 우측 날짜 */}
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <img
+                                        src={c.users?.photo_url || ""}
+                                        alt={c.users?.username || "user"}
+                                        className="w-6 h-6 rounded-full object-cover"
+                                      />
+                                      <span className="text-sm font-medium text-gray-800">
+                                        {c.users?.username??""}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-400">
+                                      {c.updated_at}
+                                    </span>
+
+                                  </div>
+
                                   {c.photo_url && (
-                                    <img src={c.photo_url} className="mt-2 w-full max-w-xs rounded" />
+                                    <div className="mt-2">
+                                      <img
+                                        src={c.photo_url}
+                                        alt="첨부 이미지"
+                                        className="max-h-64 rounded-lg border object-contain"
+                                      />
+                                    </div>
                                   )}
+
+                                  <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {c.content}
+                                  </div>
+
                                   <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
                                     삭제
                                   </button>
@@ -517,8 +592,8 @@ export default function ArtistProfileView({
                               ))}
                             </ul>
                           </div>
-
-
+                            </>
+                          )}
                         </div>
                       )}
                     </div>

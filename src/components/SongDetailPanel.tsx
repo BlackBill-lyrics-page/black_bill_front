@@ -1,5 +1,5 @@
 import { FiChevronRight } from "react-icons/fi";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import SongLikeButton from "./SongLikeButton";
 
 type SongDetail = {
   id: number;
@@ -99,24 +99,19 @@ export default function SongDetailPanel({
 
             <div className="w-full h-px bg-gray-300 mt-4" />
 
-            <div className="mb-3 flex items-center gap-2 mt-4">
-              <button
-                type="button"
-                onClick={onToggleLike}
-                disabled={likeLoading || !openSong}
-                className="flex items-center gap-1 text-sm focus:outline-none"
-                aria-pressed={liked}
-              >
-                {liked ? (
-                  <FaHeart className="w-5 h-5 text-black" />
-                ) : (
-                  <FaRegHeart className="w-5 h-5 text-black" />
-                )}
-                <div className="mb-3 flex items-center gap-4">
-                  <span>좋아요 ({likeCount})</span>
-                  <span>댓글 ({commentCount})</span>
-                </div>
-              </button>
+            <div className="mb-3 flex items-cneter gap-4 mt-4">
+                <SongLikeButton
+                    mode="controlled"
+                    liked={liked}
+                    likeCount={likeCount}
+                    likeLoading={likeLoading}
+                    onToggleLike={onToggleLike}
+                    size="md"
+                    className="text-black"
+                    showCount={true}
+                    stopPropagation={false} 
+                />
+                <span className="text-sm">댓글 ({commentCount})</span>
             </div>
 
             {/* 외부에서 댓글 컴포넌트 꽂기 */}

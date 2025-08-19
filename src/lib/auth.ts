@@ -9,3 +9,10 @@ export async function getUserId() {
   if (error || !user) return null;
   return user.id;
 }
+
+export async function signOut() {
+  await supabase.auth.signOut();
+  localStorage.clear();            
+  sessionStorage.clear();          
+  window.location.reload();
+}
