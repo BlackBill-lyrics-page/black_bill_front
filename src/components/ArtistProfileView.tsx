@@ -6,10 +6,12 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AlbumTracksPanel from "./AlbumTracksPanel";
 import SongDetailPanel from "./SongDetailPanel";
+import AlbumLikeButton from "./AlbumLikeButton";
 
 import { useSongLikeVM } from "../viewmodels/useSongLikeVM";
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
 import { useStageCommentVM } from "../viewmodels/useStageCommentVM";
+import { useAlbumLikeVM } from "../viewmodels/useAlbumLikeVM";
 
 import { FiChevronRight, FiChevronDown, FiCopy, FiSettings, FiPlus, FiChevronLeft, FiArrowDown, FiArrowUpRight } from "react-icons/fi"; 
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink, FaHeart, FaRegHeart } from "react-icons/fa";
@@ -95,6 +97,7 @@ export default function ArtistProfileView({
 
     const {
       comments,
+      count : stageCommentCount,
       addComment,
       deleteComment,
       loading: stageCmtLoading,
@@ -124,6 +127,8 @@ export default function ArtistProfileView({
     const [selectedSNS, setSelectedSNS] = useState<Link | null>(
       artist.links?.length ? artist.links[0] : null
     );
+
+    const albumLike = useAlbumLikeVM(selectedAlbum ? Number(selectedAlbum.id) : undefined);
 
 
     useEffect(() => {
@@ -476,7 +481,76 @@ export default function ArtistProfileView({
                             </div>
                           )}
 
+
+                          {/* 좋아요 댓글 카운트 */}
+                          <div className="flex items-center gap-4 text-sm text-gray-700 px-1 mb-2">
+                          <button
+                            type="button"
+                            onClick={albumLike.toggleLike}
+                            disabled={albumLike.loading}
+                            className="inline-flex items-center gap-2"
+                          >
+                            <AlbumLikeButton
+                              mode="controlled"
+                              liked={albumLike.liked}
+                              likeCount={albumLike.likeCount}
+                              likeLoading={albumLike.loading}
+                              onToggleLike={albumLike.toggleLike}
+                              showCount={false}              // ✅ 카운트는 옆에서 따로 출력
+                            />
+                            <span>좋아요({albumLike.likeCount ?? 0})</span>
+                          </button>
+
+                          <span>댓글({stageCommentCount ?? 0})</span>
+                        </div>
+
+
                           <div className="mt-6 space-y-4">
+
+                            {/* 댓글 리스트 */}
+                            <ul className="space-y-3">
+                              {comments.map((c) => (
+                                <li key={c.id} className="border-b pb-4">
+                                  {/* 헤더: 좌측 닉네임, 우측 날짜 */}
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <img
+                                        src={c.users?.photo_url || ""}
+                                        alt={c.users?.username || "user"}
+                                        className="w-6 h-6 rounded-full object-cover"
+                                      />
+                                      <span className="text-sm font-medium text-gray-800">
+                                        {c.users?.username??""}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-400">
+                                      {c.updated_at}
+                                    </span>
+
+                                  </div>
+
+                                  {c.photo_url && (
+                                    <div className="mt-2">
+                                      <img
+                                        src={c.photo_url}
+                                        alt="첨부 이미지"
+                                        className="max-h-64 rounded-lg border object-contain"
+                                      />
+                                    </div>
+                                  )}
+
+                                  <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {c.content}
+                                  </div>
+
+                                  <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
+                                    삭제
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+
+
                             {/* 이미지 업로드 + 썸네일 리스트 */}
                             {selectedStageId &&(
                               <form 
@@ -549,48 +623,6 @@ export default function ArtistProfileView({
                             {/* useStagePhotosVM(stageId) 훅으로 가져온 photos를 여기서 map */}
                             {/* 예) photos.map(p => <img key={p.id} src={p.url} className="h-20 w-20 rounded object-cover" />) */}
 
-                            {/* 댓글 리스트 */}
-                            <ul className="space-y-3">
-                              {comments.map((c) => (
-                                <li key={c.id} className="border-b pb-4">
-                                  {/* 헤더: 좌측 닉네임, 우측 날짜 */}
-                                  <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <img
-                                        src={c.users?.photo_url || ""}
-                                        alt={c.users?.username || "user"}
-                                        className="w-6 h-6 rounded-full object-cover"
-                                      />
-                                      <span className="text-sm font-medium text-gray-800">
-                                        {c.users?.username??""}
-                                      </span>
-                                    </div>
-                                    <span className="text-xs text-gray-400">
-                                      {c.updated_at}
-                                    </span>
-
-                                  </div>
-
-                                  {c.photo_url && (
-                                    <div className="mt-2">
-                                      <img
-                                        src={c.photo_url}
-                                        alt="첨부 이미지"
-                                        className="max-h-64 rounded-lg border object-contain"
-                                      />
-                                    </div>
-                                  )}
-
-                                  <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                                    {c.content}
-                                  </div>
-
-                                  <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
-                                    삭제
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
                           </div>
                             </>
                           )}

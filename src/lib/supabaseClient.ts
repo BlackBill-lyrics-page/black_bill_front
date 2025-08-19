@@ -21,6 +21,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: { persistSession: true, autoRefreshToken: true },
-  // ✅ 보강: apikey를 전역 헤더로 명시(중복되어도 문제 없음)
-  global: { headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}` } },
 })

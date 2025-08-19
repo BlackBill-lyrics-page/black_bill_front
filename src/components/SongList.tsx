@@ -152,7 +152,7 @@ export default function SongList({
                             <div className="font-medium truncate">{s.title || "(제목 없음)"}</div>
                             {s.createdAt && (
                                 <div className="text-xs text-gray-500 mt-0.5">
-                                    {new Date(s.createdAt).toLocaleString()}
+                                    {new Date(s.createdAt).toLocaleDateString()}
                                 </div>
                             )}
                         </div>
