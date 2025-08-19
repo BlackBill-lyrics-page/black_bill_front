@@ -130,6 +130,83 @@ export default function ArtistProfileView({
 
     const albumLike = useAlbumLikeVM(selectedAlbum ? Number(selectedAlbum.id) : undefined);
 
+    const [albums, setAlbums] = useState<UIAlbum[]>([]);
+
+     useEffect(() => {
+      (async () => {
+        // 1) 앨범 기본 정보
+        const { data: albumsRows, error: albumsErr } = await supabase
+          .from("albums")
+          .select("id, name:albumname, photo_url, created_at")
+          .eq("artist_id", artist.id)
+          .order("created_at", { ascending: false });
+      
+        if (albumsErr) {
+          console.error("[albums select error]", albumsErr);
+          setAlbums([]);
+          return;
+        }
+      
+        // 미리 기본 배열 세팅(댓글수 0)
+        const base: UIAlbum[] = (albumsRows ?? []).map((a: any) => ({
+          id: String(a.id),
+          name: a.name ?? "(제목 없음)",
+          photoUrl: a.photo_url ?? null,
+          createdAt: a.created_at ?? null,
+          commentCount: 0,
+        }));
+        setAlbums(base);
+      
+        // 앨범이 없으면 끝
+        const albumIds = (albumsRows ?? []).map((a: any) => a.id);
+        if (!albumIds.length) return;
+      
+        // 2) 해당 앨범들의 stage 목록 가져오기 (id, album_id)
+        const { data: stages, error: stagesErr } = await supabase
+          .from("stage_info")
+          .select("id, album_id")
+          .in("album_id", albumIds);
+      
+        if (stagesErr || !stages?.length) {
+          if (stagesErr) console.error("[stage_info select error]", stagesErr);
+          return; // 무대가 없으면 댓글수는 0 유지
+        }
+      
+        const stageIds = stages.map(s => s.id);
+      
+        // 3) 그 무대들의 댓글만 가볍게 가져오기 (stage_id만)
+        const { data: comments, error: cErr } = await supabase
+          .from("stage_comments")
+          .select("id, stage_id")
+          .in("stage_id", stageIds);
+      
+        if (cErr) {
+          console.error("[stage_comments select error]", cErr);
+          return;
+        }
+      
+        // 4) album_id별 댓글 수 집계
+        const stageToAlbum = new Map<number, number>();
+        stages.forEach(s => stageToAlbum.set(s.id, s.album_id));
+      
+        const byAlbum: Record<number, number> = {};
+        (comments ?? []).forEach(c => {
+          const albumId = stageToAlbum.get(c.stage_id as number);
+          if (albumId != null) {
+            byAlbum[albumId] = (byAlbum[albumId] ?? 0) + 1;
+          }
+        });
+      
+        // 5) setAlbums에 댓글 수 반영
+        setAlbums(prev =>
+          prev.map(a => ({
+            ...a,
+            commentCount: byAlbum[Number(a.id)] ?? 0,
+          })),
+        );
+      })();
+    }, [artist.id]);
+
 
     useEffect(() => {
       setSelectedSNS(artist.links?.length ? artist.links[0] : null);
@@ -406,7 +483,7 @@ export default function ArtistProfileView({
                       {!selectedAlbum ? (
                         // 목록 뷰
                         <AlbumsList
-                          artistId={artist.id}
+                          albums={albums}
                           readOnly={!isOwner}
                           onEdit={onEditBook}
                           onOpen={(a) => setSelectedAlbum(a)} // 클릭 → 상세로 전환
@@ -484,12 +561,7 @@ export default function ArtistProfileView({
 
                           {/* 좋아요 댓글 카운트 */}
                           <div className="flex items-center gap-4 text-sm text-gray-700 px-1 mb-2">
-                          <button
-                            type="button"
-                            onClick={albumLike.toggleLike}
-                            disabled={albumLike.loading}
-                            className="inline-flex items-center gap-2"
-                          >
+                          
                             <AlbumLikeButton
                               mode="controlled"
                               liked={albumLike.liked}
@@ -499,7 +571,7 @@ export default function ArtistProfileView({
                               showCount={false}              // ✅ 카운트는 옆에서 따로 출력
                             />
                             <span>좋아요({albumLike.likeCount ?? 0})</span>
-                          </button>
+                          
 
                           <span>댓글({stageCommentCount ?? 0})</span>
                         </div>

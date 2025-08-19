@@ -5,6 +5,9 @@ import { useMyAudienceVM } from "../viewmodels/useMyAudienceVM";
 import { useUserStore } from "../store/useUserStore";
 import { useNavigate } from "react-router-dom";
 import RoleSwitcher from "../components/RoleSwitcher";
+import AlbumsList from "../components/AlbumList";
+import { supabase } from "../lib/supabaseClient";
+import type { UIAlbum } from "../components/AlbumList";
 
 export default function MyAudiencePage() {
   const { userId, provider, nickname, photoUrl, loading, signOut, deleteAccount } =
@@ -25,6 +28,41 @@ export default function MyAudiencePage() {
   const [activeTab, setActiveTab] = useState<  //tab state
     "songs" | "books" | "artists" | "stages"
   >("songs");
+
+  const [albums, setAlbums] = useState<UIAlbum[]>([]);
+  const [selectedAlbum, setSelectedAlbum] = useState<UIAlbum | null>(null);
+
+  type AlbumRow = {
+    albums: {
+      id: number;
+      albumname: string;
+      photo_url: string | null;
+      created_at: string;
+    };
+  };
+
+  // album information fetch
+  useEffect(() => {
+    if (!userId) return;
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("album_likes")                 // 좋아요 테이블
+        .select("albums(id, albumname, photo_url, created_at)")
+        .eq("user_id", userId);
+
+      if (!error && data) {
+        const rows = data as unknown as AlbumRow[];
+        const mapped: UIAlbum[] = rows.map((r) => ({
+          id: String(r.albums.id),          
+          name: r.albums.albumname,
+          photoUrl: r.albums.photo_url,
+          createdAt: r.albums.created_at,
+        }));
+        setAlbums(mapped);
+      }
+    };
+    load();
+  }, [userId]);
 
   useEffect(() => {
     if (!loading && !userId) {
@@ -150,7 +188,9 @@ export default function MyAudiencePage() {
         {/* 콘텐츠 영역 */}
         <div className="py-8 text-sm text-gray-400">
           {activeTab === "songs" && <div>(좋아하는 곡 리스트 예정)</div>}
-          {activeTab === "books" && <div>(좋아하는 가사집 리스트 예정)</div>}
+          {activeTab === "books" && (
+            <AlbumsList albums={albums} readOnly={true} onOpen={(a)=>setSelectedAlbum(a)}/>
+          )}
           {activeTab === "artists" && <div>(내 아티스트 리스트 예정)</div>}
           {activeTab === "stages" && <div>(다녀온 무대 리스트 예정)</div>}
         </div>

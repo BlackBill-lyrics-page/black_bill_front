@@ -1,145 +1,51 @@
 // AlbumsList.tsx
-// MyArtistPage에서 아티스트가 업로드한 "가사집(앨범)" 리스트를 보여주는 컴포넌트
-
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import { useUploadAlbumsVM } from "../viewmodels/useUploadAlbumsVM";
-import { FiEdit2 } from "react-icons/fi"
+import { FiEdit2 } from "react-icons/fi";
 import AlbumLikeButton from "./AlbumLikeButton";
 
-// 화면(UI)에서 쓸 가벼운 타입 (외부 파일 의존 X)
 export type UIAlbum = {
   id: string;
-  name: string;                 // albums.albumname
-  photoUrl?: string | null;     // albums.photo_url
-  createdAt?: string | null;    // albums.created_at
-  commentCount?:number;
+  name: string;
+  photoUrl?: string | null;
+  createdAt?: string | null;
+  commentCount?: number;
+};
+
+type Props = {
+  albums: UIAlbum[];
+  onEdit?: (album: UIAlbum) => void;
+  readOnly?: boolean;
+  onOpen?: (album: UIAlbum) => void;
+  selectedId?: number | string | null;
 };
 
 export default function AlbumsList({
-  artistId,
+  albums,
   onEdit,
-  readOnly =true,
+  readOnly = true,
   onOpen,
   selectedId,
-}: {
-  artistId: string | number;
-  onEdit?: (album: UIAlbum) => void; // 수정 버튼 클릭 시 부모(MyArtistPage)에서 모달 열도록
-  readOnly?: boolean;
-  onOpen?: (album: UIAlbum)=>void;
-  selectedId?: number|string|null;
-}) {
-  const [albums, setAlbums] = useState<UIAlbum[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-
-  // ── Row 전용 액션: 삭제/수정 버튼 묶음 ─────────────────────────────
-  function RowActions({
-    item,
-    artistId,
-    onEdit,
-    onDeleted,
-    readOnly,
-  }: {
-    item: UIAlbum;
-    artistId: number | string;
-    onEdit?: (album: UIAlbum) => void;
-    onDeleted: (id: string) => void;
-    readOnly?: boolean;
-  }) {
-
-    if (readOnly) return null;
-
+}: Props) {
+  if (!albums.length)
     return (
-      <div className="flex items-center gap-2">
-        {onEdit && (
-          <button
-            onClick={(e) => {e.stopPropagation(); onEdit(item);}}
-            className="px-2 py-1 text-sm rounded cursor-pointer hover:bg-gray-50"
-            // disabled={vm.submitting || deleting}
-          >
-            <FiEdit2 size={18}/>
-          </button>
-        )}
-
-
-      </div>
+      <div className="py-6 text-sm text-gray-400">아직 등록된 가사집이 없어요.</div>
     );
-  }
-  // ────────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    let alive = true;
-
-    async function load() {
-      if (!artistId) return;
-      setLoading(true);
-      setErr(null);
-
-      // ⬇⬇ DB 컬럼명 기준으로 조회
-      const { data, error } = await supabase
-        .from("albums")
-        .select(`
-          id,
-          albumname,
-          photo_url,
-          created_at,
-          artist_id,
-          stage_info (
-            id,
-            stage_comments (id)
-          )
-        `)
-        .eq("artist_id", artistId)
-        .order("created_at", { ascending: false });
-
-      if (!alive) return;
-
-      if (error) {
-        setErr(error.message);
-      } else {
-        const mapped: UIAlbum[] = (data || []).map((r: any) => ({
-          id: String(r.id),
-          name: r.albumname ?? "",
-          photoUrl: r.photo_url ?? null,
-          createdAt: r.created_at ?? null,
-          commentCount: r.stage_info?.reduce(
-            (acc: number, s: any) => acc + (s.stage_comments?.length || 0),
-            0
-          ),
-        }));
-        setAlbums(mapped);
-      }
-      setLoading(false);
-    }
-
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [artistId]);
-
-  if (loading) return <div className="py-6 text-sm text-gray-500">불러오는 중…</div>;
-  if (err) return <div className="py-6 text-sm text-red-500">{err}</div>;
-  if (albums.length === 0) return <div className="py-6 text-sm text-gray-400">아직 등록된 가사집이 없어요.</div>;
 
   return (
     <ul className="mt-4 grid gap-3">
       {albums.map((a) => {
-        const active = String(selectedId ?? "") === String(a.id); // 선택 여부
-      
+        const active = String(selectedId ?? "") === String(a.id);
         return (
           <li
             key={a.id}
-            onClick={() => onOpen?.(a)} // 클릭 시 부모에게 전달
-            className={`flex items-center justify-between rounded-lg p-3 cursor-pointer
-                       ${active ? " bg-gray-50" : " hover:bg-gray-50"}`} // 하이라이트
+            onClick={() => onOpen?.(a)}
+            className={`flex items-center justify-between rounded-lg p-3 cursor-pointer ${
+              active ? "bg-gray-50" : "hover:bg-gray-50"
+            }`}
             role="button"
-            tabIndex={0} //keyboard tab
+            tabIndex={0}
           >
             {/* 왼쪽: 사진 + 이름/날짜 */}
             <div className="flex items-center min-w-0 gap-3">
-
               {a.photoUrl && (
                 <img
                   src={a.photoUrl}
@@ -148,9 +54,10 @@ export default function AlbumsList({
                 />
               )}
 
-            <div className="flex items-center justify-between flex-1 min-w-0">
-              <div className="min-w-0">
-                <div className="font-medium truncate">{a.name || "(제목 없음)"}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">
+                  {a.name || "(제목 없음)"}
+                </div>
                 {a.createdAt && (
                   <div className="text-xs text-gray-500 mt-0.5">
                     {new Date(a.createdAt).toLocaleDateString()}
@@ -158,26 +65,24 @@ export default function AlbumsList({
                 )}
               </div>
             </div>
-              
-            {/* 오른쪽: 수정/삭제 버튼 */}
+
+            {/* 오른쪽: 좋아요 + 댓글 + 수정 */}
             <div className="flex items-center gap-3">
-                <AlbumLikeButton mode="vm" albumId={Number(a.id)} /> 
-
-                <span className="text-xs text-gray-500">댓글({a.commentCount ?? 0})</span> 
-
-                           
-                {!readOnly && (
-                  <RowActions
-                    item={a}
-                    artistId={artistId}
-                    onEdit={onEdit}
-                    onDeleted={(id) => setAlbums((prev) => prev.filter((x) => x.id !== id))}
-                    readOnly={readOnly}
-                  />
-                )}
-            </div>
-
-            
+              <AlbumLikeButton mode="vm" albumId={Number(a.id)} />
+              <span className="text-xs text-gray-500">
+                댓글({a.commentCount ?? 0})
+              </span>
+              {!readOnly && onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(a);
+                  }}
+                  className="px-2 py-1 text-sm rounded hover:bg-gray-50"
+                >
+                  <FiEdit2 size={18} />
+                </button>
+              )}
             </div>
           </li>
         );
