@@ -10,9 +10,9 @@ import UploadSongsModal from "../components/uploadAndEditSongsModal";
 import UploadAndEditAlbumsModal from "../components/uploadAndEditAlbumsModal";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";
 import RoleSwitcher from "../components/RoleSwitcher";
-import UploadAndEditStageModal from "../components/stage/UploadAndEditStageModal";
+// import UploadAndEditStageModal from "../components/stage/UploadAndEditStageModal";
 import type { StageFormValues } from "../components/stage/StageForm";
-import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
+// import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
 
 
 // 🔧 title -> albumname 으로 교체

@@ -1,9 +1,20 @@
 import { memo } from "react"; // decreasing unnecessary rerendering
 import { useAlbumTracksVM } from "../viewmodels/useAlbumTracksVM";
 
-type Props = { albumId: number | null; albumName?: string };
+type Track = {
+  id: number;
+  title: string;
+  position?: number | null;
+  song_photo?: string | null;
+};
 
-function AlbumTracksPanelBase({ albumId, albumName }: Props) {
+type Props = {
+  albumId: number | null;
+  albumName?: string;
+  onOpen?: (song: { id: number; title?: string }) => void;
+};
+
+function AlbumTracksPanelBase({ albumId, albumName, onOpen }: Props) {
   const { tracks, loading, error } = useAlbumTracksVM(albumId);
 
   if (!albumId) return <div className="text-gray-400">가사집을 선택하세요</div>;
@@ -13,30 +24,43 @@ function AlbumTracksPanelBase({ albumId, albumName }: Props) {
 
   return (
     <div className="space-y-5">
-
       {albumName && <div className="text-base font-semibold">{albumName}</div>}
 
       <ol className="space-y-3 divide-y divide-gray-200">
-        {tracks.map(t => (
-          <li key={t.id} className="flex items-center gap-3 p-2 rounded hover:bg-gray-50">
+        {(tracks as Track[]).map((t) => (
+          <li key={t.id}>
+            {/* 버튼 전체행 클릭영역 */}
 
-            <div className="w-6 text-right text-gray-400">{t.position ?? "-"}</div>
+            <button
+              type="button"
+              onClick={() => onOpen?.({ id: t.id, title: t.title })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onOpen?.({ id: t.id, title: t.title });
+                }
+              }}
+              className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-50 text-left focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              <div className="w-6 text-right text-gray-400">
+                {t.position ?? "-"}
+              </div>
 
-            <img
+              <img
                 src={t.song_photo || "/placeholder.png"}
                 alt={t.title}
                 className="w-10 h-10 rounded object-cover"
-            />
+              />
 
-            <div className="truncate">{t.title}</div>
-
+              <div className="truncate flex-1">{t.title}</div>
+            </button>
+            
           </li>
         ))}
       </ol>
-
     </div>
   );
 }
 
-const AlbumTracksPanel = memo(AlbumTracksPanelBase); 
+const AlbumTracksPanel = memo(AlbumTracksPanelBase);
 export default AlbumTracksPanel;

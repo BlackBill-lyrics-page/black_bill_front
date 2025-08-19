@@ -5,13 +5,17 @@ import type { UIAlbum } from "./AlbumList";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AlbumTracksPanel from "./AlbumTracksPanel";
+import SongDetailPanel from "./SongDetailPanel";
 
 import { useSongLikeVM } from "../viewmodels/useSongLikeVM";
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
+import { useStageCommentVM } from "../viewmodels/useStageCommentVM";
 
-import { FiChevronRight, FiChevronDown, FiCopy, FiSettings, FiPlus, FiChevronLeft } from "react-icons/fi"; 
+import { FiChevronRight, FiChevronDown, FiCopy, FiSettings, FiPlus, FiChevronLeft, FiArrowDown, FiArrowUpRight } from "react-icons/fi"; 
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink, FaHeart, FaRegHeart } from "react-icons/fa";
 import { SiApplemusic} from "react-icons/si";
+
+import TextareaAutosize from "react-textarea-autosize";
 
 
 
@@ -85,16 +89,64 @@ export default function ArtistProfileView({
 
     const [selectedAlbum, setSelectedAlbum] = useState<UIAlbum | null>(null);
 
+    const [stages, setStages] = useState<Array<{ id:number; title:string|null; start_at:string|null }>>([]);
+    const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
+
+
+    const {
+      comments,
+      addComment,
+      deleteComment,
+      loading: stageCmtLoading,
+    } = useStageCommentVM(selectedStageId);
+
+    const [cmtText, setCmtText] = useState("");
+    const [cmtFile, setCmtFile] = useState<File | undefined>(undefined);
+
+    
+
+    const handleSubmitStageComment = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+        if (!cmtText.trim() && !cmtFile) return; 
+        await addComment(cmtText, cmtFile);
+        setCmtText("");
+        setCmtFile(undefined);
+      } catch (err:any) {
+        alert(err.message ?? "업로드에 실패했습니다.");
+      }
+    };
+
+
     const [snsOpen, setSnsOpen] = useState(false);
     const [selectedSNS, setSelectedSNS] = useState<Link | null>(
       artist.links?.length ? artist.links[0] : null
     );
+
 
     useEffect(() => {
       setSelectedSNS(artist.links?.length ? artist.links[0] : null);
       setSnsOpen(false);
     }, [artist]);
 
+    useEffect(() => {
+      (async () => {
+        if (!selectedAlbum) {
+          setStages([]); setSelectedStageId(null);
+          return;
+        }
+        const { data, error } = await supabase
+          .from("stage_info")
+          .select("id, title, start_at")
+          .eq("album_id", Number(selectedAlbum.id))
+          .order("start_at", { ascending: false })    // 최신 무대 우선
+          .order("id", { ascending: false });         // start_at 없을 때 대비
+        if (error) { console.error(error); setStages([]); setSelectedStageId(null); return; }
+      
+        setStages(data || []);
+        setSelectedStageId(data?.[0]?.id ?? null);    // 기본 선택: 첫 번째 무대
+      })();
+    }, [selectedAlbum]);
 
 
     const platformMeta = (p: string) => {
@@ -108,51 +160,67 @@ export default function ArtistProfileView({
 
 
     const handleOpenSong = async (ui: UISong) => {
-    
-    if (openSong?.id === Number(ui.id)) { // if reselected -> closed
-      setOpenSong(null);
-      return;
-    }
 
-    try {
-      setOpenLoading(true);
-      const { data, error } = await supabase
-        .from("songs")
-        .select(`
-            id,title,lyrics,bio,song_photo,song_link,created_at,
-            song_links (platform, url)
-        `)
-        .eq("id", ui.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error(error);
+      if (openSong?.id === Number(ui.id)) { // if reselected -> closed
+        setOpenSong(null);
         return;
       }
 
-      if (!data) {
-        setOpenSong(null);            
-        return;
-      }
+      try {
+        setOpenLoading(true);
+        const { data, error } = await supabase
+          .from("songs")
+          .select(`
+              id,title,lyrics,bio,song_photo,song_link,created_at,
+              song_links (platform, url)
+          `)
+          .eq("id", ui.id)
+          .maybeSingle();
 
-      const detail: SongDetail = {
-        id: data.id,
-        title: data.title ?? "",
-        lyrics: data.lyrics ?? null,
-        bio: data.bio ?? null,
-        song_photo: data.song_photo ?? null,
-        song_link: data.song_link ?? null,
-        created_at: data.created_at ?? null,
-        links: (data.song_links || [] as {platform:string; url:string}[])
-      };
-    
-      setOpenSong(detail);
-      // 패널로 스크롤
-      setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
-    } finally {
-      setOpenLoading(false);
-    }
-  };
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        if (!data) {
+          setOpenSong(null);            
+          return;
+        }
+
+        const detail: SongDetail = {
+          id: data.id,
+          title: data.title ?? "",
+          lyrics: data.lyrics ?? null,
+          bio: data.bio ?? null,
+          song_photo: data.song_photo ?? null,
+          song_link: data.song_link ?? null,
+          created_at: data.created_at ?? null,
+          links: (data.song_links || [] as {platform:string; url:string}[])
+        };
+      
+        setOpenSong(detail);
+        // 패널로 스크롤
+        setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      } finally {
+        setOpenLoading(false);
+      }
+    };
+
+  const songDetailJSX = ( //song dropdown 
+    <SongDetailPanel
+      openSong={openSong}
+      openLoading={openLoading}
+      onClose={() => setOpenSong(null)}
+      platformMeta={platformMeta}
+      liked={liked}
+      likeCount={likeCount}
+      likeLoading={loading}
+      onToggleLike={toggleLike}
+      commentCount={count}
+      panelRef={detailRef}
+      commentsSlot={openSong ? <SongCommentsInline songId={openSong.id} /> : null}
+    />
+  );
   
   return (
     <>
@@ -315,88 +383,7 @@ export default function ArtistProfileView({
                     onOpen={handleOpenSong}
                   />
 
-                  {(openLoading || openSong) && (
-                    <div ref={detailRef} className="mt-6 rounded-xl bg-white">
-                      {/* 헤더 */}
-                      <div className="flex items-center gap-3 p-4">
-                        
-                        <div className="min-w-0 flex-1">
-                          {!!openSong?.bio && (
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              {openSong.bio}
-                            </div>
-                          )}
-                        </div>
-
-                    {/* 접기 버튼 */}
-                    <button
-                      type="button"
-                      className="ml-2 text-gray-400 hover:text-black"
-                      onClick={() => setOpenSong(null)}
-                    >
-                      <FiChevronRight className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* 본문 */}
-                  <div className="px-4 pb-4">
-                    {openLoading ? (
-                      <div className="text-sm text-gray-500 py-8">
-                        불러오는 중…
-                      </div>
-                    ) : (
-                      <>
-                        {openSong?.links && openSong.links.length > 0 && (
-                          <div className="mb-3 flex flex-wrap gap-2">
-                            {openSong.links.map((L, i) => {
-                              if (!L.url) return null;
-                              const { label, Icon, className } = platformMeta(L.platform);
-                              return (
-                                <a
-                                  key={i}
-                                  href={L.url}
-                                  target="_blank" //click ->new tab
-                                  rel="noopener noreferrer" //security 1)tabnabbing 2)Referer header
-                                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition ${className}`}
-                                  title={label}
-                                >
-                                  <Icon className="w-4 h-4" />
-                                  <span>{label}</span>
-                                </a>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        <div className="max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-6 text-gray-800"> 
-                          {openSong?.lyrics || "가사가 비어 있습니다."}
-                        </div>
-                        <div className="w-full h-px bg-gray-300 mt-4"></div> 
-                        <div className="mb-3 flex items-center gap-2 mt-4">
-                            <button
-                                type="button"
-                                onClick={toggleLike}
-                                disabled={loading||!openSong}
-                                className="flex items-center gap-1 text-sm focus:outline-none"
-                                aria-pressed={liked}
-                            >
-                                {liked?(
-                                    <FaHeart className="w-5 h-5 text-black"/>
-                                ):(
-                                    <FaRegHeart className="w-5 h-5 text-black"/>
-                                )}
-                                <div className="mb-3 flex items-center gap-4">
-                                    <span>좋아요 ({likeCount})</span>
-                                    <span>댓글 ({count})</span>
-                                </div>
-                            </button>
-                        </div>
-                        {openSong&&(<SongCommentsInline songId={openSong.id}/>)}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
+                  {(openLoading || openSong) && songDetailJSX}
                     </div>
                   )}
                   {activeTab === "books" && (
@@ -443,9 +430,95 @@ export default function ArtistProfileView({
                             <div className="bg-white rounded-xl p-4">
                               <AlbumTracksPanel
                                 albumId={Number(selectedAlbum.id)}                 // string → number
+                                onOpen={(s) => handleOpenSong({ id: String(s.id), title: s.title } as any)}
                               />
+
+                              {/* songdropdown */}
+                              {(openLoading || openSong) && songDetailJSX}
+
                             </div>
                           </div>
+
+                          {/* 무대 선택 드롭다운 */}
+                          {stages.length > 0 ? (
+                            <div className="mb-3 flex items-center gap-2 px-1">
+                              <span className="text-sm text-gray-500">무대:</span>
+                              <select
+                                value={selectedStageId ?? ""}
+                                onChange={(e) => setSelectedStageId(Number(e.target.value))}
+                                className="text-sm border rounded px-2 py-1"
+                              >
+                                {stages.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {(s.title || `Stage #${s.id}`) +
+                                      (s.start_at ? ` — ${new Date(s.start_at).toLocaleDateString()}` : "")}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="mb-3 text-sm text-gray-500 px-1">
+                              이 가사집에 연결된 무대가 없습니다.
+                            </div>
+                          )}
+
+                          <div className="mt-6 space-y-4">
+                            {/* 이미지 업로드 + 썸네일 리스트 */}
+                            {selectedStageId &&(
+                              <form onSubmit={handleSubmitStageComment} className="flex items-center gap-2 bg-white border rounded-3xl">
+                              {/* + 버튼 */}
+                              <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
+                                <FiPlus className="w-5 h-5"/>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => setCmtFile(e.target.files?.[0])}
+                                />
+                              </label>
+                              {/* 입력창 */}
+                              <TextareaAutosize //UI 추후 개선 
+                                value={cmtText}
+                                onChange={(e) => setCmtText(e.target.value)}
+                                placeholder="이미지를 드래그, 또는 댓글을 작성해주세요."
+                                className="flex-1 rounded px-3 py-2 text-sm"
+                                minRows={1}
+                                onKeyDown={(e)=>{
+                                  if (e.key === "Enter" && !e.shiftKey){
+                                    e.preventDefault();
+                                    e.currentTarget.form?.requestSubmit();
+                                  }
+                                }}
+                              />
+                              {/* 전송 버튼 */}
+                              <button type="submit" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white mr-1 ">
+                                <FiArrowUpRight className="w-5 h-5"/>
+                              </button>
+                            </form>
+                            )}
+                            
+
+                            {/* (선택) 사진 썸네일 캐러셀/그리드 */}
+                            {/* useStagePhotosVM(stageId) 훅으로 가져온 photos를 여기서 map */}
+                            {/* 예) photos.map(p => <img key={p.id} src={p.url} className="h-20 w-20 rounded object-cover" />) */}
+
+                            {/* 댓글 리스트 */}
+                            <ul className="space-y-3">
+                              {comments.map((c) => (
+                                <li key={c.id} className="border-b pb-3">
+                                  <div className="text-sm text-gray-700 whitespace-pre-wrap">{c.content}</div>
+                                  {c.photo_url && (
+                                    <img src={c.photo_url} className="mt-2 w-full max-w-xs rounded" />
+                                  )}
+                                  <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
+                                    삭제
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+
                         </div>
                       )}
                     </div>
@@ -456,6 +529,10 @@ export default function ArtistProfileView({
             </>
           );
         }
+
+
+
+//functions
 
 function TabButton({
   active, onClick, label,
