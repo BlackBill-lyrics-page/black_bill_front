@@ -729,9 +729,16 @@ function TabButton({
 function SongCommentsInline({ songId }: { songId: number }) {
   const { comments, loading, addComment, editComment, deleteComment, count } = useSongCommentVM(songId);
   const [newComment, setNewComment] = useState("");
-
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
+
+  const [meId, setMeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setMeId(data?.user?.id ?? null);
+    });
+  }, []);
 
   const handleAdd = async () => {
     if (!newComment.trim()) return;
@@ -739,10 +746,12 @@ function SongCommentsInline({ songId }: { songId: number }) {
     setNewComment("");
   };
 
-  const startEdit = (id: number, current: string) => {
+  const startEdit = (id: number, current: string, ownerId?: string) => {
+    if (!meId || meId !== ownerId) return;
     setEditingId(id);
     setEditingText(current);
   };
+
   const cancelEdit = () => {
     setEditingId(null);
     setEditingText("");
@@ -753,6 +762,11 @@ function SongCommentsInline({ songId }: { songId: number }) {
     if (!text) return;
     await editComment(editingId, text);
     cancelEdit();
+  };
+
+  const handleDelete = async (id: number, ownerId?: string) => {
+    if (!meId || meId !== ownerId) return;
+    await deleteComment(id);
   };
 
   return (
@@ -776,31 +790,35 @@ function SongCommentsInline({ songId }: { songId: number }) {
       <ul className="space-y-2">
         {comments.map((c) => {
           const isEditing = editingId === c.id; //editing
+          const mine = meId != null && String(c.user_id) === String(meId)
+
           return (
             <li key={c.id} className="flex gap-2 items-start">
               <img
                 src={c.users?.photo_url || "/default-avatar.png"}
-                alt={c.users?.username}
+                alt={c.users?.username || "user"}
                 className="w-6 h-6 rounded-full"
               />
               <div className="flex-1">
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium">{c.users?.username}</span>
+                  <span className="text-sm font-medium">{c.users?.username?? "익명"}</span>
 
                   {/* 우측 액션 */}
-                  <div className="flex gap-2 text-xs text-gray-500">
-                    {!isEditing ? (
-                      <>
-                        <button onClick={() => startEdit(c.id, c.comment)}>수정</button>
-                        <button onClick={() => deleteComment(c.id)}>삭제</button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={saveEdit} className="text-black">저장</button>
-                        <button onClick={cancelEdit}>취소</button>
-                      </>
-                    )}
-                  </div>
+                  {mine && (
+                    <div className="flex gap-2 text-xs text-gray-500">
+                      {!isEditing ? (
+                        <>
+                          <button onClick={() => startEdit(c.id, c.comment, c.user_id)}>수정</button>
+                          <button onClick={() => handleDelete(c.id, c.user_id)}>삭제</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={saveEdit} className="text-black">저장</button>
+                          <button onClick={cancelEdit}>취소</button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* 본문: 보기 vs 편집 */}

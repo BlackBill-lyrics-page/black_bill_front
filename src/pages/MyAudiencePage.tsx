@@ -10,6 +10,15 @@ import { supabase } from "../lib/supabaseClient";
 import type { UIAlbum } from "../components/AlbumList";
 import LikedAlbumDetail from "../components/LikedAlbumDetail";
 
+
+import LikedSongsList from "../components/LikedSongsList";
+import SongDetailPanel from "../components/SongDetailPanel";
+import { useSongDetail } from "../hooks/useSongDetail";
+import type { UISong } from "../components/SongList";
+import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
+import { SiApplemusic } from "react-icons/si";
+
+
 export default function MyAudiencePage() {
   const { userId, provider, nickname, photoUrl, loading, signOut, deleteAccount } =
     useMyAudienceVM();
@@ -32,6 +41,46 @@ export default function MyAudiencePage() {
 
   const [albums, setAlbums] = useState<UIAlbum[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<UIAlbum | null>(null);
+
+  const [likedSongs, setLikedSongs] = useState<UISong[]>([]);
+  const songDetail = useSongDetail();
+
+  useEffect(() => {
+  if (!userId) return;
+  (async () => {
+    const { data: liked, error: e1 } = await supabase
+      .from("song_liked").select("song_id").eq("user_id", userId);
+    if (e1) { console.error(e1); setLikedSongs([]); return; }
+
+    const ids = (liked ?? []).map(x => x.song_id).filter(Boolean);
+    if (!ids.length) { setLikedSongs([]); return; }
+
+    const { data: rows, error: e2 } = await supabase
+      .from("songs").select("id,title,song_photo,created_at").in("id", ids);
+    if (e2) { console.error(e2); setLikedSongs([]); return; }
+
+    const ui = (rows ?? []).map(r => ({
+      id: String(r.id),
+      title: r.title ?? "",
+      photoUrl: r.song_photo ?? null,
+      createdAt: r.created_at ?? null,
+    }));
+    ui.sort((a,b)=> ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
+    setLikedSongs(ui);
+  })();
+}, [userId]);
+
+  function platformMeta(p: string) {
+    const map = {
+      youtube: { label:"YouTube", Icon: FaYoutube, className:"bg-red-50 hover:bg-red-100" },
+      spotify: { label:"Spotify", Icon: FaSpotify, className:"bg-green-50 hover:bg-green-100" },
+      soundcloud:{ label:"SoundCloud", Icon: FaSoundcloud, className:"bg-orange-50 hover:bg-orange-100" },
+      applemusic:{ label:"Apple Music", Icon: SiApplemusic, className:"bg-gray-100 hover:bg-gray-200" },
+      link: { label:"Link", Icon: FaLink, className:"bg-gray-100 hover:bg-gray-200" },
+    } as const;
+    return map[(p || "link").toLowerCase()] ?? map.link;
+  }
+
 
   type AlbumRow = {
     albums: {
@@ -240,7 +289,27 @@ export default function MyAudiencePage() {
 
         {/* 콘텐츠 영역 */}
         <div className="py-8 text-sm text-gray-400">
-          {activeTab === "songs" && <div>(좋아하는 곡 리스트 예정)</div>}
+          {activeTab === "songs" &&(
+              !songDetail.openSong ? (
+                <LikedSongsList
+                  songs={likedSongs}
+                  onOpen={(s)=> songDetail.open(Number(s.id))}
+                />
+              ) : (
+                <SongDetailPanel
+                  openSong={songDetail.openSong}
+                  openLoading={songDetail.openLoading}
+                  onClose={songDetail.close}
+                  platformMeta={platformMeta}
+                  liked={songDetail.liked}
+                  likeCount={songDetail.likeCount}
+                  likeLoading={songDetail.likeLoading}
+                  onToggleLike={songDetail.toggleLike}
+                  commentCount={songDetail.commentCount}
+                  panelRef={songDetail.panelRef}
+                />
+              )
+          )}
 
           {activeTab === "books" && (
             !selectedAlbum ? (

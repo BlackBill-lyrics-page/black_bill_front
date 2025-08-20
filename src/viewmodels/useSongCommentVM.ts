@@ -15,7 +15,7 @@ export function useSongCommentVM(songId: number | null) {
 
     const { data, error } = await supabase
       .from("song_comment")
-      .select(`id, comment, updated_at, users(username, photo_url)`)
+      .select(`id, comment, updated_at, user_id, users(username, photo_url)`)
       .eq("song_id", songId)
       .order("updated_at", { ascending: false });
     if (error) setError(error.message);
