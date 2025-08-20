@@ -60,7 +60,7 @@ export default function UploadAndEditStageModal({
   initialStage,
   initialForm,
 }: UploadAndEditStageModalProps) {
-  const { submitting, handleCreate, handleUpdate } = useUploadStageVM({
+  const { submitting, handleCreate, handleUpdate, handleDelete } = useUploadStageVM({
     albumId,
     artistId,
     initialStage,
@@ -103,6 +103,18 @@ export default function UploadAndEditStageModal({
     onClose();
   };
 
+  // ✅ 삭제 버튼 동작
+  const onClickDelete = async () => {
+    if (!initialStage?.id) return;
+    if (!window.confirm("정말 삭제할까요? 이 동작은 되돌릴 수 없습니다.")) return;
+    try {
+      await handleDelete(initialStage.id);
+      onClose(); // 필요 시 여기에서 상위 상태 무효화/갱신을 트리거
+    } catch (e: any) {
+      alert(e?.message ?? "삭제에 실패했습니다.");
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5">
@@ -110,7 +122,22 @@ export default function UploadAndEditStageModal({
           <h2 className="text-lg font-semibold">
             {mode === "create" ? "무대 등록" : "무대 수정"}
           </h2>
-          <button onClick={onClose} className="px-3 py-1 rounded-xl border">닫기</button>
+
+          <div className="flex items-center gap-2">
+            {/* ✅ 편집 모드에서만 삭제 버튼 표시 */}
+            {mode === "edit" && initialStage?.id ? (
+              <button
+                onClick={onClickDelete}
+                disabled={submitting}
+                className="px-3 py-1 rounded-xl border text-red-600 border-red-200 disabled:opacity-60"
+              >
+                삭제
+              </button>
+            ) : null}
+            <button onClick={onClose} className="px-3 py-1 rounded-xl border">
+              닫기
+            </button>
+          </div>
         </div>
 
         <StageForm

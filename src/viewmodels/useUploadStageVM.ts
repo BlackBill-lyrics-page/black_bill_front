@@ -12,7 +12,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import type { StageFormValues } from "../components/stage/StageForm";
-import { createStage, updateStage, upsertVenueFromKakao } from "../hooks/stage/stageService";
+import { createStage, updateStage, deleteStage, upsertVenueFromKakao } from "../hooks/stage/stageService";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -86,5 +86,15 @@ export function useUploadStageVM({ albumId }: UseUploadStageVMArgs) {
     }
   }, []);
 
-  return { submitting, handleCreate, handleUpdate } as const;
+  // stage_info삭제 시 연동되어있던 venue테이블은 supabase의 onDelete 규칙으로 자동 삭제됨
+  const handleDelete = useCallback(async (stageId: number) => {
+    setSubmitting(true);
+    try {
+      await deleteStage(stageId);
+    } finally {
+      setSubmitting(false);
+    }
+  }, []);
+
+  return { submitting, handleCreate, handleUpdate, handleDelete } as const;
 }
