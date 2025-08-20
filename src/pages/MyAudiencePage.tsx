@@ -70,16 +70,18 @@ export default function MyAudiencePage() {
   })();
 }, [userId]);
 
-  function platformMeta(p: string) {
-    const map = {
-      youtube: { label:"YouTube", Icon: FaYoutube, className:"bg-red-50 hover:bg-red-100" },
-      spotify: { label:"Spotify", Icon: FaSpotify, className:"bg-green-50 hover:bg-green-100" },
-      soundcloud:{ label:"SoundCloud", Icon: FaSoundcloud, className:"bg-orange-50 hover:bg-orange-100" },
-      applemusic:{ label:"Apple Music", Icon: SiApplemusic, className:"bg-gray-100 hover:bg-gray-200" },
-      link: { label:"Link", Icon: FaLink, className:"bg-gray-100 hover:bg-gray-200" },
-    } as const;
-    return map[(p || "link").toLowerCase()] ?? map.link;
-  }
+  function platformMeta(p: string | null | undefined) {
+  const map = {
+    youtube: { label:"YouTube", Icon: FaYoutube, className:"bg-red-50 hover:bg-red-100" },
+    spotify: { label:"Spotify", Icon: FaSpotify, className:"bg-green-50 hover:bg-green-100" },
+    soundcloud: { label:"SoundCloud", Icon: FaSoundcloud, className:"bg-orange-50 hover:bg-orange-100" },
+    applemusic: { label:"Apple Music", Icon: SiApplemusic, className:"bg-gray-100 hover:bg-gray-200" },
+    link: { label:"Link", Icon: FaLink, className:"bg-gray-100 hover:bg-gray-200" },
+  } as const;
+
+  const key = (p ?? "link").toLowerCase() as keyof typeof map;
+  return map[key] ?? map.link;
+}
 
 
   type AlbumRow = {
