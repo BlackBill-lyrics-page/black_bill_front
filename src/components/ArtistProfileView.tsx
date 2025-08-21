@@ -2,7 +2,7 @@ import AlbumsList from "./AlbumList";
 import SongList from "./SongList";
 import type { UISong } from "./SongList";
 import type { UIAlbum } from "./AlbumList";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AlbumTracksPanel from "./AlbumTracksPanel";
 import SongDetailPanel from "./SongDetailPanel";
@@ -22,7 +22,8 @@ import { SiApplemusic} from "react-icons/si";
 
 import TextareaAutosize from "react-textarea-autosize";
 
-
+import StagePhotoStrip from "./StagePhotoStrip";
+import StagePhotosModal from "./StagePhotosModal";
 
 
 type Link = { platform: string; url: string };
@@ -109,7 +110,7 @@ export default function ArtistProfileView({
     const [stages, setStages] = useState<Array<{ id:number; title:string|null; start_at:string|null }>>([]);
     const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
 
-
+    //stage comment VM
     const {
       comments,
       count : stageCommentCount,
@@ -117,6 +118,56 @@ export default function ArtistProfileView({
       deleteComment,
       loading: stageCmtLoading,
     } = useStageCommentVM(selectedStageId);
+
+  // 전체보기 모달 on/off
+  const [openPhotos, setOpenPhotos] = useState(false);
+
+  // 포토북용 데이터 묶기 (무대별 그룹)
+  const photoGroups = useMemo(() => {
+    const meta = new Map<number, { title?: string | null; date?: string | null }>();
+    stages.forEach((s) => meta.set(s.id, { title: s.title ?? null, date: s.start_at ?? null }));
+
+    const buckets = new Map<
+      number,
+      {
+        stageId: number;
+        title?: string | null;
+        date?: string | null;
+        items: Array<{
+          id: number;
+          url: string;
+          username?: string | null;
+          naturalWidth?: number;
+          naturalHeight?: number;
+        }>;
+      }
+    >();
+
+    (comments || [])
+      .filter((c) => !!c.photo_url)
+      .forEach((c) => {
+        const sid = c.stage_id as number;
+        if (!buckets.has(sid)) {
+          const m = meta.get(sid) || {};
+          buckets.set(sid, { stageId: sid, title: m.title, date: m.date, items: [] });
+        }
+        buckets.get(sid)!.items.push({
+          id: c.id,
+          url: c.photo_url as string,
+          username: c.users?.username ?? null,
+          naturalWidth:  c.photo_w ?? undefined,   // ← DB 컬럼 사용
+          naturalHeight: c.photo_h ?? undefined,
+        });
+      });
+
+    return Array.from(buckets.values()).sort((a, b) => {
+      const ad = a.date ? +new Date(a.date) : 0;
+      const bd = b.date ? +new Date(b.date) : 0;
+      return bd - ad;
+    });
+  }, [comments, stages]);
+
+
 
     const [cmtText, setCmtText] = useState("");
     const [cmtFile, setCmtFile] = useState<File | undefined>(undefined);
@@ -262,7 +313,7 @@ export default function ArtistProfileView({
       // URL(host)도 잡아주기
       const isYtMusic =
         key.includes("youtubemusic") ||
-        key.includes("youtube music")
+        key.includes("youtube music") ||
         key.includes("music.youtube") ||   // music.youtube.com
         key.includes("youtube.com/music"); // youtube.com/music
 
@@ -641,9 +692,18 @@ export default function ArtistProfileView({
                           <span>댓글({stageCommentCount ?? 0})</span>
                         </div>
 
+                          <StagePhotoStrip
+                            comments={comments}
+                            onOpenAll={() => setOpenPhotos(true)}
+                          />
+                                                  
+                          <StagePhotosModal
+                            open={openPhotos}
+                            onClose={() => setOpenPhotos(false)}
+                            groups={photoGroups}
+                          />
 
                           <div className="mt-6 space-y-4">
-
                             {/* 댓글 리스트 */}
                             <ul className="space-y-3">
                               {comments.map((c) => (

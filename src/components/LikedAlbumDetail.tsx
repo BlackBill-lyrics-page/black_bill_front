@@ -134,7 +134,21 @@ export default function LikedAlbumDetail({
     );
 
     // stageId -> 사진들
-    const buckets = new Map<number, { stageId: number; title?: string|null; date?: string|null; items: any[] }>();
+    const buckets = new Map<
+      number,
+      {
+        stageId: number;
+        title?: string | null;
+        date?: string | null;
+        items: Array<{
+          id: number;
+          url: string;
+          username?: string | null;
+          naturalWidth?: number;
+          naturalHeight?: number;
+        }>; 
+      }
+    >();
 
     (comments || [])
       .filter((c: any) => !!c.photo_url)
@@ -148,6 +162,8 @@ export default function LikedAlbumDetail({
           id: c.id,
           url: c.photo_url as string,
           username: c.users?.username ?? null,
+          naturalWidth: c.photo_w ?? undefined,
+          naturalHeight: c.photo_h ?? undefined,
         });
       });
 

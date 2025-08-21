@@ -8,6 +8,8 @@ export type StageComment = {
   user_id: string;
   content: string;
   photo_url: string | null;
+  photo_w?: number | null;   
+  photo_h?: number | null;   
   created_at: string;
   updated_at: string;
   users?: {
@@ -66,7 +68,7 @@ export function useStageCommentVM(stageId: number | null) {
       const { data, error } = await supabase
         .from("stage_comments")
         .select(`
-          id, stage_id, user_id, content, photo_url, created_at, updated_at,
+          id, stage_id, user_id, content, photo_url, photo_w, photo_h, created_at, updated_at,
           users( username, photo_url )
         `)
         .eq("stage_id", stageId!)
@@ -100,14 +102,19 @@ export function useStageCommentVM(stageId: number | null) {
       const { data: u } = await supabase.auth.getUser();
       const userId = u?.user?.id;
 
-      console.log("👤 auth.getUser() →", u);
-      console.log("📂 userId for path →", userId);
 
       if (!userId) throw new Error("로그인이 필요합니다.");
 
       let photo_url: string | null = null;
+      let photo_w: number | null = null;   
+      let photo_h: number | null = null;  
 
       if (file) {
+
+        const {w,h}=await getImageSize(file);
+        photo_w=w;
+        photo_h=h;
+        
         // 이미지 파일 가드 (MIME이 비어있을 때를 대비해 확장자도 체크)
         const isImage =
           file.type?.startsWith("image/") ||
@@ -143,6 +150,8 @@ export function useStageCommentVM(stageId: number | null) {
         user_id: userId,
         content: content || "", // 사진만 업로드 시 빈 문자열 허용
         photo_url,
+        photo_w,
+        photo_h,
       });
       if (error) throw error;
 
@@ -206,4 +215,17 @@ export function useStageCommentVM(stageId: number | null) {
     editComment,  // 텍스트 수정
     deleteComment // row + storage 삭제
   };
+}
+
+//image size function
+async function getImageSize(file: File): Promise<{ w: number; h: number }> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();  // 이미지 로드 보장
+    return { w: img.naturalWidth || 1, h: img.naturalHeight || 1 };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
