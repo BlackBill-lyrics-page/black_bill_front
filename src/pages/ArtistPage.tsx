@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import ArtistProfileView from "../components/ArtistProfileView";
 import { useArtistFollowVM } from "../viewmodels/useArtistFollowVM";
+import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
 
 type Link = { platform: string; url: string };
 type Genre = { id: number; name: string };
@@ -14,7 +15,7 @@ type Artist = {
   instruments?: string | null;
   genres: Genre[];
   links: Link[];
-  bio : string | null;
+  bio: string | null;
 };
 
 export default function ArtistPage() {
@@ -84,7 +85,7 @@ export default function ArtistPage() {
               id: ag.genres.id,
               name: ag.genres.name,
             })),
-            bio : data.bio ?? null,
+          bio: data.bio ?? null,
         });
       }
 
@@ -105,16 +106,31 @@ export default function ArtistPage() {
   }
 
   return (
-    <ArtistProfileView
-      artist={artist}
-      isOwner={false} // 관객이므로 추가/편집 버튼 없음
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
+    <>
+      <ArtistProfileView
+        artist={artist}
+        isOwner={false} // 관객이므로 추가/편집 버튼 없음
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        followerCount={followerCount}
+        following={following}
+        followLoading={followLoading}
+        onToggleFollow={onToggleFollow}
+      />
 
-      followerCount={followerCount}
-      following={following}
-      followLoading={followLoading}
-      onToggleFollow={onToggleFollow}
-    />
+      {/* 🔧 추가: 탭별 콘텐츠. Stages일 때 캘린더 조회 전용 렌더 */}
+      {activeTab === "stages" && (
+        <div className="p-4">
+          <ArtistStagesCalendar
+            artistId={artist.id}
+            mode="viewer"           // ✅ 관객 모드
+            canEdit={false}         // ✅ 수정/삭제 비활성화
+            onItemClick={(s) => {   // ✅ (옵션) 홍보 링크 열기
+              if (s.promotion_url) window.open(s.promotion_url, "_blank");
+            }}
+          />
+        </div>
+      )}
+    </>
   );
 }
