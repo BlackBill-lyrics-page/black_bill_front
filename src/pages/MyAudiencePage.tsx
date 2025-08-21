@@ -9,7 +9,7 @@ import AlbumsList from "../components/AlbumList";
 import { supabase } from "../lib/supabaseClient";
 import type { UIAlbum } from "../components/AlbumList";
 import LikedAlbumDetail from "../components/LikedAlbumDetail";
-
+import SongCommentsInline from "../components/SongCommentsInline";
 
 import LikedSongsList from "../components/LikedSongsList";
 import SongDetailPanel from "../components/SongDetailPanel";
@@ -56,33 +56,55 @@ export default function MyAudiencePage() {
     if (!ids.length) { setLikedSongs([]); return; }
 
     const { data: rows, error: e2 } = await supabase
-      .from("songs").select("id,title,song_photo,created_at").in("id", ids);
+      .from("songs")
+      .select("id,title,song_photo,created_at, artist_id, artists(name)")
+      .in("id", ids);
     if (e2) { console.error(e2); setLikedSongs([]); return; }
-
+ 
     const ui = (rows ?? []).map(r => ({
       id: String(r.id),
       title: r.title ?? "",
       photoUrl: r.song_photo ?? null,
       createdAt: r.created_at ?? null,
-    }));
+      artistName: (r as any).artists?.name??null,
+    }))as UISong[];
     ui.sort((a,b)=> ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
     setLikedSongs(ui);
   })();
 }, [userId]);
 
   function platformMeta(p: string | null | undefined) {
-  const map = {
-    youtube: { label:"YouTube", Icon: FaYoutube, className:"bg-red-50 hover:bg-red-100" },
-    spotify: { label:"Spotify", Icon: FaSpotify, className:"bg-green-50 hover:bg-green-100" },
-    soundcloud: { label:"SoundCloud", Icon: FaSoundcloud, className:"bg-orange-50 hover:bg-orange-100" },
-    applemusic: { label:"Apple Music", Icon: SiApplemusic, className:"bg-gray-100 hover:bg-gray-200" },
-    link: { label:"Link", Icon: FaLink, className:"bg-gray-100 hover:bg-gray-200" },
-  } as const;
-
-  const key = (p ?? "link").toLowerCase() as keyof typeof map;
-  return map[key] ?? map.link;
-}
-
+    const map = {
+      youtube: {
+        label:"YouTube",
+        Icon: FaYoutube,
+        className:"bg-red-50 hover:bg-red-100 text-red-600",
+      },
+      spotify: {
+        label:"Spotify",
+        Icon: FaSpotify,
+        className:"bg-green-50 hover:bg-green-100 text-green-700",
+      },
+      soundcloud: {
+        label:"SoundCloud",
+        Icon: FaSoundcloud,
+        className:"bg-orange-50 hover:bg-orange-100 text-orange-600",
+      },
+      applemusic: {
+        label:"Apple Music",
+        Icon: SiApplemusic,
+        className:"bg-gray-100 hover:bg-gray-200 text-pink-600",
+      },
+      link: {
+        label:"Link",
+        Icon: FaLink,
+        className:"bg-gray-100 hover:bg-gray-200 text-blue-600",
+      },
+    } as const;
+  
+    const key = (p ?? "link").toLowerCase() as keyof typeof map;
+    return map[key] ?? map.link;
+  }
 
   type AlbumRow = {
     albums: {
@@ -309,6 +331,11 @@ export default function MyAudiencePage() {
                   onToggleLike={songDetail.toggleLike}
                   commentCount={songDetail.commentCount}
                   panelRef={songDetail.panelRef}
+                  commentsSlot={
+                    songDetail.openSong ? (
+                      <SongCommentsInline songId={songDetail.openSong.id} />
+                    ) : null
+                  }
                 />
               )
           )}
