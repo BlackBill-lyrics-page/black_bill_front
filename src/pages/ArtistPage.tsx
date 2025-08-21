@@ -123,6 +123,7 @@ export default function ArtistPage() {
         <div className="p-4">
           <ArtistStagesCalendar
             artistId={artist.id}
+            artistName={artist.name}
             mode="viewer"           // ✅ 관객 모드
             canEdit={false}         // ✅ 수정/삭제 비활성화
             onItemClick={(s) => {   // ✅ (옵션) 홍보 링크 열기

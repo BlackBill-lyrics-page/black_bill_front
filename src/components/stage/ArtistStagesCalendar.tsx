@@ -6,6 +6,8 @@ import utc from "dayjs/plugin/utc";
 import { supabase } from "../../lib/supabaseClient";
 import UploadAndEditStageModal from "./UploadAndEditStageModal";
 import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
+// ✅ 추가: 앨범 좋아요 버튼 (VM 내장)
+import AlbumLikeButton from "../AlbumLikeButton";
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -13,12 +15,12 @@ dayjs.extend(tz);
 type StageRow = {
   id: number;
   title: string | null;
-  start_at: string;           // UTC ISO
-  end_at: string;             // UTC ISO (DB 트리거 계산)
+  start_at: string;
+  end_at: string;
   duration_hours: number;
   promotion_url: string | null;
   album_id: number;
-  albumname?: string | null;  // join
+  albumname?: string | null;
   venue?: {
     id?: number;
     name: string | null;
@@ -28,14 +30,24 @@ type StageRow = {
   address_detail?: string | null;
 };
 
+// 🔧 변경: 좋아요 카운트는 AlbumLikeButton이 처리하므로 likeCount 제거
+type AlbumMeta = {
+  id: number;
+  name: string | null;
+  photoUrl: string | null;
+  commentCount: number; // 이 가사집의 모든 stage_comments 합
+};
+
 export default function ArtistStagesCalendar({
   artistId,
+  artistName,
   onRequestCreate,
   mode = "owner",
   canEdit = mode === "owner",
   onItemClick,
 }: {
   artistId: number;
+  artistName?: string;
   onRequestCreate?: (dateStr: string) => void;
   mode?: "owner" | "viewer";
   canEdit?: boolean;
@@ -45,7 +57,6 @@ export default function ArtistStagesCalendar({
   const [selectedDate, setSelectedDate] = useState(
     dayjs().tz("Asia/Seoul").format("YYYY-MM-DD")
   );
-
   const [reloadKey, setReloadKey] = useState(0);
 
   const range = useMemo(() => {
@@ -158,7 +169,80 @@ export default function ArtistStagesCalendar({
     setReloadKey((k) => k + 1);
   };
 
-  // 삭제 핸들러
+  // ✅ 가사집 메타(커버/댓글수)만 로드 — 좋아요 로직은 🧹 제거
+  const [albumMetaMap, setAlbumMetaMap] = useState<Map<number, AlbumMeta>>(new Map());
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const albumIds = Array.from(new Set(monthStages.map((s) => s.album_id)));
+      if (!albumIds.length) {
+        if (alive) setAlbumMetaMap(new Map());
+        return;
+      }
+
+      try {
+        // 1) 앨범 기본 정보
+        const { data: albumsRows, error: albumsErr } = await supabase
+          .from("albums")
+          .select("id, albumname, photo_url")
+          .in("id", albumIds);
+        if (albumsErr) throw albumsErr;
+
+        // 2) 이 앨범들의 stage id 모으기
+        const { data: stagesRows, error: stagesErr } = await supabase
+          .from("stage_info")
+          .select("id, album_id")
+          .in("album_id", albumIds);
+        if (stagesErr) throw stagesErr;
+
+        const stageToAlbum = new Map<number, number>();
+        (stagesRows ?? []).forEach((s: any) => {
+          stageToAlbum.set(Number(s.id), Number(s.album_id));
+        });
+        const stageIds = (stagesRows ?? []).map((s: any) => Number(s.id));
+
+        // 3) stage 댓글들 → album_id별 합산
+        let commentByAlbum: Record<number, number> = {};
+        if (stageIds.length) {
+          const { data: cRows, error: cErr } = await supabase
+            .from("stage_comments")
+            .select("stage_id")
+            .in("stage_id", stageIds);
+          if (cErr) throw cErr;
+
+          (cRows ?? []).forEach((c: any) => {
+            const aid = stageToAlbum.get(Number(c.stage_id));
+            if (aid != null) {
+              commentByAlbum[aid] = (commentByAlbum[aid] ?? 0) + 1;
+            }
+          });
+        }
+
+        // 4) Map 구성
+        const map = new Map<number, AlbumMeta>();
+        (albumsRows ?? []).forEach((a: any) => {
+          const id = Number(a.id);
+          map.set(id, {
+            id,
+            name: a.albumname ?? null,
+            photoUrl: a.photo_url ?? null,
+            commentCount: commentByAlbum[id] ?? 0,
+          });
+        });
+
+        if (alive) setAlbumMetaMap(map);
+      } catch (e: any) {
+        console.error("[album meta load error]", e);
+        if (alive) setAlbumMetaMap(new Map());
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [monthStages]);
+
   async function handleDelete(s: StageRow) {
     if (!canEdit) return;
     const ok = window.confirm(`'${s.title ?? s.albumname ?? "공연"}'을(를) 삭제할까요?`);
@@ -203,7 +287,7 @@ export default function ArtistStagesCalendar({
           </button>
         </div>
 
-        <div className="text-sm text-gray-600">{/* 필요 시 총 건수 */}</div>
+        <div className="text-sm text-gray-600" />
       </div>
 
       {/* 달력 */}
@@ -211,10 +295,8 @@ export default function ArtistStagesCalendar({
         <table className="w-full table-fixed">
           <thead className="bg-gray-50 text-gray-600 text-sm">
             <tr>
-              {["일", "월", "화", "수", "목", "금", "토"].map((w) => ( // 일요일 시작
-                <th key={w} className="py-2">
-                  {w}
-                </th>
+              {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
+                <th key={w} className="py-2">{w}</th>
               ))}
             </tr>
           </thead>
@@ -223,8 +305,7 @@ export default function ArtistStagesCalendar({
               <tr key={`w-${wi}`}>
                 {week.map((cell, di) => {
                   const dStr = cell?.format("YYYY-MM-DD");
-                  const isToday =
-                    dStr === dayjs().tz("Asia/Seoul").format("YYYY-MM-DD");
+                  const isToday = dStr === dayjs().tz("Asia/Seoul").format("YYYY-MM-DD");
                   const isSelected = dStr === selectedDate;
                   const inMonth = !!cell && cell.month() === cursor.month();
                   const count = dStr ? stagesByDay.get(dStr)?.length ?? 0 : 0;
@@ -234,8 +315,7 @@ export default function ArtistStagesCalendar({
                       {cell ? (
                         <button
                           type="button"
-                          // 🔧 변경: 날짜 클릭 시 '선택'만 수행 (생성 트리거 제거)
-                          onClick={() => setSelectedDate(dStr!)}
+                          onClick={() => setSelectedDate(dStr!)} // 날짜 선택만
                           className={[
                             "w-full h-20 p-2 text-left",
                             inMonth ? "" : "bg-gray-50",
@@ -245,9 +325,7 @@ export default function ArtistStagesCalendar({
                         >
                           <div className="text-sm">{cell.date()}</div>
                           {count > 0 && (
-                            <div className="mt-1 text-xs opacity-80">
-                              공연 {count}건
-                            </div>
+                            <div className="mt-1 text-xs opacity-80">공연 {count}건</div>
                           )}
                         </button>
                       ) : (
@@ -263,17 +341,13 @@ export default function ArtistStagesCalendar({
       </div>
 
       {/* 상태 */}
-      {loadingMonth && (
-        <div className="text-sm text-gray-500">달력 데이터를 불러오는 중…</div>
-      )}
+      {loadingMonth && <div className="text-sm text-gray-500">달력 데이터를 불러오는 중…</div>}
       {errMonth && <div className="text-sm text-red-600">{errMonth}</div>}
 
       {/* 선택된 날짜의 공연 리스트 */}
       <div className="border-t pt-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="font-semibold">
-            {dayjs(selectedDate).format("YYYY.MM.DD (ddd)")} 공연
-          </h4>
+          <h4 className="font-semibold">{dayjs(selectedDate).format("YYYY.MM.DD (ddd)")} 공연</h4>
         </div>
 
         {selectedList.length === 0 ? (
@@ -283,50 +357,67 @@ export default function ArtistStagesCalendar({
             {selectedList.map((s) => {
               const startKst = dayjs(s.start_at).tz("Asia/Seoul");
               const endKst = dayjs(s.end_at).tz("Asia/Seoul");
-              const timeLabel = `${startKst.format("HH:mm")} - ${endKst.format(
-                "HH:mm"
-              )}`;
+              const timeLabel = `${startKst.format("HH:mm")} - ${endKst.format("HH:mm")}`;
               const place =
                 s.venue?.name ??
                 s.venue?.road_address ??
                 s.venue?.formatted_address ??
                 "장소 미정";
 
+              const meta = albumMetaMap.get(s.album_id);
+
               return (
-                <li
-                  key={s.id}
-                  className="flex items-center justify-between border rounded-2xl p-3 hover:bg-gray-50"
-                >
-                  {/* 왼쪽: 정보 (클릭 시 수정/상세) */}
+                <li key={s.id} className="flex items-center justify-between border rounded-2xl p-3 hover:bg-gray-50">
+                  {/* 왼쪽(커버 + 텍스트들) */}
                   <button
                     type="button"
-                    className="min-w-0 text-left flex-1 cursor-pointer"
+                    className="flex items-center gap-3 min-w-0 text-left flex-1 cursor-pointer"
                     onClick={() => handleRowClick(s)}
                     title={canEdit ? "클릭하여 수정" : "상세 보기"}
                   >
-                    <div className="text-sm text-gray-600">{place}</div>
-                    <div className="font-medium truncate">
-                      {s.albumname ?? "가사집"}
+                    <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                      {meta?.photoUrl ? (
+                        <img src={meta.photoUrl} alt={meta.name ?? "album"} className="w-full h-full object-cover" />
+                      ) : null}
                     </div>
-                    <div className="text-sm text-gray-600">{timeLabel}</div>
+
+                    <div className="min-w-0">
+                      <div className="text-sm text-gray-600">{place}</div>
+                      <div className="font-medium truncate">{meta?.name ?? s.albumname ?? "가사집 제목"}</div>
+                      <div className="text-xs text-gray-500 truncate">{artistName ?? "아티스트"}</div>
+                    </div>
                   </button>
 
-                  {/* 오른쪽: 삭제 (오너만) */}
-                  {canEdit && (
-                    <button
-                      type="button"
-                      className="ml-3 shrink-0 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 수정 클릭과 충돌 방지
-                        void handleDelete(s);
-                      }}
-                      disabled={deletingId === s.id || submitting}
-                      aria-label="공연 삭제"
-                      title="공연 삭제"
-                    >
-                      {deletingId === s.id ? "삭제중..." : "삭제"}
-                    </button>
-                  )}
+                  {/* 오른쪽(시간 + 좋아요/댓글) */}
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="text-sm text-gray-600">{timeLabel}</div>
+
+                    {/* ✅ 추가: 좋아요 버튼(내장 VM) — album_liked 테이블을 내부에서 사용 */}
+                    <AlbumLikeButton mode="vm" albumId={s.album_id} showCount size="md" />
+
+                    {/* 댓글 요약(가사집 기준 합산) */}
+                    <div className="flex items-center gap-1 text-sm text-gray-700" title="댓글">
+                      <span>💬</span>
+                      <span>{meta?.commentCount ?? 0}</span>
+                    </div>
+
+                    {/* 오너 전용 삭제 */}
+                    {canEdit && (
+                      <button
+                        type="button"
+                        className="ml-2 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDelete(s);
+                        }}
+                        disabled={deletingId === s.id || submitting}
+                        aria-label="공연 삭제"
+                        title="공연 삭제"
+                      >
+                        {deletingId === s.id ? "삭제중..." : "삭제"}
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -369,10 +460,9 @@ function buildMonthMatrix(baseMonth: dayjs.Dayjs) {
   const start = baseMonth.startOf("month");
   const end = baseMonth.endOf("month");
 
-  // 일요일 시작: 0=일 ~ 6=토
-  const lead = start.day();
-
+  const lead = start.day(); // 0=일
   const daysInMonth = end.date();
+
   const cells: (dayjs.Dayjs | null)[] = [];
   for (let i = 0; i < lead; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
