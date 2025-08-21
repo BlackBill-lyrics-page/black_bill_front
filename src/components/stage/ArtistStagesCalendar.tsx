@@ -4,7 +4,8 @@ import dayjs from "dayjs";
 import tz from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { supabase } from "../../lib/supabaseClient";
-import UploadAndEditStageModal from "./UploadAndEditStageModal"; // ✅ 추가
+import UploadAndEditStageModal from "./UploadAndEditStageModal";
+import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -19,31 +20,34 @@ type StageRow = {
   album_id: number;
   albumname?: string | null;  // join
   venue?: {
-    id?: number;                    // ✅ 모달에 넘겨줄 때 필요할 수 있어 optional로
+    id?: number;
     name: string | null;
     road_address: string | null;
     formatted_address: string | null;
   } | null;
-  address_detail?: string | null;   // ✅ 있으면 받기(선택)
+  address_detail?: string | null;
 };
 
 export default function ArtistStagesCalendar({
   artistId,
   onRequestCreate,
+  mode = "owner",
+  canEdit = mode === "owner",
+  onItemClick,
 }: {
   artistId: number;
   onRequestCreate?: (dateStr: string) => void;
+  mode?: "owner" | "viewer";
+  canEdit?: boolean;
+  onItemClick?: (s: StageRow) => void;
 }) {
-  // 기준 월(처음엔 오늘이 속한 달), 선택 날짜
   const [cursor, setCursor] = useState(dayjs().tz("Asia/Seoul").startOf("month"));
   const [selectedDate, setSelectedDate] = useState(
     dayjs().tz("Asia/Seoul").format("YYYY-MM-DD")
   );
 
-  // ✅ 재조회 트리거
   const [reloadKey, setReloadKey] = useState(0);
 
-  // 현재 달 범위(KST 기준) → UTC ISO로 변환해 쿼리
   const range = useMemo(() => {
     const startKst = cursor.clone().startOf("month");
     const endKst = cursor.clone().endOf("month");
@@ -55,10 +59,21 @@ export default function ArtistStagesCalendar({
     };
   }, [cursor]);
 
-  // 이 달의 모든 공연
   const [monthStages, setMonthStages] = useState<StageRow[]>([]);
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [errMonth, setErrMonth] = useState<string | null>(null);
+
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const { submitting, handleDelete: vmDelete } = useUploadStageVM({
+    albumId: 0,
+    artistId,
+  });
+
+  const handleRowClick = (s: StageRow) => {
+    if (canEdit) openEdit(s);
+    else onItemClick?.(s);
+  };
 
   useEffect(() => {
     let alive = true;
@@ -66,8 +81,6 @@ export default function ArtistStagesCalendar({
       setLoadingMonth(true);
       setErrMonth(null);
       try {
-        // artist -> albums -> stage_info 조인 (artist_id로 필터)
-        // albums.id = stage_info.album_id
         const { data, error } = await supabase
           .from("stage_info")
           .select(`
@@ -115,10 +128,8 @@ export default function ArtistStagesCalendar({
     return () => {
       alive = false;
     };
-    // ✅ reloadKey 추가: 모달에서 저장/닫기 후 재조회
   }, [artistId, range.fromUtc, range.toUtc, reloadKey]);
 
-  // 날짜 → 그 날짜의 공연들 (KST로 같은 날인지 비교)
   const stagesByDay = useMemo(() => {
     const map = new Map<string, StageRow[]>();
     for (const s of monthStages) {
@@ -133,7 +144,6 @@ export default function ArtistStagesCalendar({
   const daysMatrix = useMemo(() => buildMonthMatrix(cursor), [cursor]);
   const selectedList = stagesByDay.get(selectedDate) ?? [];
 
-  // ✅ 수정 모달 상태
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<StageRow | null>(null);
 
@@ -145,8 +155,25 @@ export default function ArtistStagesCalendar({
   const closeEdit = () => {
     setEditOpen(false);
     setEditTarget(null);
-    setReloadKey((k) => k + 1); // ✅ 닫힐 때 재조회
+    setReloadKey((k) => k + 1);
   };
+
+  // 삭제 핸들러
+  async function handleDelete(s: StageRow) {
+    if (!canEdit) return;
+    const ok = window.confirm(`'${s.title ?? s.albumname ?? "공연"}'을(를) 삭제할까요?`);
+    if (!ok) return;
+
+    try {
+      setDeletingId(s.id);
+      await vmDelete(s.id);
+      setMonthStages((prev) => prev.filter((x) => x.id !== s.id));
+    } catch (e: any) {
+      setErrMonth(e?.message ?? "공연 삭제에 실패했습니다.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -184,7 +211,7 @@ export default function ArtistStagesCalendar({
         <table className="w-full table-fixed">
           <thead className="bg-gray-50 text-gray-600 text-sm">
             <tr>
-              {["월", "화", "수", "목", "금", "토", "일"].map((w) => (
+              {["일", "월", "화", "수", "목", "금", "토"].map((w) => ( // 일요일 시작
                 <th key={w} className="py-2">
                   {w}
                 </th>
@@ -207,6 +234,7 @@ export default function ArtistStagesCalendar({
                       {cell ? (
                         <button
                           type="button"
+                          // 🔧 변경: 날짜 클릭 시 '선택'만 수행 (생성 트리거 제거)
                           onClick={() => setSelectedDate(dStr!)}
                           className={[
                             "w-full h-20 p-2 text-left",
@@ -267,17 +295,38 @@ export default function ArtistStagesCalendar({
               return (
                 <li
                   key={s.id}
-                  className="flex items-center justify-between border rounded-2xl p-3 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => openEdit(s)} // ✅ 클릭 시 수정 모달 열기
-                  title="클릭하여 수정"
+                  className="flex items-center justify-between border rounded-2xl p-3 hover:bg-gray-50"
                 >
-                  <div className="min-w-0">
+                  {/* 왼쪽: 정보 (클릭 시 수정/상세) */}
+                  <button
+                    type="button"
+                    className="min-w-0 text-left flex-1 cursor-pointer"
+                    onClick={() => handleRowClick(s)}
+                    title={canEdit ? "클릭하여 수정" : "상세 보기"}
+                  >
                     <div className="text-sm text-gray-600">{place}</div>
                     <div className="font-medium truncate">
                       {s.albumname ?? "가사집"}
                     </div>
-                  </div>
-                  <div className="text-sm text-gray-600">{timeLabel}</div>
+                    <div className="text-sm text-gray-600">{timeLabel}</div>
+                  </button>
+
+                  {/* 오른쪽: 삭제 (오너만) */}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="ml-3 shrink-0 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      onClick={(e) => {
+                        e.stopPropagation(); // 수정 클릭과 충돌 방지
+                        void handleDelete(s);
+                      }}
+                      disabled={deletingId === s.id || submitting}
+                      aria-label="공연 삭제"
+                      title="공연 삭제"
+                    >
+                      {deletingId === s.id ? "삭제중..." : "삭제"}
+                    </button>
+                  )}
                 </li>
               );
             })}
@@ -285,8 +334,8 @@ export default function ArtistStagesCalendar({
         )}
       </div>
 
-      {/* ✅ 수정 모달 */}
-      {editOpen && editTarget && (
+      {/* 수정 모달 (오너만) */}
+      {canEdit && editOpen && editTarget && (
         <UploadAndEditStageModal
           open={editOpen}
           onClose={closeEdit}
@@ -315,24 +364,21 @@ export default function ArtistStagesCalendar({
   );
 }
 
-/** 월 시작을 월요일로 맞춘 6x7 매트릭스 생성 (빈칸은 null) */
+/** 월 시작을 '일요일'로 맞춘 6x7 매트릭스 생성 (빈칸은 null) */
 function buildMonthMatrix(baseMonth: dayjs.Dayjs) {
   const start = baseMonth.startOf("month");
   const end = baseMonth.endOf("month");
 
-  // dayjs().day(): 0=일 ~ 6=토. 월요일 시작으로 변환
-  const weekdayKST = (d: dayjs.Dayjs) => (d.day() + 6) % 7; // 월=0, ..., 일=6
-  const lead = weekdayKST(start); // 앞쪽 빈칸 수
-  const daysInMonth = end.date();
+  // 일요일 시작: 0=일 ~ 6=토
+  const lead = start.day();
 
+  const daysInMonth = end.date();
   const cells: (dayjs.Dayjs | null)[] = [];
   for (let i = 0; i < lead; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push(start.date(d));
   }
   while (cells.length % 7 !== 0) cells.push(null);
-
-  // 6주 보장(디자인 고정 높이용)
   while (cells.length < 42) cells.push(null);
 
   const rows: (dayjs.Dayjs | null)[][] = [];
