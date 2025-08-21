@@ -467,7 +467,7 @@ export default function ArtistStagesCalendar({
                         }}
                         title="댓글 보기/숨기기"
                       >
-                        💬 {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
+                        댓글 {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
                       </button>
 
                       {/* 오너 전용 삭제 */}
