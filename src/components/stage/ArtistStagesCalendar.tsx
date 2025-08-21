@@ -6,8 +6,12 @@ import utc from "dayjs/plugin/utc";
 import { supabase } from "../../lib/supabaseClient";
 import UploadAndEditStageModal from "./UploadAndEditStageModal";
 import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
-// ✅ 추가: 앨범 좋아요 버튼 (VM 내장)
+// ✅ 추가: 가사집 좋아요 버튼(내부에서 album_liked 사용)
 import AlbumLikeButton from "../AlbumLikeButton";
+// ✅ 추가: 무대 댓글 VM & 입력 UI
+import { useStageCommentVM } from "../../viewmodels/useStageCommentVM";
+import TextareaAutosize from "react-textarea-autosize";
+import { FiPlus, FiArrowUpRight } from "react-icons/fi";
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -15,12 +19,12 @@ dayjs.extend(tz);
 type StageRow = {
   id: number;
   title: string | null;
-  start_at: string;
-  end_at: string;
+  start_at: string;           // UTC ISO
+  end_at: string;             // UTC ISO (DB 트리거 계산)
   duration_hours: number;
   promotion_url: string | null;
   album_id: number;
-  albumname?: string | null;
+  albumname?: string | null;  // join
   venue?: {
     id?: number;
     name: string | null;
@@ -30,17 +34,18 @@ type StageRow = {
   address_detail?: string | null;
 };
 
-// 🔧 변경: 좋아요 카운트는 AlbumLikeButton이 처리하므로 likeCount 제거
+// 🔧 변경: 좋아요 카운트는 AlbumLikeButton이 처리 → 여기선 앨범 커버/제목과
+//         "앨범 단위 총 댓글 수"만 요약으로 보여줌(행 접힘 상태에서 사용)
 type AlbumMeta = {
   id: number;
   name: string | null;
   photoUrl: string | null;
-  commentCount: number; // 이 가사집의 모든 stage_comments 합
+  commentCount: number; // 해당 앨범의 모든 stage 댓글 총합
 };
 
 export default function ArtistStagesCalendar({
   artistId,
-  artistName,
+  artistName, // ✅ 추가: 리스트에 "(아티스트)" 텍스트 표기용(옵션)
   onRequestCreate,
   mode = "owner",
   canEdit = mode === "owner",
@@ -53,12 +58,16 @@ export default function ArtistStagesCalendar({
   canEdit?: boolean;
   onItemClick?: (s: StageRow) => void;
 }) {
+  // 기준 월/선택 날짜
   const [cursor, setCursor] = useState(dayjs().tz("Asia/Seoul").startOf("month"));
   const [selectedDate, setSelectedDate] = useState(
     dayjs().tz("Asia/Seoul").format("YYYY-MM-DD")
   );
+
+  // 재조회 트리거
   const [reloadKey, setReloadKey] = useState(0);
 
+  // 현재 달 범위(KST) → UTC ISO
   const range = useMemo(() => {
     const startKst = cursor.clone().startOf("month");
     const endKst = cursor.clone().endOf("month");
@@ -74,18 +83,50 @@ export default function ArtistStagesCalendar({
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [errMonth, setErrMonth] = useState<string | null>(null);
 
+  // 삭제 진행 상태
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  // VM: 생성/수정/삭제 공용(삭제는 albumId 불필요 → 0으로 전달)
   const { submitting, handleDelete: vmDelete } = useUploadStageVM({
     albumId: 0,
     artistId,
   });
 
+  // ✅ 추가: 펼쳐둔(댓글 패널 오픈) 무대 id
+  const [expandedStageId, setExpandedStageId] = useState<number | null>(null);
+
+  // ✅ 추가: 펼친 무대의 댓글 VM
+  const {
+    comments,
+    count: stageCommentCount,
+    addComment,
+    deleteComment,
+    loading: stageCmtLoading,
+  } = useStageCommentVM(expandedStageId);
+
+  // ✅ 추가: 댓글 입력 상태(현재 펼친 무대에 귀속됨)
+  const [cmtText, setCmtText] = useState("");
+  const [cmtFile, setCmtFile] = useState<File | undefined>();
+  const [cmtPreview, setCmtPreview] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    if (!cmtFile) {
+      setCmtPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(cmtFile);
+    setCmtPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [cmtFile]);
+
+  // 🔧 변경: 리스트 아이템 클릭은 기존 동작 유지(오너면 수정 모달, 아니면 상위 onItemClick)
   const handleRowClick = (s: StageRow) => {
     if (canEdit) openEdit(s);
     else onItemClick?.(s);
   };
 
+  // 월간 스테이지 로드
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -141,6 +182,7 @@ export default function ArtistStagesCalendar({
     };
   }, [artistId, range.fromUtc, range.toUtc, reloadKey]);
 
+  // 날짜별 그룹
   const stagesByDay = useMemo(() => {
     const map = new Map<string, StageRow[]>();
     for (const s of monthStages) {
@@ -155,6 +197,7 @@ export default function ArtistStagesCalendar({
   const daysMatrix = useMemo(() => buildMonthMatrix(cursor), [cursor]);
   const selectedList = stagesByDay.get(selectedDate) ?? [];
 
+  // 수정 모달
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<StageRow | null>(null);
 
@@ -169,7 +212,7 @@ export default function ArtistStagesCalendar({
     setReloadKey((k) => k + 1);
   };
 
-  // ✅ 가사집 메타(커버/댓글수)만 로드 — 좋아요 로직은 🧹 제거
+  // ✅ 추가: 앨범 메타(커버, 앨범 단위 총 댓글수) 배치 로드
   const [albumMetaMap, setAlbumMetaMap] = useState<Map<number, AlbumMeta>>(new Map());
 
   useEffect(() => {
@@ -189,7 +232,7 @@ export default function ArtistStagesCalendar({
           .in("id", albumIds);
         if (albumsErr) throw albumsErr;
 
-        // 2) 이 앨범들의 stage id 모으기
+        // 2) 앨범들의 stage id 수집
         const { data: stagesRows, error: stagesErr } = await supabase
           .from("stage_info")
           .select("id, album_id")
@@ -202,7 +245,7 @@ export default function ArtistStagesCalendar({
         });
         const stageIds = (stagesRows ?? []).map((s: any) => Number(s.id));
 
-        // 3) stage 댓글들 → album_id별 합산
+        // 3) stage_comments를 album_id로 합산
         let commentByAlbum: Record<number, number> = {};
         if (stageIds.length) {
           const { data: cRows, error: cErr } = await supabase
@@ -219,7 +262,6 @@ export default function ArtistStagesCalendar({
           });
         }
 
-        // 4) Map 구성
         const map = new Map<number, AlbumMeta>();
         (albumsRows ?? []).forEach((a: any) => {
           const id = Number(a.id);
@@ -243,6 +285,7 @@ export default function ArtistStagesCalendar({
     };
   }, [monthStages]);
 
+  // 삭제
   async function handleDelete(s: StageRow) {
     if (!canEdit) return;
     const ok = window.confirm(`'${s.title ?? s.albumname ?? "공연"}'을(를) 삭제할까요?`);
@@ -252,12 +295,23 @@ export default function ArtistStagesCalendar({
       setDeletingId(s.id);
       await vmDelete(s.id);
       setMonthStages((prev) => prev.filter((x) => x.id !== s.id));
+      if (expandedStageId === s.id) setExpandedStageId(null);
     } catch (e: any) {
       setErrMonth(e?.message ?? "공연 삭제에 실패했습니다.");
     } finally {
       setDeletingId(null);
     }
   }
+
+  // ✅ 추가: 댓글 전송
+  const handleSubmitStageComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!expandedStageId) return;
+    if (!cmtText.trim() && !cmtFile) return;
+    await addComment(cmtText, cmtFile);
+    setCmtText("");
+    setCmtFile(undefined);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -290,7 +344,7 @@ export default function ArtistStagesCalendar({
         <div className="text-sm text-gray-600" />
       </div>
 
-      {/* 달력 */}
+      {/* 달력 (❗주의: 일요일 시작) */}
       <div className="rounded-2xl border overflow-hidden">
         <table className="w-full table-fixed">
           <thead className="bg-gray-50 text-gray-600 text-sm">
@@ -315,7 +369,7 @@ export default function ArtistStagesCalendar({
                       {cell ? (
                         <button
                           type="button"
-                          onClick={() => setSelectedDate(dStr!)} // 날짜 선택만
+                          onClick={() => setSelectedDate(dStr!)} // 🔧 변경: 날짜 선택만(모달 X)
                           className={[
                             "w-full h-20 p-2 text-left",
                             inMonth ? "" : "bg-gray-50",
@@ -365,59 +419,195 @@ export default function ArtistStagesCalendar({
                 "장소 미정";
 
               const meta = albumMetaMap.get(s.album_id);
+              const isExpanded = expandedStageId === s.id;
 
               return (
-                <li key={s.id} className="flex items-center justify-between border rounded-2xl p-3 hover:bg-gray-50">
-                  {/* 왼쪽(커버 + 텍스트들) */}
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 min-w-0 text-left flex-1 cursor-pointer"
-                    onClick={() => handleRowClick(s)}
-                    title={canEdit ? "클릭하여 수정" : "상세 보기"}
-                  >
-                    <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                      {meta?.photoUrl ? (
-                        <img src={meta.photoUrl} alt={meta.name ?? "album"} className="w-full h-full object-cover" />
-                      ) : null}
-                    </div>
+                <li key={s.id} className="border rounded-2xl">
+                  {/* 상단 행 */}
+                  <div className="flex items-center justify-between p-3 hover:bg-gray-50">
+                    {/* 왼쪽(커버 + 텍스트들) */}
+                    <button
+                      type="button"
+                      className="flex items-center gap-3 min-w-0 text-left flex-1 cursor-pointer"
+                      onClick={() => handleRowClick(s)}
+                      title={canEdit ? "클릭하여 수정" : "상세 보기"}
+                    >
+                      {/* 커버 */}
+                      <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                        {meta?.photoUrl ? (
+                          <img src={meta.photoUrl} alt={meta.name ?? "album"} className="w-full h-full object-cover" />
+                        ) : null}
+                      </div>
 
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-600">{place}</div>
-                      <div className="font-medium truncate">{meta?.name ?? s.albumname ?? "가사집 제목"}</div>
-                      <div className="text-xs text-gray-500 truncate">{artistName ?? "아티스트"}</div>
-                    </div>
-                  </button>
+                      {/* 텍스트 */}
+                      <div className="min-w-0">
+                        <div className="text-sm text-gray-600">{place}</div>
+                        <div className="font-medium truncate">{meta?.name ?? s.albumname ?? "가사집 제목"}</div>
+                        <div className="text-xs text-gray-500 truncate">{artistName ?? "아티스트"}</div>
+                      </div>
+                    </button>
 
-                  {/* 오른쪽(시간 + 좋아요/댓글) */}
-                  <div className="flex items-center gap-4 shrink-0">
-                    <div className="text-sm text-gray-600">{timeLabel}</div>
+                    {/* 오른쪽(시간 + 좋아요/댓글 + 삭제) */}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-sm text-gray-600">{timeLabel}</div>
 
-                    {/* ✅ 추가: 좋아요 버튼(내장 VM) — album_liked 테이블을 내부에서 사용 */}
-                    <AlbumLikeButton mode="vm" albumId={s.album_id} showCount size="md" />
+                      {/* ✅ 좋아요(가사집 단위) → album_liked 테이블 사용 */}
+                      <AlbumLikeButton mode="vm" albumId={s.album_id} showCount size="md" />
 
-                    {/* 댓글 요약(가사집 기준 합산) */}
-                    <div className="flex items-center gap-1 text-sm text-gray-700" title="댓글">
-                      <span>💬</span>
-                      <span>{meta?.commentCount ?? 0}</span>
-                    </div>
-
-                    {/* 오너 전용 삭제 */}
-                    {canEdit && (
+                      {/* ✅ 댓글 버튼(무대 단위) : 접힘/펼침 토글 */}
                       <button
                         type="button"
-                        className="ml-2 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        className="px-2 py-1 text-sm rounded-lg border hover:bg-gray-50"
                         onClick={(e) => {
                           e.stopPropagation();
-                          void handleDelete(s);
+                          const next = isExpanded ? null : s.id;
+                          setExpandedStageId(next);
+                          setCmtText("");
+                          setCmtFile(undefined);
                         }}
-                        disabled={deletingId === s.id || submitting}
-                        aria-label="공연 삭제"
-                        title="공연 삭제"
+                        title="댓글 보기/숨기기"
                       >
-                        {deletingId === s.id ? "삭제중..." : "삭제"}
+                        💬 {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
                       </button>
-                    )}
+
+                      {/* 오너 전용 삭제 */}
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="ml-2 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDelete(s);
+                          }}
+                          disabled={deletingId === s.id || submitting}
+                          aria-label="공연 삭제"
+                          title="공연 삭제"
+                        >
+                          {deletingId === s.id ? "삭제중..." : "삭제"}
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {/* ✅ 댓글 패널 (펼친 경우) */}
+                  {isExpanded && (
+                    <div className="px-3 pb-4">
+                      {/* 댓글 리스트 */}
+                      {stageCmtLoading ? (
+                        <div className="text-sm text-gray-500 px-1">댓글 불러오는 중…</div>
+                      ) : comments.length === 0 ? (
+                        <div className="text-sm text-gray-500 px-1">아직 댓글이 없습니다.</div>
+                      ) : (
+                        <ul className="space-y-3 mt-2">
+                          {comments.map((c) => (
+                            <li key={c.id} className="border-b pb-3">
+                              {/* 헤더 */}
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    src={c.users?.photo_url || "/default-avatar.png"}
+                                    alt={c.users?.username || "user"}
+                                    className="w-6 h-6 rounded-full object-cover"
+                                  />
+                                  <span className="text-sm font-medium text-gray-800">
+                                    {c.users?.username ?? ""}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-400">{c.updated_at}</span>
+                              </div>
+
+                              {/* 이미지 */}
+                              {c.photo_url && (
+                                <div className="mt-2">
+                                  <img
+                                    src={c.photo_url}
+                                    alt="첨부 이미지"
+                                    className="max-h-64 rounded-lg border object-contain"
+                                  />
+                                </div>
+                              )}
+
+                              {/* 본문 */}
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                                {c.content}
+                              </div>
+
+                              {/* 삭제(권한 검증은 VM 내부 정책에 따름) */}
+                              <button
+                                onClick={() => deleteComment(c.id)}
+                                className="text-xs text-gray-500 mt-2"
+                              >
+                                삭제
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* 댓글 입력폼 */}
+                      <form
+                        onSubmit={handleSubmitStageComment}
+                        onDragOver={(e)=>{e.preventDefault(); setDragOver(true);}}
+                        onDragLeave={()=>setDragOver(false)}
+                        onDrop={(e)=>{
+                          e.preventDefault(); setDragOver(false);
+                          const f = Array.from(e.dataTransfer.files || []).find(f => f.type.startsWith("image/"));
+                          if (f) setCmtFile(f);
+                        }}
+                        className={`mt-3 flex items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""}`}
+                      >
+                        {/* 이미지 업로드 버튼 */}
+                        <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
+                          <FiPlus className="w-5 h-5"/>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => setCmtFile(e.target.files?.[0])}
+                          />
+                        </label>
+
+                        {/* 미리보기 */}
+                        {cmtPreview && (
+                          <div className="relative ml-1 shrink-0">
+                            <img
+                              src={cmtPreview}
+                              alt="preview"
+                              className="w-16 h-16 rounded-xl object-cover bg-gray-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCmtFile(undefined)}
+                              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] leading-none"
+                              aria-label="미리보기 제거"
+                              title="미리보기 제거"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+
+                        {/* 입력창 */}
+                        <TextareaAutosize
+                          value={cmtText}
+                          onChange={(e) => setCmtText(e.target.value)}
+                          placeholder="이미지를 드래그, 또는 댓글을 작성해주세요."
+                          className="flex-1 rounded px-3 py-2 text-sm"
+                          minRows={1}
+                          onKeyDown={(e)=>{
+                            if (e.key === "Enter" && !e.shiftKey){
+                              e.preventDefault();
+                              (e.currentTarget.form as HTMLFormElement).requestSubmit();
+                            }
+                          }}
+                        />
+                        {/* 전송 */}
+                        <button type="submit" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white mr-1 ">
+                          <FiArrowUpRight className="w-5 h-5"/>
+                        </button>
+                      </form>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -455,25 +645,20 @@ export default function ArtistStagesCalendar({
   );
 }
 
-/** 월 시작을 '일요일'로 맞춘 6x7 매트릭스 생성 (빈칸은 null) */
+/** 🔧 변경: '일요일' 시작 6x7 매트릭스 (빈칸은 null) */
 function buildMonthMatrix(baseMonth: dayjs.Dayjs) {
   const start = baseMonth.startOf("month");
   const end = baseMonth.endOf("month");
-
-  const lead = start.day(); // 0=일
+  const lead = start.day(); // 0=일 ~ 6=토
   const daysInMonth = end.date();
 
   const cells: (dayjs.Dayjs | null)[] = [];
   for (let i = 0; i < lead; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push(start.date(d));
-  }
+  for (let d = 1; d <= daysInMonth; d++) cells.push(start.date(d));
   while (cells.length % 7 !== 0) cells.push(null);
   while (cells.length < 42) cells.push(null);
 
   const rows: (dayjs.Dayjs | null)[][] = [];
-  for (let i = 0; i < cells.length; i += 7) {
-    rows.push(cells.slice(i, i + 7));
-  }
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
   return rows;
 }

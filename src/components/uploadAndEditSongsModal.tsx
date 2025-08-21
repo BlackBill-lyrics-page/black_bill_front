@@ -1,4 +1,4 @@
-// MyArtistPage에서 아티스트가 곡을 업로드/수정하는 모달 컴포넌트
+// components/uploadAndEditSongsModal.tsx
 import type { FormEvent } from "react";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";
@@ -11,30 +11,27 @@ type Props = {
 
 export default function UploadSongsModal({ isOpen, onClose, initialSong = null }: Props) {
   const {
-    // 기본 텍스트들
     title, setTitle,
     lyrics, setLyrics,
     bio, setBio,
 
-    // 대표 링크
     songLink, setSongLink,
 
-    // ✅ 사진 업로드/미리보기
-    songPhoto,                // 미리보기/저장될 URL (VM이 알아서 채움)
-    setSongPhoto,             // 필요시 수동 초기화용 (선택)
-    songPhotoFile,            // 현재 선택된 파일(없으면 null)
-    setSongPhotoFile,         // <input type="file"> onChange에서 사용
+    songPhoto,
+    setSongPhoto,
+    songPhotoFile,
+    setSongPhotoFile,
 
-    // ✅ SNS/플랫폼 링크 리스트 편집
     links,
     addLink,
     updateLink,
     removeLink,
 
-    // 저장
     loading,
     handleSubmit,
-  } = useUploadSongsVM(initialSong ?? null);
+    // deleteCurrentSong, // 필요 시 노출
+    // 🔧 Changed: VM 호출 시 watchKey로 isOpen 전달 → 열릴 때마다 동기화 보장
+  } = useUploadSongsVM(initialSong ?? null, { watchKey: isOpen }); // ✅ Added
 
   if (!isOpen) return null;
   const isEdit = !!initialSong?.id;
@@ -99,11 +96,10 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
             />
           </div>
 
-          {/* ✅ 곡 사진 업로드 + 미리보기 */}
+          {/* 곡 사진 업로드 + 미리보기 */}
           <div className="space-y-2">
             <label className="text-sm font-medium">곡 사진 (커버/썸네일)</label>
             <div className="flex items-center gap-3">
-              {/* 미리보기 썸네일 */}
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
                 {songPhoto ? (
                   <img
@@ -118,7 +114,6 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
                 )}
               </div>
 
-              {/* 파일 선택 */}
               <div className="flex-1">
                 <input
                   type="file"
@@ -126,8 +121,8 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
                   onChange={(e) => {
                     const f = e.target.files?.[0] ?? null;
                     setSongPhotoFile(f);
-                    // 필요 시 기존 미리보기 초기화:
-                    if (!f && !initialSong?.song_photo) setSongPhoto("");
+                    // 🔧 Changed: 파일이 해제되면 기존 initialSong 사진 유지하도록 보정
+                    if (!f) setSongPhoto(initialSong?.song_photo ?? "");
                   }}
                   className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-black"
                   disabled={loading}
@@ -139,8 +134,7 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
             </div>
           </div>
 
-
-          {/* ✅ 음원 링크 (YouTube/Spotify/SoundCloud 등) */}
+          {/* 음원 링크 */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">음원 링크</label>
@@ -200,7 +194,6 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
             </div>
           </div>
 
-
           {/* 버튼들 */}
           <div className="flex justify-end gap-2 pt-1">
             <button
@@ -213,7 +206,8 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
             </button>
             <button
               type="submit"
-              className={`rounded-md px-4 py-2 text-sm text-white ${loading ? "bg-gray-700" : "bg-gray-900 hover:bg-black"} disabled:opacity-60`}
+              className={`rounded-md px-4 py-2 text-sm text-white ${loading ? "bg-gray-700" : "bg-gray-900 hover:bg-black"
+                } disabled:opacity-60`}
               disabled={loading}
             >
               {loading ? "저장 중..." : isEdit ? "수정하기" : "업로드"}
