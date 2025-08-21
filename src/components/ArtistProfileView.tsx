@@ -661,7 +661,7 @@ export default function ArtistProfileView({
                                       </span>
                                     </div>
                                     <span className="text-xs text-gray-400">
-                                      {c.updated_at}
+                                      {c.updated_at ? new Date(c.updated_at).toLocaleDateString():""}
                                     </span>
 
                                   </div>
@@ -900,7 +900,7 @@ function SongCommentsInline({ songId }: { songId: number }) {
                 )}
 
                 <span className="text-xs text-gray-400">
-                  {new Date(c.updated_at).toLocaleString()} 
+                  {new Date(c.updated_at).toLocaleDateString()} 
                 </span>
               </div>
             </li>

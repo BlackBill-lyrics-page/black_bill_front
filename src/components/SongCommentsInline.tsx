@@ -103,7 +103,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
                 )}
 
                 <span className="text-xs text-gray-400">
-                  {new Date(c.updated_at).toLocaleString()}
+                  {new Date(c.updated_at).toLocaleDateString()}
                 </span>
               </div>
             </li>

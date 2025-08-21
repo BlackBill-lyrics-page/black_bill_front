@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import AlbumTracksPanel from "./AlbumTracksPanel";
 import AlbumLikeButton from "./AlbumLikeButton";
@@ -10,6 +10,9 @@ import SongDetailPanel from "./SongDetailPanel";
 import { useSongDetail } from "../hooks/useSongDetail";
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
 import { SiApplemusic } from "react-icons/si";
+
+import StagePhotoStrip from "./StagePhotoStrip";
+import StagePhotosModal from "./StagePhotosModal";
 
 import melonPng from "../assets/melon.png";
 import ytMusicPng from "../assets/youtubemusic.png";
@@ -120,6 +123,43 @@ export default function LikedAlbumDetail({
     };
   };
 
+  //photobook modal 
+  const [openPhotos, setOpenPhotos] = useState(false); 
+
+  const photoGroups = useMemo(() => {
+    // stageId -> 메타
+    const meta = new Map<number, { title?: string|null; date?: string|null }>();
+    stages.forEach((s) =>
+      meta.set(s.id, { title: s.title ?? null, date: s.start_at ?? null })
+    );
+
+    // stageId -> 사진들
+    const buckets = new Map<number, { stageId: number; title?: string|null; date?: string|null; items: any[] }>();
+
+    (comments || [])
+      .filter((c: any) => !!c.photo_url)
+      .forEach((c: any) => {
+        const sid = c.stage_id as number; // 필드명 확인
+        if (!buckets.has(sid)) {
+          const m = meta.get(sid) || {};
+          buckets.set(sid, { stageId: sid, title: m.title, date: m.date, items: [] });
+        }
+        buckets.get(sid)!.items.push({
+          id: c.id,
+          url: c.photo_url as string,
+          username: c.users?.username ?? null,
+        });
+      });
+
+
+
+    // 날짜 최신 순으로 섹션 정렬(선택)
+    return Array.from(buckets.values()).sort((a, b) => {
+      const ad = a.date ? +new Date(a.date) : 0;
+      const bd = b.date ? +new Date(b.date) : 0;
+      return bd - ad;
+    });
+  }, [comments, stages]);
 
   type AlbumWithArtist = {
     id: number;
@@ -274,6 +314,17 @@ export default function LikedAlbumDetail({
             </div>
           )}
 
+          <StagePhotoStrip
+            comments={comments}
+            onOpenAll={() => setOpenPhotos(true)}
+          />
+
+          <StagePhotosModal
+            open={openPhotos}
+            onClose={() => setOpenPhotos(false)}
+            groups={photoGroups}
+          />
+
           {/* 댓글 리스트 */}
           <ul className="space-y-3">
             {comments.map((c) => (
@@ -289,7 +340,9 @@ export default function LikedAlbumDetail({
                       {c.users?.username ?? ""}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">{c.updated_at}</span>
+                  <span className="text-xs text-gray-400">
+                    {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
+                  </span>
                 </div>
 
                 {c.photo_url && (
