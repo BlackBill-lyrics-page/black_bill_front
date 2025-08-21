@@ -18,6 +18,19 @@ import type { UISong } from "../components/SongList";
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
 import { SiApplemusic } from "react-icons/si";
 
+import melonPng from "../assets/melon.png";
+import ytMusicPng from "../assets/youtubemusic.png";
+
+type IconLike = React.ComponentType<{ className?: string }>;
+const makeImgIcon = (src: string, alt: string): IconLike => {
+  const ImgIcon: IconLike = ({ className }) => (
+    <img src={src} alt={alt} className={className} />
+  );
+  return ImgIcon;
+};
+
+const YoutubeMusicIcon = makeImgIcon(ytMusicPng, "YouTube Music");
+const MelonIcon = makeImgIcon(melonPng, "Melon");
 
 export default function MyAudiencePage() {
   const { userId, provider, nickname, photoUrl, loading, signOut, deleteAccount } =
@@ -74,36 +87,69 @@ export default function MyAudiencePage() {
 }, [userId]);
 
   function platformMeta(p: string | null | undefined) {
-    const map = {
-      youtube: {
-        label:"YouTube",
+    const key = (p ?? "").toLowerCase();
+
+    // YouTube Music: 키워드 + 호스트까지 대응
+    const isYtMusic =
+      key.includes("youtubemusic") ||
+      key.includes("youtube music")||
+      key.includes("music.youtube") ||   // e.g. https://music.youtube.com/...
+      key.includes("youtube.com/music"); // e.g. https://youtube.com/music/...
+
+    if (isYtMusic) {
+      return {
+        label: "YouTube Music",
+        Icon: YoutubeMusicIcon, // ← 이미지 아이콘을 컴포넌트로
+        className: "bg-red-50 hover:bg-red-100 text-red-600",
+      };
+    }
+
+    if (key.includes("youtube")) {
+      return {
+        label: "YouTube",
         Icon: FaYoutube,
-        className:"bg-red-50 hover:bg-red-100 text-red-600",
-      },
-      spotify: {
-        label:"Spotify",
+        className: "bg-red-50 hover:bg-red-100 text-red-600",
+      };
+    }
+
+    if (key.includes("spotify") || key.includes("open.spotify")) {
+      return {
+        label: "Spotify",
         Icon: FaSpotify,
-        className:"bg-green-50 hover:bg-green-100 text-green-700",
-      },
-      soundcloud: {
-        label:"SoundCloud",
-        Icon: FaSoundcloud,
-        className:"bg-orange-50 hover:bg-orange-100 text-orange-600",
-      },
-      applemusic: {
-        label:"Apple Music",
+        className: "bg-green-50 hover:bg-green-100 text-green-700",
+      };
+    }
+
+    if (key.includes("apple")) {
+      return {
+        label: "Apple Music",
         Icon: SiApplemusic,
-        className:"bg-gray-100 hover:bg-gray-200 text-pink-600",
-      },
-      link: {
-        label:"Link",
-        Icon: FaLink,
-        className:"bg-gray-100 hover:bg-gray-200 text-blue-600",
-      },
-    } as const;
-  
-    const key = (p ?? "link").toLowerCase() as keyof typeof map;
-    return map[key] ?? map.link;
+        className: "bg-gray-50 hover:bg-gray-100 text-gray-800",
+      };
+    }
+
+    if (key.includes("sound")) {
+      return {
+        label: "SoundCloud",
+        Icon: FaSoundcloud,
+        className: "bg-orange-50 hover:bg-orange-100 text-orange-700",
+      };
+    }
+
+    // Melon: 키워드 + 호스트 대응
+    if (key.includes("melon") || key.includes("melon.co")) {
+      return {
+        label: "Melon",
+        Icon: MelonIcon, // ← 이미지 아이콘을 컴포넌트로
+        className: "bg-emerald-50 hover:bg-emerald-100 text-emerald-700",
+      };
+    }
+
+    return {
+      label: p || "Link",
+      Icon: FaLink,
+      className: "bg-gray-50 hover:bg-gray-100 text-blue-600",
+    };
   }
 
   type AlbumRow = {

@@ -154,6 +154,7 @@ const SetProfileArtist = () => {
           >
             <option value="instagram">Instagram</option>
             <option value="youtube">YouTube</option>
+            <option value="youtube">YouTube Music</option>
             <option value="soundcloud">Soundcloud</option>
             <option value="bandcamp">Bandcamp</option>
             <option value="tiktok">TikTok</option>

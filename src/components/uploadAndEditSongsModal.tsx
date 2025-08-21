@@ -167,6 +167,7 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
                     disabled={loading}
                   >
                     <option>YouTube</option>
+                    <option>YouTube Music</option>
                     <option>Spotify</option>
                     <option>SoundCloud</option>
                     <option>Apple Music</option>
