@@ -11,7 +11,21 @@ import { useSongDetail } from "../hooks/useSongDetail";
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
 import { SiApplemusic } from "react-icons/si";
 
+import melonPng from "../assets/melon.png";
+import ytMusicPng from "../assets/youtubemusic.png";
+
 type UIAlbum = { id: string; name: string; photoUrl?: string | null };
+
+type IconLike = React.ComponentType<{ className?: string }>;
+const makeImgIcon = (src: string, alt: string): IconLike => {
+  const ImgIcon: IconLike = ({ className }) => (
+    <img src={src} alt={alt} className={className} />
+  );
+  return ImgIcon;
+};
+
+const YoutubeMusicIcon = makeImgIcon(ytMusicPng, "YouTube Music");
+const MelonIcon = makeImgIcon(melonPng, "Melon");
 
 export default function LikedAlbumDetail({
   album,
@@ -48,13 +62,65 @@ export default function LikedAlbumDetail({
   } = useSongDetail();
 
   const platformMeta = (p: string) => {
-    const key = (p || "").toLowerCase();
-    if (key.includes("youtube")) return { label: "YouTube", Icon: FaYoutube, className: "bg-red-50 text-red-600" };
-    if (key.includes("spotify")) return { label: "Spotify", Icon: FaSpotify, className: "bg-green-50 text-green-700" };
-    if (key.includes("apple")) return { label: "Apple Music", Icon: SiApplemusic, className: "bg-gray-50 text-gray-800" };
-    if (key.includes("sound")) return { label: "SoundCloud", Icon: FaSoundcloud, className: "bg-orange-50 text-orange-700" };
-    return { label: p || "Link", Icon: FaLink, className: "bg-blue-50 text-blue-700" };
+    const key = (p ?? "").toLowerCase();
+
+    // ✅ URL(host)도 잡아주기
+    const isYtMusic =
+      key.includes("youtubemusic") ||
+      key.includes("youtube music") ||
+      key.includes("music.youtube") ||   // music.youtube.com
+      key.includes("youtube.com/music"); // youtube.com/music
+
+    if (isYtMusic)
+      return {
+        label: "YouTube Music",
+        Icon: YoutubeMusicIcon,
+        className: "bg-red-50 hover:bg-red-100 text-red-600",
+      };
+
+    if (key.includes("youtube"))
+      return {
+        label: "YouTube",
+        Icon: FaYoutube,
+        className: "bg-red-50 hover:bg-red-100 text-red-600",
+      };
+
+    if (key.includes("spotify"))
+      return {
+        label: "Spotify",
+        Icon: FaSpotify,
+        className: "bg-green-50 hover:bg-green-100 text-green-700",
+      };
+
+    if (key.includes("apple"))
+      return {
+        label: "Apple Music",
+        Icon: SiApplemusic,
+        className: "bg-gray-50 hover:bg-gray-100 text-gray-800",
+      };
+
+    if (key.includes("sound"))
+      return {
+        label: "SoundCloud",
+        Icon: FaSoundcloud,
+        className: "bg-orange-50 hover:bg-orange-100 text-orange-700",
+      };
+
+    if (key.includes("melon"))
+      return {
+        label: "Melon",
+        Icon: MelonIcon,
+        className: "bg-emerald-50 hover:bg-emerald-100 text-emerald-700",
+      };
+
+    return {
+      label: p || "Link",
+      Icon: FaLink,
+      className: "bg-blue-50 hover:bg-blue-100 text-blue-700",
+    };
   };
+
+
   type AlbumWithArtist = {
     id: number;
     albumname: string;

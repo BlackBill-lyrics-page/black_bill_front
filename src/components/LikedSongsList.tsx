@@ -27,6 +27,9 @@ export default function LikedSongsList({
             )}
             <div className="min-w-0">
               <div className="font-medium truncate">{s.title || "(제목 없음)"}</div>
+              <div className="text-xs text-gray-500 truncate">
+                {s.artistName ?? "(아티스트 미상)"}
+              </div>
             </div>
           </div>
         </li>

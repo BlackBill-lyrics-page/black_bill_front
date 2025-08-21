@@ -10,6 +10,7 @@ export type UISong = {
     title: string;
     photoUrl?: string | null;
     createdAt?: string | null;
+    artistName?: string | null;
 };
 
 export default function SongList({

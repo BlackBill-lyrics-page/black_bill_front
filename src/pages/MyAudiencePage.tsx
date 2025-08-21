@@ -9,7 +9,9 @@ import AlbumsList from "../components/AlbumList";
 import { supabase } from "../lib/supabaseClient";
 import type { UIAlbum } from "../components/AlbumList";
 import LikedAlbumDetail from "../components/LikedAlbumDetail";
-
+import SongCommentsInline from "../components/SongCommentsInline";
+import { useFollowedArtists } from "../hooks/useFollowedArtists";
+import FollowedArtistsGrid from "../components/FollowedArtistsGrid";
 
 import LikedSongsList from "../components/LikedSongsList";
 import SongDetailPanel from "../components/SongDetailPanel";
@@ -18,6 +20,19 @@ import type { UISong } from "../components/SongList";
 import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
 import { SiApplemusic } from "react-icons/si";
 
+import melonPng from "../assets/melon.png";
+import ytMusicPng from "../assets/youtubemusic.png";
+
+type IconLike = React.ComponentType<{ className?: string }>;
+const makeImgIcon = (src: string, alt: string): IconLike => {
+  const ImgIcon: IconLike = ({ className }) => (
+    <img src={src} alt={alt} className={className} />
+  );
+  return ImgIcon;
+};
+
+const YoutubeMusicIcon = makeImgIcon(ytMusicPng, "YouTube Music");
+const MelonIcon = makeImgIcon(melonPng, "Melon");
 
 export default function MyAudiencePage() {
   const { userId, provider, nickname, photoUrl, loading, signOut, deleteAccount } =
@@ -42,6 +57,8 @@ export default function MyAudiencePage() {
   const [albums, setAlbums] = useState<UIAlbum[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<UIAlbum | null>(null);
 
+  const { artists: followedArtists, loading: loadingArtists } = useFollowedArtists(userId); // myartist grid
+
   const [likedSongs, setLikedSongs] = useState<UISong[]>([]);
   const songDetail = useSongDetail();
 
@@ -56,33 +73,88 @@ export default function MyAudiencePage() {
     if (!ids.length) { setLikedSongs([]); return; }
 
     const { data: rows, error: e2 } = await supabase
-      .from("songs").select("id,title,song_photo,created_at").in("id", ids);
+      .from("songs")
+      .select("id,title,song_photo,created_at, artist_id, artists(name)")
+      .in("id", ids);
     if (e2) { console.error(e2); setLikedSongs([]); return; }
-
+ 
     const ui = (rows ?? []).map(r => ({
       id: String(r.id),
       title: r.title ?? "",
       photoUrl: r.song_photo ?? null,
       createdAt: r.created_at ?? null,
-    }));
+      artistName: (r as any).artists?.name??null,
+    }))as UISong[];
     ui.sort((a,b)=> ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
     setLikedSongs(ui);
   })();
 }, [userId]);
 
   function platformMeta(p: string | null | undefined) {
-  const map = {
-    youtube: { label:"YouTube", Icon: FaYoutube, className:"bg-red-50 hover:bg-red-100" },
-    spotify: { label:"Spotify", Icon: FaSpotify, className:"bg-green-50 hover:bg-green-100" },
-    soundcloud: { label:"SoundCloud", Icon: FaSoundcloud, className:"bg-orange-50 hover:bg-orange-100" },
-    applemusic: { label:"Apple Music", Icon: SiApplemusic, className:"bg-gray-100 hover:bg-gray-200" },
-    link: { label:"Link", Icon: FaLink, className:"bg-gray-100 hover:bg-gray-200" },
-  } as const;
+    const key = (p ?? "").toLowerCase();
 
-  const key = (p ?? "link").toLowerCase() as keyof typeof map;
-  return map[key] ?? map.link;
-}
+    // YouTube Music: 키워드 + 호스트까지 대응
+    const isYtMusic =
+      key.includes("youtubemusic") ||
+      key.includes("youtube music")||
+      key.includes("music.youtube") ||   // e.g. https://music.youtube.com/...
+      key.includes("youtube.com/music"); // e.g. https://youtube.com/music/...
 
+    if (isYtMusic) {
+      return {
+        label: "YouTube Music",
+        Icon: YoutubeMusicIcon, // ← 이미지 아이콘을 컴포넌트로
+        className: "bg-red-50 hover:bg-red-100 text-red-600",
+      };
+    }
+
+    if (key.includes("youtube")) {
+      return {
+        label: "YouTube",
+        Icon: FaYoutube,
+        className: "bg-red-50 hover:bg-red-100 text-red-600",
+      };
+    }
+
+    if (key.includes("spotify") || key.includes("open.spotify")) {
+      return {
+        label: "Spotify",
+        Icon: FaSpotify,
+        className: "bg-green-50 hover:bg-green-100 text-green-700",
+      };
+    }
+
+    if (key.includes("apple")) {
+      return {
+        label: "Apple Music",
+        Icon: SiApplemusic,
+        className: "bg-gray-50 hover:bg-gray-100 text-gray-800",
+      };
+    }
+
+    if (key.includes("sound")) {
+      return {
+        label: "SoundCloud",
+        Icon: FaSoundcloud,
+        className: "bg-orange-50 hover:bg-orange-100 text-orange-700",
+      };
+    }
+
+    // Melon: 키워드 + 호스트 대응
+    if (key.includes("melon") || key.includes("melon.co")) {
+      return {
+        label: "Melon",
+        Icon: MelonIcon, // ← 이미지 아이콘을 컴포넌트로
+        className: "bg-emerald-50 hover:bg-emerald-100 text-emerald-700",
+      };
+    }
+
+    return {
+      label: p || "Link",
+      Icon: FaLink,
+      className: "bg-gray-50 hover:bg-gray-100 text-blue-600",
+    };
+  }
 
   type AlbumRow = {
     albums: {
@@ -309,6 +381,11 @@ export default function MyAudiencePage() {
                   onToggleLike={songDetail.toggleLike}
                   commentCount={songDetail.commentCount}
                   panelRef={songDetail.panelRef}
+                  commentsSlot={
+                    songDetail.openSong ? (
+                      <SongCommentsInline songId={songDetail.openSong.id} />
+                    ) : null
+                  }
                 />
               )
           )}
@@ -321,7 +398,16 @@ export default function MyAudiencePage() {
             )
           )}
 
-          {activeTab === "artists" && <div>(내 아티스트 리스트 예정)</div>}
+          {activeTab === "artists" && (
+            <div className="space-y-3">
+              {loadingArtists?(
+                <div className="text-gray-500">불러오는 중...</div>
+              ) : (
+                <FollowedArtistsGrid artists={followedArtists}/>
+              )}
+            </div>
+          )}
+
           {activeTab === "stages" && <div>(다녀온 무대 리스트 예정)</div>}
         </div>
       </div>
