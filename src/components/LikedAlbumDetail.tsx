@@ -67,7 +67,6 @@ export default function LikedAlbumDetail({
   const platformMeta = (p: string) => {
     const key = (p ?? "").toLowerCase();
 
-    // ✅ URL(host)도 잡아주기
     const isYtMusic =
       key.includes("youtubemusic") ||
       key.includes("youtube music") ||
@@ -128,7 +127,7 @@ export default function LikedAlbumDetail({
 
   const photoGroups = useMemo(() => {
     // stageId -> 메타
-    const meta = new Map<number, { title?: string|null; date?: string|null }>();
+    const meta = new Map<number, { title?: string|null; date?: string|null }>(); //Map key: value data structure
     stages.forEach((s) =>
       meta.set(s.id, { title: s.title ?? null, date: s.start_at ?? null })
     );
@@ -153,10 +152,10 @@ export default function LikedAlbumDetail({
     (comments || [])
       .filter((c: any) => !!c.photo_url)
       .forEach((c: any) => {
-        const sid = c.stage_id as number; // 필드명 확인
+        const sid = c.stage_id as number; 
         if (!buckets.has(sid)) {
           const m = meta.get(sid) || {};
-          buckets.set(sid, { stageId: sid, title: m.title, date: m.date, items: [] });
+          buckets.set(sid, { stageId: sid, title: m.title, date: m.date, items: [] }); //items: [] for photos
         }
         buckets.get(sid)!.items.push({
           id: c.id,
@@ -167,10 +166,8 @@ export default function LikedAlbumDetail({
         });
       });
 
-
-
     // 날짜 최신 순으로 섹션 정렬(선택)
-    return Array.from(buckets.values()).sort((a, b) => {
+    return Array.from(buckets.values()).sort((a, b) => { // [ {stageId:1, title:..., date:..., items:...}, {stageId:2, ...}, ... ] from Map
       const ad = a.date ? +new Date(a.date) : 0;
       const bd = b.date ? +new Date(b.date) : 0;
       return bd - ad;
@@ -341,50 +338,6 @@ export default function LikedAlbumDetail({
             groups={photoGroups}
           />
 
-          {/* 댓글 리스트 */}
-          <ul className="space-y-3">
-            {comments.map((c) => (
-              <li key={c.id} className="border-b pb-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={c.users?.photo_url || "/default-avatar.png"}
-                      alt={c.users?.username || "user"}
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
-                    <span className="text-sm font-medium text-gray-800">
-                      {c.users?.username ?? ""}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
-                  </span>
-                </div>
-
-                {c.photo_url && (
-                  <div className="mt-2">
-                    <img
-                      src={c.photo_url}
-                      alt="첨부"
-                      className="max-h-64 rounded-lg border object-contain"
-                    />
-                  </div>
-                )}
-
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {c.content}
-                </div>
-
-                <button
-                  onClick={() => deleteComment(c.id)}
-                  className="text-xs text-gray-500 mt-2"
-                >
-                  삭제
-                </button>
-              </li>
-            ))}
-          </ul>
-
           {/* 댓글 입력 */}
           {selectedStageId && (
             <form
@@ -440,6 +393,51 @@ export default function LikedAlbumDetail({
               </button>
             </form>
           )}
+
+          {/* 댓글 리스트 */}
+          <ul className="space-y-3 mt-10">
+            {comments.map((c) => (
+              <li key={c.id} className="border-b pb-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={c.users?.photo_url || "/default-avatar.png"}
+                      alt={c.users?.username || "user"}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                    <span className="text-sm font-medium text-gray-800">
+                      {c.users?.username ?? ""}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
+                  </span>
+                </div>
+
+                {c.photo_url && (
+                  <div className="mt-2">
+                    <img
+                      src={c.photo_url}
+                      alt="첨부"
+                      className="max-h-64 rounded-lg border object-contain"
+                    />
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                  {c.content}
+                </div>
+
+                <button
+                  onClick={() => deleteComment(c.id)}
+                  className="text-xs text-gray-500 mt-2"
+                >
+                  삭제
+                </button>
+              </li>
+            ))}
+          </ul>
+
         </div>
       )}
     </div>
