@@ -10,6 +10,8 @@ import { supabase } from "../lib/supabaseClient";
 import type { UIAlbum } from "../components/AlbumList";
 import LikedAlbumDetail from "../components/LikedAlbumDetail";
 import SongCommentsInline from "../components/SongCommentsInline";
+import { useFollowedArtists } from "../hooks/useFollowedArtists";
+import FollowedArtistsGrid from "../components/FollowedArtistsGrid";
 
 import LikedSongsList from "../components/LikedSongsList";
 import SongDetailPanel from "../components/SongDetailPanel";
@@ -54,6 +56,8 @@ export default function MyAudiencePage() {
 
   const [albums, setAlbums] = useState<UIAlbum[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<UIAlbum | null>(null);
+
+  const { artists: followedArtists, loading: loadingArtists } = useFollowedArtists(userId); // myartist grid
 
   const [likedSongs, setLikedSongs] = useState<UISong[]>([]);
   const songDetail = useSongDetail();
@@ -394,7 +398,16 @@ export default function MyAudiencePage() {
             )
           )}
 
-          {activeTab === "artists" && <div>(내 아티스트 리스트 예정)</div>}
+          {activeTab === "artists" && (
+            <div className="space-y-3">
+              {loadingArtists?(
+                <div className="text-gray-500">불러오는 중...</div>
+              ) : (
+                <FollowedArtistsGrid artists={followedArtists}/>
+              )}
+            </div>
+          )}
+
           {activeTab === "stages" && <div>(다녀온 무대 리스트 예정)</div>}
         </div>
       </div>
