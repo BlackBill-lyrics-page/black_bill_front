@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import { useImageCropper } from '../hooks/useImageCropper';
 import Cropper from 'react-easy-crop';
+import { FiPlusCircle, FiTrash } from "react-icons/fi"
 
 const SetProfileArtist = () => {
   const [selectedGenres, setSelectedGenres] = useState<number[]>([]);
@@ -80,20 +81,23 @@ const SetProfileArtist = () => {
 
   return (
     <div className="max-w-lg mx-auto bg-white rounded-lg shadow p-6">
-      <h1 className="text-lg font-bold mb-4">아티스트 회원가입</h1>
-
+      <h1 className="text-xl font-bold mb-4">아티스트 회원가입</h1>
+      <div className='justify-between flex mt-10'>
+        <div className='font-bold'>아티스트 프로필 사진</div>
+        <div className='text-blue-700'>필수</div>
+      </div>
       {/* 프로필 사진 */}
-      <div className="relative w-32 h-32 mx-auto mb-4">
+      <div className="relative w-32 h-32 mx-auto mb-4 mt-5">
         <img
           src={photoUrl || '/default-profile.svg'}
           alt="default profile"
-          className="w-full h-full rounded-full object-cover border border-gray-300"
+          className="w-full h-full rounded-full bg-gray-100 object-contain p-10"
         />
         <label
           htmlFor="photo-upload"
-          className="absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-300 cursor-pointer hover:bg-gray-100"
+          className="absolute bottom-0 right-0 cursor-pointer"
         >
-          <span className="text-xl leading-none">＋</span>
+          <FiPlusCircle className="w-7 h-7 text-gray-400 bg-white rounded-full border-gray-100" />
         </label>
         <input
           id="photo-upload"
@@ -109,40 +113,75 @@ const SetProfileArtist = () => {
       </div>
 
       {/* 활동명 */}
+      <div className='justify-between flex mb-2 mt-10'>
+        <div className='font-bold'>활동명</div>
+        <div className='text-blue-700'>필수</div>
+      </div>
       <input
-        placeholder="활동명"
+        placeholder="활동명 입력"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full border p-2 mb-3 rounded"
-      />
-
-      {/* 아티스트 설명 */}
-      <textarea
-        placeholder="아티스트 설명"
-        value={bio}
-        onChange={(e) => setBio(e.target.value)}
-        className="w-full border p-2 mb-3 rounded"
+        className="w-full bg-gray-100 p-2 mb-3 rounded-full px-5 "
       />
 
       {/* 소속사 */}
+      <div className='justify-between flex mb-2 mt-2'>
+        <div className='font-bold'>소속사</div>
+        <div className={(label ?? '').length>30 ? 'text-red-500' : 'text-gray-500'}>
+          {(label ?? '').length}/30
+        </div>
+      </div>
       <input
         placeholder="소속사"
         value={label}
         onChange={(e) => setLabel(e.target.value)}
-        className="w-full border p-2 mb-3 rounded"
+        className="w-full bg-gray-100 p-2 mb-3 rounded-full px-5 "
       />
 
+      {/* 아티스트 설명 */}
+      <div className='justify-between flex mb-2 mt-2'>
+        <div className='font-bold'>아티스트 설명</div>
+        <div className={(bio ?? '').length>500 ? 'text-red-500' : 'text-gray-500'}>
+          {(bio ?? '').length}/500
+        </div>
+      </div>
+      <textarea
+        placeholder="아티스트 설명"
+        value={bio}
+        rows={4}
+        onChange={(e) => setBio(e.target.value)}
+        className="w-full bg-gray-100 p-2 mb-3 rounded-2xl px-5 "
+      />
+
+
       {/* 밴드 구성 */}
+      <div className='justify-between flex mb-2 mt-2'>
+        <div className='font-bold'>구성</div>
+        <div className={(instruments ?? '').length>30 ? 'text-red-500' : 'text-gray-500'}>
+          {(instruments ?? '').length}/30
+        </div>
+      </div>
       <input
         placeholder="밴드 구성"
         value={instruments}
         onChange={(e) => setInstruments(e.target.value)}
-        className="w-full border p-2 mb-3 rounded"
+        className="w-full bg-gray-100 p-2 mb-3 rounded-full px-5 "
       />
 
       {/* SNS Links */}
+      <div className='flex justify-between mt-2'>
+        <div className='font-bold'>sns 링크</div>
+          <button
+          type="button"
+          onClick={() => setSnsLinks([...snsLinks, { platform: 'instagram', url: '' }])}
+          className="text-blue-500"
+        >
+          링크 추가하기 +
+        </button>
+      </div>
+
       {snsLinks.map((link, idx) => (
-        <div key={idx} className="flex items-center gap-2 mb-2">
+        <div key={idx} className="flex items-center gap-2 mb-1">
           <select
             value={link.platform}
             onChange={(e) => {
@@ -150,11 +189,11 @@ const SetProfileArtist = () => {
               updated[idx].platform = e.target.value;
               setSnsLinks(updated);
             }}
-            className="border p-1 rounded"
+            className="bg-gray-100 p-1 rounded-2xl w-28"
           >
             <option value="instagram">Instagram</option>
             <option value="youtube">YouTube</option>
-            <option value="youtube">YouTube Music</option>
+            <option value="youtube_music">YT Music</option>
             <option value="soundcloud">Soundcloud</option>
             <option value="bandcamp">Bandcamp</option>
             <option value="tiktok">TikTok</option>
@@ -171,7 +210,7 @@ const SetProfileArtist = () => {
               updated[idx].url = e.target.value;
               setSnsLinks(updated);
             }}
-            className="flex-1 border p-1 rounded"
+            className="flex-1 p-1 pl-4 rounded-2xl bg-gray-100"
           />
 
           <button
@@ -183,23 +222,19 @@ const SetProfileArtist = () => {
             className="text-red-500 hover:text-red-700"
             title="삭제"
           >
-            🗑️
+            <FiTrash className="w-7 h-7 p-1 text-gray-400 bg-white rounded-full border-gray-100" />
           </button>
         </div>
       ))}
 
-      <button
-        type="button"
-        onClick={() => setSnsLinks([...snsLinks, { platform: 'instagram', url: '' }])}
-        className="text-blue-500 mb-4"
-      >
-        + SNS 링크 추가
-      </button>
-
       {/* 장르 선택 */}
-      <div className="mb-3">
-        <label className="block font-medium mb-1">장르 (최대 3개)</label>
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-3 mt-8">
+        <div className='flex justify-between'>
+          <label className="block font-bold mb-1">장르 (최대 3개)</label>
+          <div className='text-blue-700'>필수</div>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 mt-3">
           {genreList.map((g) => {
             const isSelected = selectedGenres.includes(g.id);
             return (
@@ -212,17 +247,17 @@ const SetProfileArtist = () => {
                     setSelectedGenres(selectedGenres.filter((id) => id !== g.id));
                   } else {
                     if (selectedGenres.length >= 3) {
-                      setGenreError('장르는 최대 3개까지만 선택 가능합니다.');
+                      setGenreError('장르는 최대 3개까지 선택 가능합니다.');
                       return;
                     }
                     setGenreError('');
                     setSelectedGenres([...selectedGenres, g.id]);
                   }
                 }}
-                className={`px-3 py-1 rounded border ${
+                className={`px-3 py-1 rounded rounded-full ${
                   isSelected
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-300'
+                    ? 'bg-black text-white '
+                    : 'bg-gray-100 text-gray-700'
                 }`}
               >
                 {g.name}
@@ -281,11 +316,11 @@ const SetProfileArtist = () => {
               className="w-40"
             />
             <div className="flex gap-2">
-              <button className="px-4 py-2 rounded border" onClick={cancelCrop}>
+              <button className="px-4 py-2 rounded-full bg-gray-100" onClick={cancelCrop}>
                 취소
               </button>
               <button
-                className="px-4 py-2 rounded bg-blue-600 text-white"
+                className="px-4 py-2 rounded-full bg-gray-100"
                 onClick={async () => {
                   const result = await applyCrop();
                   if (result) {

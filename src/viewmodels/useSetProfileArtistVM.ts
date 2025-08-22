@@ -37,6 +37,12 @@ export const useSetProfileArtistVM = () => {
 
     if (!photoFile) return alert('프로필 사진을 등록해주세요.');
 
+    if (label.length>30) return alert ('소속사는 30자를 초과할 수 없습니다.')
+
+    if (bio.length>500) return alert ('아티스트 설명은 500자를 초과할 수 없습니다.')
+
+    if (instruments.length>30) return alert ('구성은 30자를 초과할 수 없습니다.')
+
     if (!name.trim()) return alert('활동명을 입력해주세요.');
 
     if (selectedGenres.length < 1) {

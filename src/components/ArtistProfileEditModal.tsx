@@ -266,13 +266,13 @@ export default function ArtistProfileEditModal({
               />
               <div className="flex gap-2">
                 <button
-                  className="px-4 py-2 rounded border"
+                  className="px-4 py-2 rounded-full bg-gray-100"
                   onClick={cancelCrop}
                 >
                   취소
                 </button>
                 <button
-                  className="px-4 py-2 rounded bg-blue-600 text-white"
+                  className="px-4 py-2 rounded-full bg-gray-100 "
                   onClick={async () => {
                     const result = await applyCrop(); // { blob, file, previewUrl }
                     if (result) {

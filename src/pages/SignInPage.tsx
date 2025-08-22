@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signinwithEmail, signinwithGoogle } from '../lib/authService'
+import AuthShell from "../components/login/AuthShell";
+import AuthCard from "../components/login/AuthCard";
+import AuthHeader from "../components/login/AuthHeader";
+
 
 const SignInPage = () => {
   const [email, setEmail] = useState('')
@@ -39,66 +43,64 @@ const SignInPage = () => {
 };
 
   return (
-    <div className="min-h-screen flex flex-col px-6 bg-white">
+    <AuthShell>
+      <AuthCard>
+        <AuthHeader title="BlackBill"/>
+        <div className='flex flex-1 flex-col justify-center items-center'>
 
-       <div className="w-full max-w-xs mx-auto mt-20 items-center gap-2">
-        <img src="/logo.png" alt="logo" className="w-12 h-12" />
-        <div className="text-2xl font-semibold">BlackBill</div>
-      </div>
+          <div className="w-full max-w-xs flex flex-col gap-3 mt-40">
+             <input
+               type="email"
+               placeholder="이메일 입력"
+               value={email}
+               onChange={(e) => setEmail(e.target.value)}
+               className="bg-gray-100 p-3 rounded-full text-sm"
+             />
 
-      <div className='flex flex-1 flex-col justify-center items-center'>
-        <div className="w-full max-w-xs flex flex-col gap-3">
-           <input
-             type="email"
-             placeholder="이메일 입력"
-             value={email}
-             onChange={(e) => setEmail(e.target.value)}
-             className="bg-gray-100 p-3 rounded-full text-sm"
-           />
+             <input
+               type="password"
+               placeholder="비밀번호 입력"
+               value={password}
+               onChange={(e) => setPassword(e.target.value)}
+               className="bg-gray-100 p-3 rounded-full text-sm"
+             />
 
-           <input
-             type="password"
-             placeholder="비밀번호 입력"
-             value={password}
-             onChange={(e) => setPassword(e.target.value)}
-             className="bg-gray-100 p-3 rounded-full text-sm"
-           />
-
-           <button
-             onClick={handleEmailSignIn}
-             className="bg-gray-200 text-black py-3  font-semibold cursor-pointer"
-           >
-             로그인하기
-           </button>
-         </div>
-         <div className='mt-4 justify-between flex items-center w-full max-w-xs'>
-           <div className=" text-sm text-gray-500">
-             처음 오셨나요?{' '}  
+             <button
+               onClick={handleEmailSignIn}
+               className="bg-gray-200 text-black py-3  font-semibold cursor-pointer"
+             >
+               로그인하기
+             </button>
            </div>
-           <button onClick={() => navigate('/sign-up')} className="text-black cursor-pointer text-sm">
-             회원가입하기
-           </button>
-         </div>
+           <div className='mt-4 justify-between flex items-center w-full max-w-xs'>
+             <div className=" text-sm text-gray-500">
+               처음 오셨나요?{' '}  
+             </div>
+             <button onClick={() => navigate('/sign-up')} className="text-black cursor-pointer text-sm">
+               회원가입하기
+             </button>
+           </div>
 
 
-         <div className="w-full max-w-xs my-6 flex items-center">
-           <hr className="flex-grow border-gray-300" />
-           <span className="mx-4 text-sm text-gray-400">또는</span>
-           <hr className="flex-grow border-gray-300" />
-         </div>
+           <div className="w-full max-w-xs my-6 flex items-center">
+             <hr className="flex-grow border-gray-300" />
+             <span className="mx-4 text-sm text-gray-400">또는</span>
+             <hr className="flex-grow border-gray-300" />
+           </div>
 
-         <div className="flex gap-4">
-           <button
-             onClick={handleOAuthLogin}
-             className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer"
-           >
-             구글
-           </button>
+           <div className="flex gap-4">
+             <button
+               onClick={handleOAuthLogin}
+               className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer"
+             >
+               구글
+             </button>
 
-         </div>
-      </div>
-      
-    </div>
+           </div>
+        </div>      
+      </AuthCard>
+    </AuthShell>
+    
   )
 }
 
