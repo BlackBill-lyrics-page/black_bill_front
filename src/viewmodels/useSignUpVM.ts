@@ -2,6 +2,18 @@ import { supabase } from '../lib/supabaseClient'
 import { useState } from 'react'
 import { signupwithEmail } from '../lib/authService'
 
+function translateSupabaseError(message: string): string {
+  if (message.includes("Unable to validate email address")) {
+    return "이메일 주소 형식이 올바르지 않습니다."
+  }
+  if (message.includes("User already registered")) {
+    return "이미 가입된 이메일입니다."
+  }
+  if (message.includes("Invalid login credentials")) {
+    return "이메일 또는 비밀번호가 올바르지 않습니다."
+  }
+  return "알 수 없는 오류가 발생했습니다."
+}
 
 export const validatePassword = (pw: string): boolean => { //password validifying function
       const isLengthValid = pw.length >= 8 && pw.length <= 20
@@ -28,6 +40,12 @@ export const useSignUpVM = () => {
         setLoading(true)
         setError(null)
 
+         if (!email || email.trim() === "") {
+          alert("이메일을 입력해주세요.")
+          setLoading(false)
+          return false
+        }
+
         if (!validatePassword(password)) {
           setPasswordError(true)
           setLoading(false)
@@ -38,7 +56,7 @@ export const useSignUpVM = () => {
         const {data, error} = await signupwithEmail(email, password)
 
         if (error){
-            setError(error.message)
+            alert(translateSupabaseError(error.message))
             setLoading(false)
             return false
         }
@@ -51,7 +69,7 @@ export const useSignUpVM = () => {
 
                 if (inserError){
                     console.error('DB saving failure', inserError.message)
-                    setError('saving error occurs')
+                    alert(translateSupabaseError(inserError.message))
                     setLoading(false)
                     return false
                 }
@@ -61,7 +79,7 @@ export const useSignUpVM = () => {
                 } 
             }
             else{
-                setError('user information is missing')
+                alert("회원가입 중 알 수 없는 오류가 발생했습니다. 다시 시도해주세요.")
                 setLoading(false)
                 return false
             }

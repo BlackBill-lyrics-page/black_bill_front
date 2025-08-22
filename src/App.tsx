@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+// App.tsx
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import EmailSignUpPage from './pages/EmailSignUpPage'
 import SignUpPage from './pages/SignUpPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
@@ -10,10 +11,14 @@ import ArtistPage from './pages/ArtistPage'
 import SearchPage from './pages/SearchPage'
 import Header from "./components/Header";
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const noHeaderRoutes = ["/sign-in", "/sign-up", "/sign-up_email"];
+
   return (
-    <BrowserRouter>
-      <Header/>
+    <>
+      {!noHeaderRoutes.includes(location.pathname) && <Header />}
+
       <Routes>
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/sign-up_email" element={<EmailSignUpPage />} />
@@ -24,10 +29,15 @@ function App() {
         <Route path="/my_artist" element={<MyArtistPage />} />
         <Route path="/artist/:id" element={<ArtistPage />} />
         <Route path="/search" element={<SearchPage />} />
-
       </Routes>
-    </BrowserRouter>
-  )
+    </>
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
