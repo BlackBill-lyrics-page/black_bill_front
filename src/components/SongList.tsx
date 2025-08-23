@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
+import SongLikeButton from "./SongLikeButton";
 
 // 화면(UI)에서 쓸 가벼운 타입 (외부 파일 의존 X)
 export type UISong = {
@@ -11,6 +12,8 @@ export type UISong = {
     photoUrl?: string | null;
     createdAt?: string | null;
     artistName?: string | null;
+    likeCount? : number;
+    commentCount? : number;
 };
 
 export default function SongList({
@@ -100,10 +103,12 @@ export default function SongList({
             setLoading(true);
             setErr(null);
 
-            // ⬇⬇ DB 컬럼명에 맞게 필요시 수정
             const { data, error } = await supabase
                 .from("songs")
-                .select("id,title,song_photo,created_at,artist_id")
+                .select(`id,title,song_photo,created_at,artist_id, 
+                        like_count:song_liked!song_liked_song_id_fkey(count), 
+                        comment_count:song_comment!song_comment_song_id_fkey(count)
+                      `)
                 .eq("artist_id", artistId)
                 .order("created_at", { ascending: false });
 
@@ -111,15 +116,20 @@ export default function SongList({
 
             if (error) {
                 setErr(error.message);
-            } else {
-                const mapped: UISong[] = (data || []).map((r: any) => ({
-                    id: String(r.id),
-                    title: r.title ?? "",
-                    photoUrl: r.song_photo ?? null,
-                    createdAt: r.created_at ?? null,
-                }));
-                setSongs(mapped);
-            }
+                setLoading(false);
+                return;
+            } 
+            
+            const base = (data ?? []).map((r:any)=>({
+                id: String(r.id),
+                title: r.title ?? "",
+                photoUrl: r.song_photo ?? null,
+                createdAt: r.created_at ?? null,
+                likeCount : r.like_count?.[0]?.count?? 0,
+                commentCount : r.comment_count?.[0]?.count ?? 0,
+            })) as UISong[];
+            
+            setSongs(base);
             setLoading(false);
         }
 
@@ -159,8 +169,15 @@ export default function SongList({
                         </div>
                     </div>
 
-                    {/* 오른쪽: 수정/삭제 버튼 */}
-                    {!readOnly && (
+                    {/* 오른쪽: 관객/본인 뷰 분기 */}
+                    {readOnly ? (
+                      // 관객 뷰: 좋아요 + 댓글 수
+                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                        <SongLikeButton mode="vm" songId={Number(s.id)} />
+                        <span className="text-xs text-gray-500">댓글({s.commentCount ?? 0})</span>
+                      </div>
+                    ) : (
+                      // 본인 뷰: 수정/삭제
                       <div onClick={(e) => e.stopPropagation()}>
                         <RowActions
                           item={s}
@@ -170,7 +187,7 @@ export default function SongList({
                         />
                       </div>
                     )}
-                </li>
+                  </li>
             ))}
         </ul>
     );

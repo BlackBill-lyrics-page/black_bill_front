@@ -48,30 +48,37 @@ const SignInPage = () => {
         <AuthHeader title="BlackBill"/>
         <div className='flex flex-1 flex-col justify-center items-center'>
 
-          <div className="w-full max-w-xs flex flex-col gap-3 mt-40">
-             <input
-               type="email"
-               placeholder="이메일 입력"
-               value={email}
-               onChange={(e) => setEmail(e.target.value)}
-               className="bg-gray-100 p-3 rounded-full text-sm"
-             />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleEmailSignIn()
+            }}
+            className="w-full px-4 flex flex-col gap-3 mt-40"
+          >
+            <input
+              type="email"
+              placeholder="이메일 입력"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-gray-100 p-3 rounded-full text-sm"
+            />
+          
+            <input
+              type="password"
+              placeholder="비밀번호 입력"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="bg-gray-100 p-3 rounded-full text-sm"
+            />
+          
+            <button
+              type="submit"   
+              className="bg-gray-200 text-black py-3 font-semibold cursor-pointer"
+            >
+              로그인하기
+            </button>
+          </form>
 
-             <input
-               type="password"
-               placeholder="비밀번호 입력"
-               value={password}
-               onChange={(e) => setPassword(e.target.value)}
-               className="bg-gray-100 p-3 rounded-full text-sm"
-             />
-
-             <button
-               onClick={handleEmailSignIn}
-               className="bg-gray-200 text-black py-3  font-semibold cursor-pointer"
-             >
-               로그인하기
-             </button>
-           </div>
            <div className='mt-4 justify-between flex items-center w-full max-w-xs'>
              <div className=" text-sm text-gray-500">
                처음 오셨나요?{' '}  

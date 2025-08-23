@@ -26,7 +26,13 @@ const EmailSignUpForm = () => {
       
 
         {!showTerms ? (
-          <div className="flex flex-col gap-5">
+          <form 
+            onSubmit={async (e)=>{
+              e.preventDefault()
+              const success = await handleSignup()
+              if (success) setShowWelcomeModal(true)
+            }}
+            className="flex flex-col gap-5">
 
 
             <div className="flex flex-col gap-2 pt-40">
@@ -40,7 +46,7 @@ const EmailSignUpForm = () => {
               />
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 pt-3">
               <label className="text-sm font-bold">비밀번호 입력</label>
               <input
                 type="password"
@@ -83,17 +89,14 @@ const EmailSignUpForm = () => {
             </button>
 
             <button
-              onClick={async () => {
-                const success = await handleSignup()
-                if (success) setShowWelcomeModal(true)
-              }}
+              type="submit"
               disabled={loading || !agreeAll}
               className="w-full bg-gray-100 text-gray-900 py-3 text-sm font-semibold disabled:opacity-60"
             >
               {loading ? '가입 중...' : '가입하기'}
             </button>
 
-          </div>
+          </form>
         ) : (
 
           <div className="flex flex-col h-[600px] mt-5">

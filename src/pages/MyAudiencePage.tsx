@@ -265,7 +265,7 @@ export default function MyAudiencePage() {
   if (loading) return null;
 
   return (
-    <>
+    <div className="max-w-[700px] mx-auto">
       {/* 프로필 영역 */}
       <div className="flex items-center gap-4 p-6">
         <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -284,40 +284,42 @@ export default function MyAudiencePage() {
             type="button"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            className="p-1 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() => setMenuOpen(v => !v)}
+            className="flex h-9 w-9 items-center justify-center p-0 leading-none
+                       rounded  cursor-pointer"
           >
-            <FiSettings className="w-6 h-6 text-gray-500" />
+            <FiSettings className="block w-5 h-5 text-gray-500 translate-y-[2px]" />
           </button>
-
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 z-50 mt-2 w-44 rounded-xl border bg-white shadow-lg p-1"
+              className="absolute right-0 z-50 mt-5 w-[120px] rounded-xl border border-gray-300 bg-gray-100 shadow-lg p-0 py-2 px-3 space-y-2"
             >
               <button
                 role="menuitem"
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100"
+                className="w-full text-left rounded-lg hover:bg-gray-200"
                 onClick={() => {
                   setMenuOpen(false);
                   setIsModalOpen(true);
                 }}
               >
-                프로필 편집
+                <div className="text-gray-400">프로필 수정</div>
               </button>
+              <hr className=" border-gray-300 mx-2" />
               <button
                 role="menuitem"
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100"
+                className="w-full text-left rounded-lg hover:bg-gray-200"
                 onClick={async () => {
                   setMenuOpen(false);
                   await signOut();
                 }}
               >
-                로그아웃
+                <div className="text-gray-400">로그아웃</div>
               </button>
+              <hr className=" border-gray-300 mx-2" />
               <button
                 role="menuitem"
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-red-600"
+                className="w-full text-left rounded-lg hover:bg-gray-200 text-red-600"
                 onClick={async () => {
                   setMenuOpen(false);
                   await deleteAccount();
@@ -419,7 +421,7 @@ export default function MyAudiencePage() {
         userId={userId}
         provider={provider}
       />
-    </>
+    </div>
   );
 }
 

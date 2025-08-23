@@ -110,15 +110,23 @@ export const useEditArtistProfileVM = (artist : Artist) => {
     // 로그인 여부 및 필수값 검증
     // supabase.auth.getUser() : 현재 로그인 사용자 확인
     const user = (await supabase.auth.getUser()).data.user;
-    if (!user) return alert("로그인이 필요합니다.");
-    if (!name.trim()) return alert("활동명을 입력해주세요.");
+    if (!user) return alert('로그인이 필요합니다.');
 
-    // 장르 개수 제한
+    if (!photoFile && !artist.photoUrl) return alert('프로필 사진을 등록해주세요.');
+
+    if (label.length>30) return alert ('소속사는 30자를 초과할 수 없습니다.')
+
+    if (bio.length>500) return alert ('아티스트 설명은 500자를 초과할 수 없습니다.')
+
+    if (instruments.length>30) return alert ('구성은 30자를 초과할 수 없습니다.')
+
+    if (!name.trim()) return alert('활동명을 입력해주세요.');
+
     if (selectedGenres.length < 1) {
-      return alert("장르는 최소 1개 이상 선택해야 합니다.");
+      return alert('장르는 최소 1개 이상 선택해야 합니다.');
     }
     if (selectedGenres.length > 3) {
-      return alert("장르는 최대 3개까지만 선택 가능합니다.");
+      return alert('장르는 최대 3개까지만 선택 가능합니다.');
     }
 
     let finalPhotoUrl = artist.photoUrl;

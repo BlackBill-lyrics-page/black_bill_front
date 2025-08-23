@@ -431,7 +431,7 @@ export default function ArtistProfileView({
   );
   
   return (
-    <>
+    <div className="max-w-[700px] mx-auto">
       {/* 상단 프로필 */}
       <div className="flex items-center gap-4 p-6">
 
@@ -447,7 +447,7 @@ export default function ArtistProfileView({
           <h2 className="text-xl font-semibold">{artist.name}</h2>
           {isOwner && (
             <FiSettings
-              className="w-6 h-6 text-gray-500 cursor-pointer"
+              className="w-6 h-6 text-gray-500 cursor-pointer mt-2 mx-5"
               onClick={onEditProfile}
             />
           )}
@@ -497,7 +497,7 @@ export default function ArtistProfileView({
               <button
                 type="button"
                 onClick={() => setSnsOpen((v) => !v)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200 text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 text-sm"
               >
                 {selectedSNS?.platform ?? "SNS"}
                 <FiChevronDown
@@ -540,11 +540,11 @@ export default function ArtistProfileView({
 
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard.writeText(selectedSNS.url)}
-                  className="p-1 rounded hover:bg-gray-200"
+                  onClick={() => navigator.clipboard.writeText(selectedSNS.url).then(()=>{alert("복사되었습니다")})}
+                  className="p-1 rounded hover:bg-gray-200 flex items-center justify-center"
                   title="링크 복사"
                 >
-                  <FiCopy className="w-4 h-4" />
+                  <FiCopy className="w-4 h-4 relative -translate-y-[10px]" />
                 </button>
 
               </div>
@@ -560,9 +560,9 @@ export default function ArtistProfileView({
       <div className="px-6 mt-6">
         <div className="flex items-center justify-between">
           <div className="flex gap-4 text-sm">
-            <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
             <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="가사집" />
-            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="무대" />
+            <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
+            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
           </div>
 
           {isOwner && (
@@ -684,7 +684,7 @@ export default function ArtistProfileView({
                               likeCount={albumLike.likeCount}
                               likeLoading={albumLike.loading}
                               onToggleLike={albumLike.toggleLike}
-                              showCount={false}              // ✅ 카운트는 옆에서 따로 출력
+                              showCount={false}              //  카운트는 옆에서 따로 출력
                             />
                             <span>좋아요({albumLike.likeCount ?? 0})</span>
                           
@@ -827,7 +827,7 @@ export default function ArtistProfileView({
                   {activeTab === "stages" && null}
                 </div>
               </div>
-            </>
+            </div>
           );
         }
 
