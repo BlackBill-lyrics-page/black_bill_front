@@ -13,6 +13,7 @@ import { SiApplemusic } from "react-icons/si";
 
 import StagePhotoStrip from "./StagePhotoStrip";
 import StagePhotosModal from "./StagePhotosModal";
+import SongCommentsInline from "./SongCommentsInline";
 
 import melonPng from "../assets/melon.png";
 import ytMusicPng from "../assets/youtubemusic.png";
@@ -284,6 +285,7 @@ export default function LikedAlbumDetail({
           onToggleLike={toggleLike}
           commentCount={commentCount}
           panelRef={panelRef}
+          commentsSlot={openSong ? <SongCommentsInline songId={openSong.id} /> : null}
         />
       ) : (
 

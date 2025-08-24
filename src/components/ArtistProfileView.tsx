@@ -25,6 +25,8 @@ import TextareaAutosize from "react-textarea-autosize";
 import StagePhotoStrip from "./StagePhotoStrip";
 import StagePhotosModal from "./StagePhotosModal";
 
+import { useSearchParams } from "react-router-dom";
+
 
 type Link = { platform: string; url: string };
 
@@ -109,6 +111,8 @@ export default function ArtistProfileView({
 
     const [stages, setStages] = useState<Array<{ id:number; title:string|null; start_at:string|null }>>([]);
     const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
+
+    const [searchParams, setSearchParams] = useSearchParams();
 
     //stage comment VM
     const {
@@ -197,6 +201,34 @@ export default function ArtistProfileView({
     const albumLike = useAlbumLikeVM(selectedAlbum ? Number(selectedAlbum.id) : undefined);
 
     const [albums, setAlbums] = useState<UIAlbum[]>([]);
+
+    useEffect(() => { // album 열 때 경로 지정 (실제 페이지는 안바뀜)
+      const albumParam = searchParams.get("album");     
+
+      if (!albumParam) {
+        if (selectedAlbum !== null) setSelectedAlbum(null);
+        return;
+      }
+
+      const found = albums.find(a => String(a.id) === String(albumParam));
+      if (!found) {
+        return;
+      }
+
+      // 이미 같은 앨범이면 스킵
+      if (!selectedAlbum || String(selectedAlbum.id) !== String(found.id)) {
+        setSelectedAlbum(found);
+      }
+    
+      const tabParam = searchParams.get("tab");
+       if (tabParam === "lyricsbook" || tabParam === "books") {
+          setActiveTab("books");
+        } else if (tabParam === "songs") { // songs stages는 추후 필요 시 구현, 현재는 홈에 앨범밖에 없음
+          setActiveTab("songs");
+        } else if (tabParam === "stages") {
+          setActiveTab("stages");
+        }
+    }, [searchParams, albums, selectedAlbum]);
 
      useEffect(() => {
       (async () => {
@@ -602,7 +634,13 @@ export default function ArtistProfileView({
                           albums={albums}
                           readOnly={!isOwner}
                           onEdit={onEditBook}
-                          onOpen={(a) => setSelectedAlbum(a)} // 클릭 → 상세로 전환
+                          onOpen={(a) => {
+                            setSelectedAlbum(a) // 클릭 → 상세로 전환
+                            const next = new URLSearchParams(searchParams);
+                            next.set("tab","books");
+                            next.set('album', String(a.id));
+                            setSearchParams(next);
+                          }} 
                         />
                       ) : (
                         // 상세(선택한 가사집 + 곡 리스트) 뷰
@@ -611,8 +649,13 @@ export default function ArtistProfileView({
                           <div className="flex items-center gap-3 p-3">
                             
                             <button
-                              type="button"
-                              onClick={() => setSelectedAlbum(null)}               // ← 뒤로: 목록으로 복귀
+                              type="button" //뒤로 가기 버튼 
+                              onClick={() => {
+                                setSelectedAlbum(null) //뒤로가기
+                                const next = new URLSearchParams(searchParams);
+                                next.delete("album");
+                                setSearchParams(next, {replace: true})
+                              }}               
                               className="p-1 rounded hover:bg-gray-100"
                               aria-label="목록으로"
                             >

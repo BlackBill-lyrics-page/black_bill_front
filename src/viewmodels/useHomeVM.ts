@@ -6,6 +6,7 @@ export type TopAlbum = {
   albumname: string | null;
   album_photo: string | null;
   artist_name : string | null;
+  artist_id : string | null;
 };
 
 export function useHomeVM() {

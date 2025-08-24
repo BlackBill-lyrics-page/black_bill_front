@@ -14,7 +14,7 @@ export default function LikedSongsList({
       {songs.map((s) => (
         <li
           key={s.id}
-          className="flex items-center justify-between rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+          className="flex items-center justify-between border-b p-3 cursor-pointer hover:bg-gray-50"
           onClick={() => onOpen?.(s)}
         >
           <div className="flex items-center min-w-0 gap-3">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { IoIosArrowBack } from "react-icons/io"; 
 import { useHomeVM } from "../viewmodels/useHomeVM";
+import { useNavigate } from "react-router-dom";
 
 function getWeekInfo(date=new Date()){
     const month=date.getMonth()+1;
@@ -18,6 +19,7 @@ export default function HomePage(){
     const [view, setView]= useState<"home"|"album"|"stage">("home");
     const {month, weekNumber}= getWeekInfo();
     const {albums, loading} = useHomeVM();
+    const navigate = useNavigate();
 
     return(
         <div className="max-w-[700px] mx-auto">
@@ -38,12 +40,13 @@ export default function HomePage(){
                         {albums.map((a) => (
                             <div
                               key={a.album_id}
-                              className="relative bg-gray-200 rounded-lg w-32 h-40 overflow-hidden"
+                              onClick={()=>navigate(`/artist/${a.artist_id}?tab=lyricsbook&album=${a.album_id}`)}
+                              className="relative bg-gray-200 rounded-lg w-32 h-40 overflow-hidden cursor-pointer"
                             >
                               {/* 앨범 이미지 */}
                               <img
-                                src={a.album_photo || "/placeholder.png"}
-                                alt={a.albumname || "album"}
+                                src={a.album_photo ?? undefined}
+                                alt={""}
                                 className="w-full h-full object-cover"
                               />
 
@@ -113,12 +116,13 @@ export default function HomePage(){
                         {albums.map((a) => (
                             <div
                               key={a.album_id}
-                              className="relative bg-gray-200 rounded-lg w-32 h-40 overflow-hidden"
+                              onClick={()=>navigate(`/artist/${a.artist_id}?tab=lyricsbook&album=${a.album_id}`)}
+                              className="relative bg-gray-200 rounded-lg w-32 h-40 overflow-hidden cursor-pointer"
                             >
                               {/* 앨범 이미지 */}
                               <img
-                                src={a.album_photo || "/placeholder.png"}
-                                alt={a.albumname || "album"}
+                                src={a.album_photo ?? undefined}
+                                alt={""}
                                 className="w-full h-full object-cover"
                               />
 

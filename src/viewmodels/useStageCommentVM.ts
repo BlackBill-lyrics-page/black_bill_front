@@ -91,6 +91,11 @@ export function useStageCommentVM(stageId: number | null) {
   }, [enabled, stageId]);
 
   useEffect(() => {
+    //stageId 바뀌면 이전 데이터 즉시 리셋
+    setComments([]);
+    setCount(0);
+    setErr(null);
+
     fetchComments();
   }, [fetchComments]);
 

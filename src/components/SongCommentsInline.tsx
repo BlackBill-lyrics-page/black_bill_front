@@ -1,4 +1,3 @@
-// src/components/SongCommentsInline.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
@@ -69,7 +68,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
               />
               <div className="flex-1">
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium">{c.users?.username ?? "익명"}</span>
+                  <span className="text-sm font-medium text-gray-800">{c.users?.username ?? "익명"}</span>
 
                   {/* 우측 액션 */}
                   {mine && (
@@ -91,7 +90,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
 
                 {/* 본문: 보기 vs 편집 */}
                 {!isEditing ? (
-                  <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
+                  <p className="text-sm whitespace-pre-wrap text-gray-800">{c.comment}</p>
                 ) : (
                   <textarea
                     value={editingText}

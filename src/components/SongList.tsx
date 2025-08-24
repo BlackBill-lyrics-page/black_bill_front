@@ -147,7 +147,7 @@ export default function SongList({
         <ul className="mt-4 grid gap-3">
             {songs.map((s) => (
                 <li key={s.id} 
-                    className="flex items-center justify-between rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+                    className="flex items-center justify-between border-b p-3 cursor-pointer hover:bg-gray-50"
                     onClick={()=>onOpen?.(s)}
                 >
                     {/* 왼쪽: 사진 + 제목/날짜 */}

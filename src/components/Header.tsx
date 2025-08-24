@@ -9,7 +9,7 @@ export default function Header() {
       {/* 왼쪽 로고 */}
       <span
         className="text-xl font-bold cursor-pointer"
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/home")}
       >
         LOGO
       </span>

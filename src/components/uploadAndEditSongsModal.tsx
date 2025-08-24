@@ -166,8 +166,6 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
                     <option>SoundCloud</option>
                     <option>Apple Music</option>
                     <option>Melon</option>
-                    <option>Bugs</option>
-                    <option>Genie</option>
                     <option>Link</option>
                   </select>
 
