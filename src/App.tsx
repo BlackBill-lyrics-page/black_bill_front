@@ -10,6 +10,7 @@ import MyArtistPage from './pages/MyArtistPage'
 import ArtistPage from './pages/ArtistPage'
 import SearchPage from './pages/SearchPage'
 import Header from "./components/Header";
+import HomePage from './pages/HomePage'
 
 function AppContent() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function AppContent() {
         <Route path="/my_artist" element={<MyArtistPage />} />
         <Route path="/artist/:id" element={<ArtistPage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/home" element={<HomePage />} />
       </Routes>
     </>
   );
