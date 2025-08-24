@@ -25,6 +25,7 @@ type StageRow = {
   promotion_url: string | null;
   album_id: number;
   albumname?: string | null;  // join
+  artist_id: number;          // ✅ 추가: 다중 아티스트 표기/필터용
   venue?: {
     id?: number;
     name: string | null;
@@ -44,15 +45,19 @@ type AlbumMeta = {
 };
 
 export default function ArtistStagesCalendar({
-  artistId,
-  artistName, // ✅ 추가: 리스트에 "(아티스트)" 텍스트 표기용(옵션)
+  artistId,                   // 단일도 계속 지원
+  artistIds,                  // ✅ 여러 아티스트 지원
+  artistName,                 // 단일 표기용(기존)
+  artistNameMap,              // ✅ 여러 명 표기용
   onRequestCreate,
   mode = "owner",
   canEdit = mode === "owner",
   onItemClick,
 }: {
-  artistId: number;
+  artistId?: number;
+  artistIds?: number[];
   artistName?: string;
+  artistNameMap?: Record<number, string>;
   onRequestCreate?: (dateStr: string) => void;
   mode?: "owner" | "viewer";
   canEdit?: boolean;
@@ -89,7 +94,7 @@ export default function ArtistStagesCalendar({
   // VM: 생성/수정/삭제 공용(삭제는 albumId 불필요 → 0으로 전달)
   const { submitting, handleDelete: vmDelete } = useUploadStageVM({
     albumId: 0,
-    artistId,
+    artistId: artistId ?? 0, // owner 모드에서만 의미 있음
   });
 
   // ✅ 추가: 펼쳐둔(댓글 패널 오픈) 무대 id
@@ -126,7 +131,7 @@ export default function ArtistStagesCalendar({
     else onItemClick?.(s);
   };
 
-  // 월간 스테이지 로드
+  // 월간 스테이지 로드 (단일/다중 공통)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -146,8 +151,15 @@ export default function ArtistStagesCalendar({
 
         if (error) throw error;
 
+        const idSet =
+          artistIds && artistIds.length
+            ? new Set(artistIds.map(Number))
+            : artistId
+            ? new Set([Number(artistId)])
+            : null; // null이면 전체 허용
+
         const rows = (data ?? [])
-          .filter((r: any) => r.albums?.artist_id === artistId)
+          .filter((r: any) => (idSet ? idSet.has(Number(r.albums?.artist_id)) : true))
           .map((r: any) => ({
             id: Number(r.id),
             title: r.title ?? null,
@@ -157,6 +169,7 @@ export default function ArtistStagesCalendar({
             promotion_url: r.promotion_url ?? null,
             album_id: Number(r.album_id),
             albumname: r.albums?.albumname ?? null,
+            artist_id: Number(r.albums?.artist_id ?? 0),
             address_detail: r.address_detail ?? null,
             venue: r.venue
               ? {
@@ -180,7 +193,8 @@ export default function ArtistStagesCalendar({
     return () => {
       alive = false;
     };
-  }, [artistId, range.fromUtc, range.toUtc, reloadKey]);
+    // artistIds는 배열 → 안전하게 join해서 dep 관리
+  }, [artistId, artistIds?.join(","), range.fromUtc, range.toUtc, reloadKey]);
 
   // 날짜별 그룹
   const stagesByDay = useMemo(() => {
@@ -420,6 +434,10 @@ export default function ArtistStagesCalendar({
 
               const meta = albumMetaMap.get(s.album_id);
               const isExpanded = expandedStageId === s.id;
+              const artistLabel =
+                artistName ??
+                (artistNameMap ? artistNameMap[s.artist_id] : undefined) ??
+                "아티스트";
 
               return (
                 <li key={s.id} className="border rounded-2xl">
@@ -443,7 +461,7 @@ export default function ArtistStagesCalendar({
                       <div className="min-w-0">
                         <div className="text-sm text-gray-600">{place}</div>
                         <div className="font-medium truncate">{meta?.name ?? s.albumname ?? "가사집 제목"}</div>
-                        <div className="text-xs text-gray-500 truncate">{artistName ?? "아티스트"}</div>
+                        <div className="text-xs text-gray-500 truncate">{artistLabel}</div>
                       </div>
                     </button>
 
@@ -547,9 +565,9 @@ export default function ArtistStagesCalendar({
                       {/* 댓글 입력폼 */}
                       <form
                         onSubmit={handleSubmitStageComment}
-                        onDragOver={(e)=>{e.preventDefault(); setDragOver(true);}}
-                        onDragLeave={()=>setDragOver(false)}
-                        onDrop={(e)=>{
+                        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={(e) => {
                           e.preventDefault(); setDragOver(false);
                           const f = Array.from(e.dataTransfer.files || []).find(f => f.type.startsWith("image/"));
                           if (f) setCmtFile(f);
@@ -558,7 +576,7 @@ export default function ArtistStagesCalendar({
                       >
                         {/* 이미지 업로드 버튼 */}
                         <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
-                          <FiPlus className="w-5 h-5"/>
+                          <FiPlus className="w-5 h-5" />
                           <input
                             type="file"
                             accept="image/*"
@@ -594,8 +612,8 @@ export default function ArtistStagesCalendar({
                           placeholder="이미지를 드래그, 또는 댓글을 작성해주세요."
                           className="flex-1 rounded px-3 py-2 text-sm"
                           minRows={1}
-                          onKeyDown={(e)=>{
-                            if (e.key === "Enter" && !e.shiftKey){
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
                               (e.currentTarget.form as HTMLFormElement).requestSubmit();
                             }
@@ -603,7 +621,7 @@ export default function ArtistStagesCalendar({
                         />
                         {/* 전송 */}
                         <button type="submit" className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white mr-1 ">
-                          <FiArrowUpRight className="w-5 h-5"/>
+                          <FiArrowUpRight className="w-5 h-5" />
                         </button>
                       </form>
                     </div>
@@ -622,7 +640,7 @@ export default function ArtistStagesCalendar({
           onClose={closeEdit}
           mode="edit"
           albumId={editTarget.album_id}
-          artistId={artistId}
+          artistId={artistId! /* 단일(owner) 모드에서만 열림 */}
           initialStage={{
             id: editTarget.id,
             title: editTarget.title ?? undefined,
@@ -645,7 +663,7 @@ export default function ArtistStagesCalendar({
   );
 }
 
-/** 🔧 변경: '일요일' 시작 6x7 매트릭스 (빈칸은 null) */
+/** 🔧 '일요일' 시작 6x7 매트릭스 (빈칸은 null) */
 function buildMonthMatrix(baseMonth: dayjs.Dayjs) {
   const start = baseMonth.startOf("month");
   const end = baseMonth.endOf("month");

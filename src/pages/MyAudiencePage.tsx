@@ -22,6 +22,8 @@ import { SiApplemusic } from "react-icons/si";
 
 import melonPng from "../assets/melon.png";
 import ytMusicPng from "../assets/youtubemusic.png";
+import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
+
 
 type IconLike = React.ComponentType<{ className?: string }>;
 const makeImgIcon = (src: string, alt: string): IconLike => {
@@ -63,32 +65,32 @@ export default function MyAudiencePage() {
   const songDetail = useSongDetail();
 
   useEffect(() => {
-  if (!userId) return;
-  (async () => {
-    const { data: liked, error: e1 } = await supabase
-      .from("song_liked").select("song_id").eq("user_id", userId);
-    if (e1) { console.error(e1); setLikedSongs([]); return; }
+    if (!userId) return;
+    (async () => {
+      const { data: liked, error: e1 } = await supabase
+        .from("song_liked").select("song_id").eq("user_id", userId);
+      if (e1) { console.error(e1); setLikedSongs([]); return; }
 
-    const ids = (liked ?? []).map(x => x.song_id).filter(Boolean);
-    if (!ids.length) { setLikedSongs([]); return; }
+      const ids = (liked ?? []).map(x => x.song_id).filter(Boolean);
+      if (!ids.length) { setLikedSongs([]); return; }
 
-    const { data: rows, error: e2 } = await supabase
-      .from("songs")
-      .select("id,title,song_photo,created_at, artist_id, artists(name)")
-      .in("id", ids);
-    if (e2) { console.error(e2); setLikedSongs([]); return; }
- 
-    const ui = (rows ?? []).map(r => ({
-      id: String(r.id),
-      title: r.title ?? "",
-      photoUrl: r.song_photo ?? null,
-      createdAt: r.created_at ?? null,
-      artistName: (r as any).artists?.name??null,
-    }))as UISong[];
-    ui.sort((a,b)=> ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
-    setLikedSongs(ui);
-  })();
-}, [userId]);
+      const { data: rows, error: e2 } = await supabase
+        .from("songs")
+        .select("id,title,song_photo,created_at, artist_id, artists(name)")
+        .in("id", ids);
+      if (e2) { console.error(e2); setLikedSongs([]); return; }
+
+      const ui = (rows ?? []).map(r => ({
+        id: String(r.id),
+        title: r.title ?? "",
+        photoUrl: r.song_photo ?? null,
+        createdAt: r.created_at ?? null,
+        artistName: (r as any).artists?.name ?? null,
+      })) as UISong[];
+      ui.sort((a, b) => ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
+      setLikedSongs(ui);
+    })();
+  }, [userId]);
 
   function platformMeta(p: string | null | undefined) {
     const key = (p ?? "").toLowerCase();
@@ -96,7 +98,7 @@ export default function MyAudiencePage() {
     // YouTube Music: 키워드 + 호스트까지 대응
     const isYtMusic =
       key.includes("youtubemusic") ||
-      key.includes("youtube music")||
+      key.includes("youtube music") ||
       key.includes("music.youtube") ||   // e.g. https://music.youtube.com/...
       key.includes("youtube.com/music"); // e.g. https://youtube.com/music/...
 
@@ -332,7 +334,7 @@ export default function MyAudiencePage() {
         </div>
 
         <div className="ml-auto">
-            <RoleSwitcher align="right" label="관객"/> {/* 관객/아티스트 드롭다운 */}
+          <RoleSwitcher align="right" label="관객" /> {/* 관객/아티스트 드롭다운 */}
         </div>
       </div>
 
@@ -365,52 +367,75 @@ export default function MyAudiencePage() {
 
         {/* 콘텐츠 영역 */}
         <div className="py-8 text-sm text-gray-400">
-          {activeTab === "songs" &&(
-              !songDetail.openSong ? (
-                <LikedSongsList
-                  songs={likedSongs}
-                  onOpen={(s)=> songDetail.open(Number(s.id))}
-                />
-              ) : (
-                <SongDetailPanel
-                  openSong={songDetail.openSong}
-                  openLoading={songDetail.openLoading}
-                  onClose={songDetail.close}
-                  platformMeta={platformMeta}
-                  liked={songDetail.liked}
-                  likeCount={songDetail.likeCount}
-                  likeLoading={songDetail.likeLoading}
-                  onToggleLike={songDetail.toggleLike}
-                  commentCount={songDetail.commentCount}
-                  panelRef={songDetail.panelRef}
-                  commentsSlot={
-                    songDetail.openSong ? (
-                      <SongCommentsInline songId={songDetail.openSong.id} />
-                    ) : null
-                  }
-                />
-              )
+          {activeTab === "songs" && (
+            !songDetail.openSong ? (
+              <LikedSongsList
+                songs={likedSongs}
+                onOpen={(s) => songDetail.open(Number(s.id))}
+              />
+            ) : (
+              <SongDetailPanel
+                openSong={songDetail.openSong}
+                openLoading={songDetail.openLoading}
+                onClose={songDetail.close}
+                platformMeta={platformMeta}
+                liked={songDetail.liked}
+                likeCount={songDetail.likeCount}
+                likeLoading={songDetail.likeLoading}
+                onToggleLike={songDetail.toggleLike}
+                commentCount={songDetail.commentCount}
+                panelRef={songDetail.panelRef}
+                commentsSlot={
+                  songDetail.openSong ? (
+                    <SongCommentsInline songId={songDetail.openSong.id} />
+                  ) : null
+                }
+              />
+            )
           )}
 
           {activeTab === "books" && (
             !selectedAlbum ? (
-              <AlbumsList albums={albums} readOnly onOpen={(a)=>setSelectedAlbum(a)} /> //onOpen : callback function
+              <AlbumsList albums={albums} readOnly onOpen={(a) => setSelectedAlbum(a)} /> //onOpen : callback function
             ) : (
-              <LikedAlbumDetail album={selectedAlbum} onBack={()=>setSelectedAlbum(null)} /> //onBack : callback function
+              <LikedAlbumDetail album={selectedAlbum} onBack={() => setSelectedAlbum(null)} /> //onBack : callback function
             )
           )}
 
           {activeTab === "artists" && (
             <div className="space-y-3">
-              {loadingArtists?(
+              {loadingArtists ? (
                 <div className="text-gray-500">불러오는 중...</div>
               ) : (
-                <FollowedArtistsGrid artists={followedArtists}/>
+                <FollowedArtistsGrid artists={followedArtists} />
               )}
             </div>
           )}
 
-          {activeTab === "stages" && <div>(다녀온 무대 리스트 예정)</div>}
+          {activeTab === "stages" && (
+            <div className="space-y-3">
+              {loadingArtists ? (
+                <div className="text-gray-500">불러오는 중...</div>
+              ) : followedArtists.length === 0 ? (
+                <div className="text-gray-500">팔로우한 아티스트가 없습니다.</div>
+              ) : (
+                <ArtistStagesCalendar
+                  mode="viewer"
+                  canEdit={false}
+                  // ✅ 여러 아티스트의 무대 한 번에
+                  artistIds={followedArtists.map((a: any) => Number(a.id))}
+                  artistNameMap={Object.fromEntries(
+                    followedArtists.map((a: any) => [Number(a.id), String(a.name ?? "")])
+                  )}
+                  // ✅ (옵션) 공연 클릭 시 홍보 링크 있으면 새 창으로
+                  onItemClick={(s) => {
+                    if (s.promotion_url) window.open(s.promotion_url, "_blank");
+                  }}
+                />
+              )}
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -437,11 +462,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`pb-2 transition ${
-        active
+      className={`pb-2 transition ${active
           ? "text-black border-b-2 border-black"
           : "text-gray-500 hover:text-black"
-      }`}
+        }`}
     >
       {label}
     </button>
