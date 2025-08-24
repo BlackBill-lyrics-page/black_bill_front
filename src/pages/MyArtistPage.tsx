@@ -15,7 +15,7 @@ import type { StageFormValues } from "../components/stage/StageForm";
 import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
 
 
-// 🔧 title -> albumname 으로 교체
+// title -> albumname 으로 교체
 type AlbumLite = { id: number; albumname?: string | null; created_at?: string | null };
 
 export default function MyArtistPage() {
@@ -61,7 +61,7 @@ export default function MyArtistPage() {
 
   const isOwner = !!(finalArtist && userId && (finalArtist as any).userId === userId);
 
-  // ✅ 가사집(앨범) 목록 & 선택 상태
+  //  가사집(앨범) 목록 & 선택 상태
   const [albums, setAlbums] = useState<AlbumLite[]>([]);
   const [selectedAlbumId, setSelectedAlbumId] = useState<number | "">("");
 
@@ -156,12 +156,12 @@ export default function MyArtistPage() {
         }}
         onAddStage={() => {
           if (!isOwner) return;
-          if (!selectedAlbumId) {                    // 🔧 가사집 미선택 보호
+          if (!selectedAlbumId) {                    //  가사집 미선택 보호
             alert("무대를 연결할 가사집을 먼저 선택해주세요.");
             setActiveTab("stages");
             return;
           }
-          openCreateStage();           // ✅ 탭 전환 + 모달 오픈
+          openCreateStage();           //  탭 전환 + 모달 오픈
         }}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -176,7 +176,7 @@ export default function MyArtistPage() {
       {/* === Stages 탭 콘텐츠 === */}
       {activeTab === "stages" && (
         <div className="p-4 flex flex-col gap-4">
-          {/* 🔧 가사집 선택 셀렉터 추가 (무대 생성 시 albumId로 사용) */}
+          {/*  가사집 선택 셀렉터 추가 (무대 생성 시 albumId로 사용) */}
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600">무대 연결 가사집</label>
             <select
@@ -201,7 +201,7 @@ export default function MyArtistPage() {
                     alert("무대를 연결할 가사집을 먼저 선택해주세요.");
                     return;
                   }
-                  openCreateStage();                 // 🔧 셀렉터 옆의 '무대 추가' 빠르게
+                  openCreateStage();                 //  셀렉터 옆의 '무대 추가' 빠르게
                 }}
               >
                 무대 추가 +
@@ -219,7 +219,7 @@ export default function MyArtistPage() {
                 alert("무대를 연결할 가사집을 먼저 선택해주세요.");
                 return;
               }
-              openCreateStage(dateStr);               // ✅ 선택 날짜로 초기화
+              openCreateStage(dateStr);               //  선택 날짜로 초기화
             }}
           // onItemClick={(s) => {                   // (옵션) 오너가 아닐 때 클릭 동작
           //   if (!isOwner && s.promotion_url) window.open(s.promotion_url, "_blank");
@@ -262,9 +262,9 @@ export default function MyArtistPage() {
           onClose={() => { setIsStageModalOpen(false); setStageInitial(null); setCalendarBump((k) => k + 1);}}
           mode="create"
           artistId={finalArtist.id}
-          albumId={Number(selectedAlbumId)}             // ✅ 필수
+          albumId={Number(selectedAlbumId)}             
           initialStage={null}
-          initialForm={stageInitial ?? undefined}      // ✅ 여기!
+          initialForm={stageInitial ?? undefined}      
         />
       )}
 

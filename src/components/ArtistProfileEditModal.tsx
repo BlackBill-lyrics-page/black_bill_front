@@ -54,9 +54,9 @@ export default function ArtistProfileEditModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center overflow-y-hidden">
       {/* 카드 */}
-      <div className="w-full max-w-lg bg-white rounded-lg shadow p-6">
+      <div className="w-full max-w-lg bg-white rounded-lg shadow p-6 max-h-[80vh] overflow-y-auto">
         <h1 className="text-xl font-bold">아티스트 정보 수정</h1>
 
         {/* 프로필 사진 */}

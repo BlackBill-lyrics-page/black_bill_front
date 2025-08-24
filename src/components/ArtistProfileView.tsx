@@ -714,7 +714,7 @@ export default function ArtistProfileView({
                                   const f = Array.from(e.dataTransfer.files || []).find(f => f.type.startsWith("image/"));
                                   if (f) setCmtFile(f);
                                 }}
-                                className={`flex items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""}`}
+                                className={`flex mt-4 items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""}`}
 
                               >
                               {/* + 버튼 */}
@@ -728,13 +728,13 @@ export default function ArtistProfileView({
                                 />
                               </label>
 
-                              {/* ✅ 미리보기 썸네일 */}
+                              {/*  미리보기 썸네일 */}
                               {cmtPreview && (
                                 <div className="relative ml-1 shrink-0">
                                   <img
                                     src={cmtPreview}
                                     alt="preview"
-                                    className="w-16 h-16 rounded-xl object-cover bg-gray-100"
+                                    className="w-16 h-16 rounded-xl object-cover bg-gray-100 "
                                   />
                                   <button
                                     type="button"
@@ -754,7 +754,7 @@ export default function ArtistProfileView({
                                 value={cmtText}
                                 onChange={(e) => setCmtText(e.target.value)}
                                 placeholder="이미지를 드래그, 또는 댓글을 작성해주세요."
-                                className="flex-1 rounded px-3 py-2 text-sm"
+                                className="flex-1 rounded px-3 py-2 text-sm "
                                 minRows={1}
                                 onKeyDown={(e)=>{
                                   if (e.key === "Enter" && !e.shiftKey){
@@ -798,7 +798,7 @@ export default function ArtistProfileView({
                                       <img
                                         src={c.photo_url}
                                         alt="첨부 이미지"
-                                        className="max-h-64 rounded-lg border object-contain"
+                                        className="max-h-64 rounded-lg object-contain"
                                       />
                                     </div>
                                   )}

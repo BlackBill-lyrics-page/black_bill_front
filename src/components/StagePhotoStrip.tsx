@@ -41,9 +41,9 @@ export default function StagePhotoStrip({
   };
 
   return (
-    <div className="mt-4 bg-white rounded-xl p-4">
+    <div className="mt-4 bg-white rounded-xl ">
       {/* 헤더: 공연 이미지 / 전체보기 */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 py-4">
         <span className="text-sm font-semibold">공연 이미지</span>
         <button
           type="button"
@@ -55,21 +55,21 @@ export default function StagePhotoStrip({
       </div>
 
       {/* 가로 슬라이더 */}
-      <div className="relative">
+      <div className="grid grid-cols-[15px_1fr_15px] items-center gap-2 h-40">
         {/* 좌측 화살표 */}
         <button
           type="button"
           aria-label="왼쪽으로"
           onClick={() => scrollByPage(-1)}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 grid place-items-center"
+          className="h-full flex items-center justify-center"
         >
-          <FiChevronLeft className="w-5 h-5" />
+          <FiChevronLeft className="w-20 h-20" />
         </button>
 
         {/* 썸네일 트랙 */}
         <div
           ref={trackRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth px-8 no-scrollbar"
+          className="flex gap-3 overflow-x-auto scroll-smooth no-scrollbar"
         >
           {photos.map((p) => (
             <div
@@ -96,9 +96,9 @@ export default function StagePhotoStrip({
           type="button"
           aria-label="오른쪽으로"
           onClick={() => scrollByPage(1)}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 grid place-items-center"
+          className="h-full flex items-center justify-center"
         >
-          <FiChevronRight className="w-5 h-5" />
+          <FiChevronRight className="w-20 h-20" />
         </button>
       </div>
     </div>
