@@ -44,7 +44,7 @@ export default function HomePage() {
     });
 
     return (
-        <div className="max-w-[700px] mx-auto">
+        <div className="max-w-[700px] mx-auto px-4 sm:px-6">
             {view === "album" && (
                 <div>
                     <div className="flex items-center gap-2">
@@ -153,8 +153,8 @@ export default function HomePage() {
                             전체보기
                         </button>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {albums.slice(0,5).map((a) => (
+                    <div className="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(80px,1fr))] gap-3 sm:gap-4">
+                      {albums.slice(0,6).map((a) => (
                         <button
                           key={a.album_id}
                           onClick={() =>

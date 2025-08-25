@@ -91,7 +91,7 @@ const SetProfileArtist = () => {
         <img
           src={photoUrl || '/default-profile.svg'}
           alt="default profile"
-          className="w-full h-full rounded-full bg-gray-100 object-contain p-10"
+          className="w-full h-full rounded-full bg-gray-100 object-contain"
         />
         <label
           htmlFor="photo-upload"
