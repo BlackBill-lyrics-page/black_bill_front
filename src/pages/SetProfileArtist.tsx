@@ -91,7 +91,7 @@ const SetProfileArtist = () => {
         <img
           src={photoUrl || '/default-profile.svg'}
           alt="default profile"
-          className="w-full h-full rounded-full bg-gray-100 object-contain p-10"
+          className="w-full h-full rounded-full bg-gray-100 object-contain"
         />
         <label
           htmlFor="photo-upload"
@@ -182,6 +182,7 @@ const SetProfileArtist = () => {
 
       {snsLinks.map((link, idx) => (
         <div key={idx} className="flex items-center gap-2 mb-1">
+
           <select
             value={link.platform}
             onChange={(e) => {
@@ -210,7 +211,7 @@ const SetProfileArtist = () => {
               updated[idx].url = e.target.value;
               setSnsLinks(updated);
             }}
-            className="flex-1 p-1 pl-4 rounded-2xl bg-gray-100"
+            className="flex-1 min-w-0 p-1 pl-3 rounded-2xl bg-gray-100" //media query under width 375
           />
 
           <button
@@ -224,6 +225,7 @@ const SetProfileArtist = () => {
           >
             <FiTrash className="w-7 h-7 p-1 text-gray-400 bg-white rounded-full border-gray-100" />
           </button>
+
         </div>
       ))}
 

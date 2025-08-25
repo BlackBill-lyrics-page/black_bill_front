@@ -147,7 +147,11 @@ export default function MyAudiencePage() {
 
       const { data: rows, error: e2 } = await supabase
         .from("songs")
-        .select("id,title,song_photo,created_at, artist_id, artists(name)")
+        .select(`id,title,song_photo,created_at, artist_id, 
+                artists(name),
+                song_comment:song_comment!song_comment_song_id_fkey(count),
+                song_liked:song_liked!song_liked_song_id_fkey(count)
+               `)
         .in("id", ids);
       if (e2) {
         console.error(e2);
@@ -161,7 +165,10 @@ export default function MyAudiencePage() {
         photoUrl: r.song_photo ?? null,
         createdAt: r.created_at ?? null,
         artistName: (r as any).artists?.name ?? null,
+        commentCount: r.song_comment?.[0]?.count ?? 0,
+        likeCount: r.song_liked?.[0]?.count ?? 0,
       })) as UISong[];
+
       ui.sort((a, b) => ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
       setLikedSongs(ui);
     })();
@@ -222,15 +229,17 @@ export default function MyAudiencePage() {
   return (
     <div className="max-w-[700px] mx-auto">
       {/* 프로필 영역 */}
-      <div className="flex items-center gap-4 p-6">
+      <div className="flex flex-wrap items-center gap-4 p-6">
         <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
           <img src={displayPhoto} alt="프로필" className="w-full h-full object-cover" />
         </div>
 
-        <span className="text-xl font-semibold">{displayName}님의 서랍장</span>
+        
 
         {/* 설정 아이콘 + 드롭다운 */}
-        <div className="relative" ref={menuRef}>
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-semibold">{displayName}님의 서랍장</span>
+                  <div className="relative" ref={menuRef}>
           <button
             type="button"
             aria-haspopup="menu"
@@ -280,6 +289,7 @@ export default function MyAudiencePage() {
             </div>
           )}
         </div>
+        </div>
 
         <div className="ml-auto">
           <RoleSwitcher align="right" label="관객" />
@@ -288,12 +298,12 @@ export default function MyAudiencePage() {
 
       {/* 탭 */}
       <div className="px-6 mt-6">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <div className="flex gap-4 text-sm whitespace-nowrap">
             <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="좋아하는 곡" />
             <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="좋아하는 가사집" />
             <TabButton active={activeTab === "artists"} onClick={() => setActiveTab("artists")} label="내 아티스트" />
-            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="다녀온 무대" />
+            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="무대" />
           </div>
         </div>
 
@@ -374,7 +384,7 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
   return (
     <button
       onClick={onClick}
-      className={`pb-2 transition ${active ? "text-black border-b-2 border-black" : "text-gray-500 hover:text-black"}`}
+      className={`pb-2 transition break-keep ${active ? "text-black border-b-2 border-black" : "text-gray-500 hover:text-black"}`}
     >
       {label}
     </button>

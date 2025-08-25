@@ -44,7 +44,7 @@ export default function HomePage() {
     });
 
     return (
-        <div className="max-w-[700px] mx-auto">
+        <div className="max-w-[700px] mx-auto px-4 sm:px-6">
             {view === "album" && (
                 <div>
                     <div className="flex items-center gap-2">
@@ -57,33 +57,28 @@ export default function HomePage() {
                     </div>
                     <div className="text-gray-400 px-5 mt-2">이번 주, 관객이 가장 좋아한 가사집이에요</div>
 
-                    <div className="grid grid-cols-5 gap-4 mt-4">
-
-                        {albums.map((a) => (
-                            <div
-                                key={a.album_id}
-                                onClick={() => navigate(`/artist/${a.artist_id}?tab=lyricsbook&album=${a.album_id}`)}
-                                className="relative bg-gray-200 rounded-lg w-32 h-40 overflow-hidden cursor-pointer"
-                            >
-                                {/* 앨범 이미지 */}
-                                <img
-                                    src={a.album_photo ?? undefined}
-                                    alt={""}
-                                    className="w-full h-full object-cover"
-                                />
-
-                                {/* 텍스트 영역 */}
-                                <div className="absolute inset-0 flex flex-col justify-between p-2 text-xs">
-                                    <div className="font-medium text-gray-900 truncate bg-white/70 px-1 rounded">
-                                        {a.albumname}
-                                    </div>
-                                    <div className="text-gray-700 truncate bg-white/70 px-1 rounded">
-                                        {a.artist_name}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {albums.map((a) => (
+                        <button
+                          key={a.album_id}
+                          onClick={() =>
+                            navigate(`/artist/${a.artist_id}?tab=lyricsbook&album=${a.album_id}`)
+                          }
+                          className="rounded-xl overflow-hidden border bg-white hover:shadow-md transition text-left"
+                        >
+                          <div className="aspect-[4/3] bg-gray-100">
+                            <img
+                              src={a.album_photo ?? undefined}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="p-2">
+                            <div className="text-xs text-gray-500 truncate">{a.artist_name}</div>
+                            <div className="text-[12px] font-medium truncate">{a.albumname}</div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                 </div>
             )}
@@ -146,33 +141,28 @@ export default function HomePage() {
                             전체보기
                         </button>
                     </div>
-                    <div className="grid grid-cols-5 gap-4 mt-4">
-
-                        {albums.map((a) => (
-                            <div
-                                key={a.album_id}
-                                onClick={() => navigate(`/artist/${a.artist_id}?tab=lyricsbook&album=${a.album_id}`)}
-                                className="relative bg-gray-200 rounded-lg w-32 h-40 overflow-hidden cursor-pointer"
-                            >
-                                {/* 앨범 이미지 */}
-                                <img
-                                    src={a.album_photo ?? undefined}
-                                    alt={""}
-                                    className="w-full h-full object-cover"
-                                />
-
-                                {/* 텍스트 영역 */}
-                                <div className="absolute inset-0 flex flex-col justify-between p-2 text-xs">
-                                    <div className="font-medium text-gray-900 truncate bg-white/70 px-1 rounded">
-                                        {a.albumname}
-                                    </div>
-                                    <div className="text-gray-700 truncate bg-white/70 px-1 rounded">
-                                        {a.artist_name}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
+                    <div className="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(80px,1fr))] gap-3 sm:gap-4">
+                      {albums.slice(0,6).map((a) => (
+                        <button
+                          key={a.album_id}
+                          onClick={() =>
+                            navigate(`/artist/${a.artist_id}?tab=lyricsbook&album=${a.album_id}`)
+                          }
+                          className="rounded-xl overflow-hidden border bg-white hover:shadow-md transition text-left"
+                        >
+                          <div className="aspect-[4/3] bg-gray-100">
+                            <img
+                              src={a.album_photo ?? undefined}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="p-2">
+                            <div className="text-xs text-gray-500 truncate">{a.artist_name}</div>
+                            <div className="text-[12px] font-medium truncate">{a.albumname}</div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
 
                     <div className="justify-between flex mt-10 mb-4">

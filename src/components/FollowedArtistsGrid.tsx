@@ -9,7 +9,7 @@ export default function FollowedArtistsGrid({artists}:{artists:UIArtist[]}){
     }
 
     return(
-        <ul className="grid gap-6 grid-cols-4">
+        <ul className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
             {artists.map((a)=>(
                 <li
                     key={a.id}

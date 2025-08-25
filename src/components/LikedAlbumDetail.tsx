@@ -306,8 +306,8 @@ export default function LikedAlbumDetail({
 
           {/* 무대 드롭다운 */}
           {stages.length ? (
-            <div className="mb-3 flex items-center gap-2">
-              <span className="text-sm text-gray-500">무대:</span>
+            <div className="mb-3 flex items-center gap-2 min-w-0">
+              <span className="text-sm text-gray-500 shrink-0 whitespace-nowrap">무대:</span>
               <select
                 value={selectedStageId ?? ""}
                 onChange={(e) => setSelectedStageId(Number(e.target.value))}
