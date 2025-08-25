@@ -147,7 +147,11 @@ export default function MyAudiencePage() {
 
       const { data: rows, error: e2 } = await supabase
         .from("songs")
-        .select("id,title,song_photo,created_at, artist_id, artists(name)")
+        .select(`id,title,song_photo,created_at, artist_id, 
+                artists(name),
+                song_comment:song_comment!song_comment_song_id_fkey(count),
+                song_liked:song_liked!song_liked_song_id_fkey(count)
+               `)
         .in("id", ids);
       if (e2) {
         console.error(e2);
@@ -161,7 +165,10 @@ export default function MyAudiencePage() {
         photoUrl: r.song_photo ?? null,
         createdAt: r.created_at ?? null,
         artistName: (r as any).artists?.name ?? null,
+        commentCount: r.song_comment?.[0]?.count ?? 0,
+        likeCount: r.song_liked?.[0]?.count ?? 0,
       })) as UISong[];
+
       ui.sort((a, b) => ids.indexOf(Number(a.id)) - ids.indexOf(Number(b.id)));
       setLikedSongs(ui);
     })();
