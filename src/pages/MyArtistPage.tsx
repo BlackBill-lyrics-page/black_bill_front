@@ -175,12 +175,31 @@ export default function MyArtistPage() {
 
       {/* === Stages 탭 콘텐츠 === */}
       {activeTab === "stages" && (
-        <div className="p-4 flex flex-col gap-4">
+        <div
+          className="
+            p-4 flex flex-col gap-4
+            w-full max-w-[700px] mx-auto                    /* ✅ 공연 탭 가로 700px 제한 + 중앙정렬 */
+            [@media(max-width:375px)]:p-3                   /* ✅ 375px에서 패딩 살짝 줄이기 */
+          "
+        >
           {/*  가사집 선택 셀렉터 추가 (무대 생성 시 albumId로 사용) */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">무대 연결 가사집</label>
+          <div
+            className="
+              flex flex-wrap items-center gap-2             /* ✅ 375px일 때 줄바꿈 허용 */
+              [@media(max-width:375px)]:gap-1               /* ✅ 간격 더 압축 */
+            "
+          >
+            <label className="text-sm text-gray-600 [@media(max-width:375px)]:text-xs">
+              무대 연결 가사집
+            </label>
+
             <select
-              className="border rounded-lg px-2 py-1"
+              className="
+                border rounded-lg px-2 py-1
+                min-w-[160px]
+                [@media(max-width:375px)]:text-sm
+                [@media(max-width:375px)]:flex-1            /* ✅ 아주 좁은 화면에서 가로폭 유연하게 */
+              "
               value={selectedAlbumId}
               onChange={(e) =>
                 setSelectedAlbumId(e.target.value ? Number(e.target.value) : "")
@@ -193,9 +212,14 @@ export default function MyArtistPage() {
                 </option>
               ))}
             </select>
+
             {isOwner && (
               <button
-                className="ml-auto px-3 py-2 rounded-xl border"
+                className="
+                  ml-auto px-3 py-2 rounded-xl border
+                  [@media(max-width:375px)]:ml-0             /* ✅ 작은 화면에서 밀림 방지 */
+                  [@media(max-width:375px)]:w-full           /* ✅ 버튼 한 줄 차지 */
+                "
                 onClick={() => {
                   if (!selectedAlbumId) {
                     alert("무대를 연결할 가사집을 먼저 선택해주세요.");
@@ -208,6 +232,7 @@ export default function MyArtistPage() {
               </button>
             )}
           </div>
+          
           <ArtistStagesCalendar
             key={calendarBump}
             artistId={finalArtist.id}
@@ -259,12 +284,12 @@ export default function MyArtistPage() {
       {isStageModalOpen && selectedAlbumId && (
         <UploadAndEditStageModal
           open={isStageModalOpen}
-          onClose={() => { setIsStageModalOpen(false); setStageInitial(null); setCalendarBump((k) => k + 1);}}
+          onClose={() => { setIsStageModalOpen(false); setStageInitial(null); setCalendarBump((k) => k + 1); }}
           mode="create"
           artistId={finalArtist.id}
-          albumId={Number(selectedAlbumId)}             
+          albumId={Number(selectedAlbumId)}
           initialStage={null}
-          initialForm={stageInitial ?? undefined}      
+          initialForm={stageInitial ?? undefined}
         />
       )}
 

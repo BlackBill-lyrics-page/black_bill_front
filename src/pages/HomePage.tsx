@@ -89,57 +89,45 @@ export default function HomePage() {
             )}
 
             {view === "stage" && (
-                <div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setView("home")}
-                        >
-                            <IoIosArrowBack />
-                        </button>
-                        <div>다가오는 공연</div>
-                    </div>
-                    <div className="text-gray-400 px-5 mt-2">가장 가까운 날짜의 공연이에요</div>
+                <div className="mx-auto w-full max-w-[1200px] px-4">
+                    {/* ...헤더/설명 그대로... */}
 
-                    {stageError && <div className="text-red-500 px-5 mt-3">에러: {stageError}</div>}
-                    {stageLoading && <div className="px-5 mt-3">불러오는 중…</div>}
-                    {/* ✅ 추가: 날짜별 구분 + 카드 그리드 */}
                     {stageByDate.map(({ date, items }) => (
                         <section key={date} className="px-1 mt-6">
                             <h3 className="text-sm text-gray-600 mb-2">{date}</h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+
+                            {/* ✅ 3열(기본) / 6열(large) — 각 트랙 폭을 121px로 고정 */}
+                            <div className="
+          grid gap-3
+          grid-cols-[repeat(3,_121px)]
+          lg:grid-cols-[repeat(6,_121px)]
+          justify-center                 /* ✅ 가운데 정렬 */
+        ">
                                 {items.map((s) => (
                                     <UpcomingStageCard
                                         key={s.id}
                                         stage={s}
-                                        onClick={() =>
-                                            navigate(`/artist/${s.artist?.id}`, {
-                                                state: { tab: "albums", albumId: s.album?.id } // ✅ 상태로 전달
-                                            })
-                                        }
+                                        onClick={() => navigate(`/artist/${s.artist?.id}?tab=stages&stageId=${s.id}`)}
                                     />
                                 ))}
                             </div>
                         </section>
                     ))}
 
-                    {/* ✅ 추가: 비어있을 때 */}
                     {!stageLoading && !stageByDate.length && (
-                        <div className="px-5 mt-6 text-sm text-gray-500">표시할 공연이 없어요.</div>
+                        <div className="px-1 mt-6 text-sm text-gray-500">표시할 공연이 없어요.</div>
                     )}
 
-                    {/* ✅ 추가: 더보기 페이지네이션 */}
                     {hasMore && !stageLoading && (
                         <div className="flex justify-center py-6">
-                            <button
-                                onClick={() => setStagePage((p) => p + 1)}
-                                className="px-4 py-2 rounded-lg border hover:bg-gray-50"
-                            >
+                            <button onClick={() => setStagePage((p) => p + 1)} className="px-4 py-2 rounded-lg border hover:bg-gray-50">
                                 더보기
                             </button>
                         </div>
                     )}
                 </div>
             )}
+
 
             {view === "home" && (
                 <>
@@ -194,34 +182,34 @@ export default function HomePage() {
                         </button>
                     </div>
 
-                    {/* ✅ 여기서부터 프리뷰(가로 스크롤) */}
-                    <div className="pb-2 -mx-2 px-2">
-                        {previewError && (
-                            <div className="text-red-500">에러: {previewError}</div>
-                        )}
-                        {previewLoading && (
-                            <div className="h-36">불러오는 중…</div>
-                        )}
+                    {/* 프리뷰: 스크롤 제거 + 5개 고정 + 가운데 정렬 */}
+                    <div className="pb-2">
+                        {previewError && <div className="text-red-500">에러: {previewError}</div>}
+                        {previewLoading && <div className="h-36">불러오는 중…</div>}
                         {!previewLoading && !previewError && (!previewStages || previewStages.length === 0) && (
                             <div className="text-sm text-gray-500">다가오는 공연이 없어요.</div>
                         )}
 
                         {!!previewStages?.length && (
-                            <div className="flex gap-3 overflow-x-auto">
-                                {previewStages.map((s) => (
+                            <div
+                                className="
+        grid gap-3
+        grid-cols-[repeat(5,_121px)]   /* ✅ 고정 폭 121px × 5열 */
+        justify-center                 /* ✅ 전체 그리드를 가운데 정렬 */
+      "
+                            >
+                                {previewStages.slice(0, 5).map((s) => (
                                     <UpcomingStageCard
                                         key={s.id}
                                         stage={s}
-                                        onClick={() =>
-                                            navigate(`/artist/${s.artist?.id}`, {
-                                                state: { tab: "albums", albumId: s.album?.id }
-                                            })
-                                        }
+                                        onClick={() => navigate(`/artist/${s.artist?.id}?tab=stages`)}
                                     />
                                 ))}
                             </div>
                         )}
                     </div>
+
+
                 </>
             )}
 
