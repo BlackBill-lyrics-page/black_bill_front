@@ -110,9 +110,9 @@ export default function AlbumsList({
               </div>
 
               {/* 오른쪽: 좋아요 + 댓글 + 수정 */}
-              <div className="flex items-center gap-3">
-                <AlbumLikeButton mode="vm" albumId={Number(a.id)} />
-                <span className="text-xs text-gray-500">
+              <div className="shrink-0 pl-2 flex items-center gap-3">
+                <AlbumLikeButton mode="vm" albumId={Number(a.id)} />    
+                <span className="text-xs text-gray-500 whitespace-nowrap">
                   댓글({(a as any).commentCount ?? 0})
                 </span>
                 {!readOnly && onEdit && (

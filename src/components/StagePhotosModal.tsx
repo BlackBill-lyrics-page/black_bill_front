@@ -24,6 +24,7 @@ type LightboxItem = {  // single photo modal
   username?: string | null;
 };
 
+
 async function handleDownloadFromUrl(url: string, fallbackName = "image") {
   const parsed = parseSupabasePublicUrl(url);
   if (!parsed) {
@@ -55,6 +56,28 @@ export default function StagePhotosModal({
     document.body.style.overflow = prev;
   };
 }, [lightbox]);
+
+const [colW, setColW] = useState(220);
+const [gutter, setGutter] = useState(16);
+const [minCols, setMinCols] = useState(2);
+
+useEffect(() => { //media query
+  const el = scrollRef.current;
+  if (!el) return;
+  const ro = new ResizeObserver(() => {
+    const w = el.clientWidth;       // 스크롤 컨테이너 실제 폭
+    // columnWidth / gutter 반응형
+    if (w < 380) { setColW(160); setGutter(1); }
+    else if (w < 520) { setColW(180); setGutter(14); }
+    else { setColW(220); setGutter(16); }
+
+    //가용 폭이 2컬럼 못 담으면 1컬럼로
+    const needFor2 = colW * 2 + gutter;     // 2칼럼에 필요한 최소폭
+    setMinCols(w < needFor2 ? 1 : 2);
+  });
+  ro.observe(el);
+  return () => ro.disconnect();
+}, [scrollRef, colW, gutter]);
 
 //   전체 아이템 플랫 
 //   const flatItems = useMemo(
@@ -92,7 +115,7 @@ export default function StagePhotosModal({
   return (
     <div className="fixed inset-0 z-[100] bg-black/60" onClick={onClose}>
       <div
-        className="mx-auto mt-[5vh] w-[92vw] max-w-[1000px] h-[90vh] rounded-2xl bg-white shadow-xl overflow-y-auto"
+        className="mx-auto mt-[5vh] w-[92vw] max-w-[1000px] h-[90vh] rounded-2xl bg-white shadow-xl overflow-y-auto overflow-x-hidden"
         onClick={(e) => e.stopPropagation()}
         ref={scrollRef} // -> scrollerProps
       >
@@ -109,7 +132,7 @@ export default function StagePhotosModal({
         </div>
 
         {/* section header + Masonry */}
-        <div className="px-4 py-4 space-y-8">
+        <div className="px-2 py-4 space-y-8">
           {groups.map((g) => (
             <section key={g.stageId} className="space-y-3">
               {(g.title || g.date) && (
@@ -152,9 +175,9 @@ export default function StagePhotosModal({
                   </button>
                 )}
 
-                columnWidth={220}
-                gutterWidth={16}
-                minCols={2}
+                columnWidth={colW}
+                gutterWidth={gutter}
+                minCols={minCols}
                 layout="basicCentered"
                 align="center"
                 {...scrollerProps}

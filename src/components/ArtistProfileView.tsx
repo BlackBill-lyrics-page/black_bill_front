@@ -427,7 +427,7 @@ export default function ArtistProfileView({
   return (
     <div className="max-w-[700px] mx-auto">
       {/* 상단 프로필 */}
-      <div className="flex items-center gap-4 p-6">
+      <div className="flex flex-wrap items-center gap-4 p-6">
         <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
           {artist.photoUrl ? (
             <img src={artist.photoUrl} alt={artist.name} className="w-full h-full object-cover" />
@@ -543,8 +543,8 @@ export default function ArtistProfileView({
 
       {/* 탭 + (오너만) 추가 버튼 */}
       <div className="px-6 mt-6">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-4 text-sm flex-1 min-w-0 whitespace-nowrap">
             <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="가사집" />
             <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
             <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
@@ -552,7 +552,7 @@ export default function ArtistProfileView({
 
           {isOwner && (
             <button
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
+              className="ml-auto -mr-5 shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
               onClick={() => {
                 if (activeTab === "songs") onAddSong?.();
                 else if (activeTab === "books") onAddBook?.();

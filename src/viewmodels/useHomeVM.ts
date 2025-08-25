@@ -32,7 +32,7 @@ export function useHomeVM() {
       const { data, error } = await supabase.rpc("top_albums_for_week", {
         p_week_start: start.toISOString(),
         p_week_end: end.toISOString(),
-        p_limit: 5,
+        p_limit: 20,
       });
 
       if (error) {
