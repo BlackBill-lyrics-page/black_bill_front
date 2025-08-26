@@ -14,11 +14,11 @@ import HomePage from './pages/HomePage'
 
 function AppContent() {
   const location = useLocation();
-  const noHeaderRoutes = ["/sign-in", "/sign-up", "/sign-up_email"];
+  // const noHeaderRoutes = ["/sign-in", "/sign-up", "/sign-up_email"];
 
   return (
     <>
-      {!noHeaderRoutes.includes(location.pathname) && <Header />}
+      {/* {!noHeaderRoutes.includes(location.pathname) &&*/ <Header />} 
 
       <Routes>
         <Route path="/sign-up" element={<SignUpPage />} />

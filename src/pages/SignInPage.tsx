@@ -11,8 +11,9 @@ const SignInPage = () => {
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
 
-  const params = new URLSearchParams(location.search)
-  const redirect = params.get("redirect")||"/" //home 경로 추후 구현 '/'아님
+  const params = new URLSearchParams(window.location.search); // window.location 권장
+  const rawRedirect = params.get("redirect");
+  const redirect = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : "/sign-in";
 
   const handleEmailSignIn = async () => {
     if (!email || !password) {

@@ -53,7 +53,7 @@ export default function MyAudiencePage() {
 
   const [activeTab, setActiveTab] = useState<"songs" | "books" | "artists" | "stages">("songs");
 
-  // ✅ 앨범/선택 앨범은 훅 타입으로
+  // 앨범/선택 앨범은 훅 타입으로
   const [albums, setAlbums] = useState<HookAlbum[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<HookAlbum | null>(null);
 
@@ -330,7 +330,7 @@ export default function MyAudiencePage() {
 
           {activeTab === "books" &&
             (!selectedAlbum ? (
-              // ✅ AlbumsList에 pageType="audience"를 넘겨서
+              //   AlbumsList에 pageType="audience"를 넘겨서
               //    최신 무대 프리뷰 & “무대 정보 더보기” 패널을 활성화
               <AlbumsList
                 albums={albums}

@@ -24,7 +24,7 @@ const WelcomeModal = ({ username, onClose }: { username: string, onClose: () => 
         <button
           onClick={() => {
             onClose()
-            navigate('/')
+            navigate('/home')
           }}
           className="w-full bg-gray-100 text-sm py-2 rounded hover:bg-gray-200 transition"
         >

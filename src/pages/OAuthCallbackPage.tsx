@@ -51,7 +51,7 @@ const OAuthCallbackPage = () => {
         return
       }
 
-      navigate('/') // 홈으로 이동 추후 구현
+      navigate('/home') // 홈으로 이동 추후 구현
     }
 
     checkUser()
