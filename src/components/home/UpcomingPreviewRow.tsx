@@ -1,4 +1,5 @@
-// ✅ NEW: Home 상단 "다가오는 공연" 섹션 프리뷰 전용
+// components/home/UpcomingPreviewRow.tsx
+// ✅ 변경점: flex → grid, slice(0,6) 적용
 import { useNavigate } from "react-router-dom";
 import UpcomingStageCard from "./UpcomingStageCard";
 import { useUpcomingStagesVM } from "../../viewmodels/useUpcomingStages";
@@ -12,8 +13,8 @@ export default function UpcomingPreviewRow() {
   if (!rows?.length) return <div className="text-sm text-gray-500">다가오는 공연이 없어요.</div>;
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
-      {rows.map((s) => (
+    <div className="mt-4 grid [grid-template-columns:repeat(auto-fit,minmax(80px,1fr))] gap-3 sm:gap-4">
+      {rows.slice(0, 6).map((s) => (
         <UpcomingStageCard
           key={s.id}
           stage={s}
@@ -23,3 +24,4 @@ export default function UpcomingPreviewRow() {
     </div>
   );
 }
+ 
