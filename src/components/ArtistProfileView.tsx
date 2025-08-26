@@ -36,6 +36,7 @@ import StagePhotoStrip from "./StagePhotoStrip";
 import StagePhotosModal from "./StagePhotosModal";
 
 import { useSearchParams } from "react-router-dom";
+import QRDownloadButtonBB from "./QRDownloadButtonBB";
 
 type Link = { platform: string; url: string };
 
@@ -165,6 +166,16 @@ export default function ArtistProfileView({
       );
     })();
   }, [albumsVM]);
+  // [ADD] 관객용 ArtistPage에서 해당 가사집이 자동 오픈되도록 하는 URL
+  const publicAlbumUrl = useMemo(() => {
+    if (!selectedAlbum) return "";
+    const base =
+      (typeof window !== "undefined" ? window.location.origin : "").replace(/\/$/, "");
+    const u = new URL(`${base}/artist/${artist.id}`);
+    u.searchParams.set("tab", "books");                    // 가사집 탭 열기
+    u.searchParams.set("album", String(selectedAlbum.id)); // 해당 가사집 자동 선택
+    return u.toString();
+  }, [artist.id, selectedAlbum?.id]);
 
   // URL 파라미터 → 앨범 열기
   useEffect(() => {
@@ -454,9 +465,8 @@ export default function ArtistProfileView({
             type="button"
             onClick={onToggleFollow}
             disabled={followLoading}
-            className={`px-3 py-1.5 rounded-full text-sm border ${
-              following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
-            }`}
+            className={`px-3 py-1.5 rounded-full text-sm border ${following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
+              }`}
           >
             {following ? "팔로잉" : "팔로우"}
           </button>
@@ -594,36 +604,56 @@ export default function ArtistProfileView({
               ) : (
                 // 상세(선택한 가사집 + 곡 리스트) 뷰
                 <div className="mt-4">
-                  {/* 헤더(뒤로가기 + 커버/제목/아티스트) */}
-                  <div className="flex items-center gap-3 p-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedAlbum(null);
-                        const next = new URLSearchParams(searchParams);
-                        next.delete("album");
-                        setSearchParams(next, { replace: true });
-                      }}
-                      className="p-1 rounded hover:bg-gray-100"
-                      aria-label="목록으로"
-                    >
-                      <FiChevronLeft className="w-5 h-5" />
-                    </button>
+                  {/* [REPLACE] 헤더(뒤로가기 + 커버/제목/아티스트) + 우측 QR 버튼 */}
+                  <div className="flex items-center justify-between p-3">
+                    {/* 왼쪽: 뒤로가기 + 커버/텍스트 */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedAlbum(null);
+                          const next = new URLSearchParams(searchParams);
+                          next.delete("album");
+                          setSearchParams(next, { replace: true });
+                        }}
+                        className="p-1 rounded hover:bg-gray-100"
+                        aria-label="목록으로"
+                      >
+                        <FiChevronLeft className="w-5 h-5" />
+                      </button>
 
-                    <div className="flex items-start gap-3 p-3">
-                      {selectedAlbum?.photoUrl && (
-                        <img
-                          src={selectedAlbum.photoUrl}
-                          alt={selectedAlbum.name ?? "album cover"}
-                          className="w-20 h-20 rounded object-cover"
-                        />
-                      )}
-                      <div className="min-w-0">
-                        <div className="font-semibold leading-tight truncate">{selectedAlbum.name ?? "(제목 없음)"}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{artist.name}</div>
+                      <div className="flex items-start gap-3">
+                        {selectedAlbum?.photoUrl && (
+                          <img
+                            src={selectedAlbum.photoUrl}
+                            alt={selectedAlbum.name ?? "album cover"}
+                            className="w-20 h-20 rounded object-cover"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-semibold leading-tight truncate">
+                            {selectedAlbum?.name ?? "(제목 없음)"}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">{artist.name}</div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* 오른쪽: QR 프리뷰 + 다운로드 (오너 화면에서만 노출) */}
+                    {isOwner && selectedAlbum && (
+                      <QRDownloadButtonBB
+                        url={publicAlbumUrl}
+                        filename={`artist_${artist.id}_album_${selectedAlbum.id}_qr`}
+                        size={96}
+                        mode="in"           // ← 중앙 로고 / "below"로 바꾸면 하단 프레임 로고
+                        margin={2}
+                        lightColor="#ffffff"
+                        darkColor="#000000"
+                        className="shrink-0"
+                      />
+                    )}
                   </div>
+
 
                   <div className="w-full h-px bg-gray-200" />
 
@@ -696,9 +726,8 @@ export default function ArtistProfileView({
                             const f = Array.from(e.dataTransfer.files || []).find((f) => f.type.startsWith("image/"));
                             if (f) setCmtFile(f);
                           }}
-                          className={`flex mt-4 items-center gap-2 bg-white border rounded-3xl px-1 ${
-                            dragOver ? "ring-2 ring-gray-300" : ""
-                          }`}
+                          className={`flex mt-4 items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""
+                            }`}
                         >
                           {/* + 버튼 */}
                           <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
