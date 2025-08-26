@@ -18,7 +18,6 @@ import { useSongLikeVM } from "../viewmodels/useSongLikeVM";
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
 import { useStageCommentVM } from "../viewmodels/useStageCommentVM";
 import { useAlbumLikeVM } from "../viewmodels/useAlbumLikeVM";
-import QRDownloadButton from "./QRDownloadButton";
 
 import {
   FiChevronDown,
@@ -37,6 +36,7 @@ import StagePhotoStrip from "./StagePhotoStrip";
 import StagePhotosModal from "./StagePhotosModal";
 
 import { useSearchParams } from "react-router-dom";
+import QRDownloadButtonBB from "./QRDownloadButtonBB";
 
 type Link = { platform: string; url: string };
 
@@ -641,10 +641,14 @@ export default function ArtistProfileView({
 
                     {/* 오른쪽: QR 프리뷰 + 다운로드 (오너 화면에서만 노출) */}
                     {isOwner && selectedAlbum && (
-                      <QRDownloadButton
+                      <QRDownloadButtonBB
                         url={publicAlbumUrl}
-                        filename={`artist_${artist.id}_album_${selectedAlbum.id}_qr.png`}
-                        label="QR 다운로드"
+                        filename={`artist_${artist.id}_album_${selectedAlbum.id}_qr`}
+                        size={96}
+                        mode="in"           // ← 중앙 로고 / "below"로 바꾸면 하단 프레임 로고
+                        margin={2}
+                        lightColor="#ffffff"
+                        darkColor="#000000"
                         className="shrink-0"
                       />
                     )}

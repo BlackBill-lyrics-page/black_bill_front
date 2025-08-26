@@ -15,7 +15,6 @@ import type { StageFormValues } from "../components/stage/StageForm";
 import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
 
 // [NEW] QR 버튼 & 공개 URL 유틸
-import QRDownloadButton from "../components/QRDownloadButton";
 import { buildArtistAlbumPublicUrl } from "../utility/buildArtistAlbumPublicUrl";
 
 // title -> albumname 으로 교체
@@ -181,30 +180,7 @@ export default function MyArtistPage() {
         }}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        // // [NEW] 우측 상단에 QR 다운로드 버튼 추가 (가사집 탭에서, 특정 가사집이 열려 있을 때만)
-        // rightExtra={
-        //   <div className="pl-2 flex items-center gap-2">
-        //     <RoleSwitcher align="right" label="아티스트" />
-        //     {activeTab === "books" && isOwner && (
-        //       openedAlbumIdFromURL ? (
-        //         <QRDownloadButton
-        //           url={qrPublicUrl}
-        //           filename={`artist_${finalArtist.id}_album_${openedAlbumIdFromURL}_qr.png`}
-        //           label="QR 다운로드"
-        //         />
-        //       ) : (
-        //         <button
-        //           type="button"
-        //           className="px-3 py-2 rounded-xl border text-sm text-gray-500"
-        //           title="가사집을 선택하면 QR을 받을 수 있어요"
-        //           disabled
-        //         >
-        //           QR 다운로드
-        //         </button>
-        //       )
-        //     )}
-        //   </div>
-        // }
+
       />
 
       {/* === Stages 탭 콘텐츠 === */}
