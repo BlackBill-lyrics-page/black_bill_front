@@ -1,5 +1,5 @@
 // App.tsx
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import EmailSignUpPage from './pages/EmailSignUpPage'
 import SignUpPage from './pages/SignUpPage'
 import OAuthCallbackPage from './pages/OAuthCallbackPage'
@@ -21,6 +21,7 @@ function AppContent() {
       {/* {!noHeaderRoutes.includes(location.pathname) &&*/ <Header />} 
 
       <Routes>
+        <Route index element={<Navigate to="/home" replace />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/sign-up_email" element={<EmailSignUpPage />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
@@ -31,6 +32,7 @@ function AppContent() {
         <Route path="/artist/:id" element={<ArtistPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </>
   );
