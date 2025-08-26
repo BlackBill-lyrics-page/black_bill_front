@@ -49,48 +49,17 @@ export default function StagePhotosModal({
   const [lightbox, setLightbox] = useState<LightboxItem | null>(null);
 
   useEffect(() => {
-  if (!lightbox) return;
-  const prev = document.body.style.overflow;
-  document.body.style.overflow = "hidden";
-  return () => {
-    document.body.style.overflow = prev;
-  };
-}, [lightbox]);
+    if (!lightbox) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [lightbox]);
 
-const [colW, setColW] = useState(220);
-const [gutter, setGutter] = useState(16);
-const [minCols, setMinCols] = useState(2);
-
-useEffect(() => { //media query
-  const el = scrollRef.current;
-  if (!el) return;
-  const ro = new ResizeObserver(() => {
-    const w = el.clientWidth;       // 스크롤 컨테이너 실제 폭
-    // columnWidth / gutter 반응형
-    if (w < 380) { setColW(160); setGutter(1); }
-    else if (w < 520) { setColW(180); setGutter(14); }
-    else { setColW(220); setGutter(16); }
-
-    //가용 폭이 2컬럼 못 담으면 1컬럼로
-    const needFor2 = colW * 2 + gutter;     // 2칼럼에 필요한 최소폭
-    setMinCols(w < needFor2 ? 1 : 2);
-  });
-  ro.observe(el);
-  return () => ro.disconnect();
-}, [scrollRef, colW, gutter]);
-
-//   전체 아이템 플랫 
-//   const flatItems = useMemo(
-//     () =>
-//       groups.flatMap((g) =>
-//         g.items.map((p) => ({
-//           id: p.id,
-//           url: p.url,
-//           username: p.username ?? "닉네임",
-//         }))
-//       ),
-//     [groups]
-//   );
+  const [colW, setColW] = useState(150);
+  const [gutter, setGutter] = useState(16);
+  const [minCols, setMinCols] = useState(2);
 
   // ESC로 닫기
   useEffect(() => {
