@@ -281,6 +281,13 @@ export default function MyAudiencePage() {
                 className="w-full text-left rounded-lg hover:bg-gray-200 text-red-600"
                 onClick={async () => {
                   setMenuOpen(false);
+                  const ok = window.confirm(
+                    "정말로 계정을 탈퇴하시겠습니까?\n" +
+                    "작성하신 댓글, 좋아요 등 일부 기록은 '탈퇴한 사용자'로 남으며,\n" +
+                    "계정은 복구할 수 없습니다."
+                  );
+                  if (!ok) return;
+                
                   await deleteAccount();
                 }}
               >

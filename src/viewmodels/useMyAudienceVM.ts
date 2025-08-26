@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { signOut as authSignOut } from "../lib/auth";
+import { useNavigate } from "react-router-dom";
 
 export function useMyAudienceVM() {
   const [nickname, setNickname] = useState("");
@@ -9,6 +10,7 @@ export function useMyAudienceVM() {
   const [provider, setProvider] = useState("");  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate= useNavigate();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,8 +62,36 @@ export function useMyAudienceVM() {
   }, []);
 
   const deleteAccount = useCallback(async () => {
-    await signOut(); //추후구현
-  }, [signOut]);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      await supabase.auth.signOut();
+      navigate("/sign-in", { replace: true });
+      return;
+    }
+  
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/account-delete`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "unknown error" }));
+      console.error("account-delete failed:", error);
+      alert("탈퇴 처리 중 오류가 발생했습니다.");
+      return;
+    }
+  
+    // 세션 정리
+    await supabase.auth.signOut();
+    navigate("/sign-in", { replace: true });
+  }, [navigate]);
 
   return {
     nickname,
