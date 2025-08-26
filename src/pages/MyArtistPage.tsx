@@ -55,10 +55,12 @@ export default function MyArtistPage() {
   }
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       setUserId(data.user?.id ?? null);
+      setAuthReady(true);
     })();
   }, []);
 
@@ -128,9 +130,11 @@ export default function MyArtistPage() {
     <>
       <ArtistProfileView
         artist={finalArtist}
-        isOwner={isOwner}
+        isOwner={true}
+        authReady={authReady}
         followerCount={finalArtist.followerCount ?? 0}
         onEditProfile={() => setIsModalOpen(true)}
+        rightExtra={<RoleSwitcher align="right" label="아티스트" />}
         onAddSong={() => {
           if (!isOwner) return;
           setEditingSong(null);

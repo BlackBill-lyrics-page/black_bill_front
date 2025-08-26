@@ -112,7 +112,9 @@ export const useSetProfileArtistVM = () => {
     }
     
     console.log('Inserted SNS Links:', insertedLinks);
-    alert('Setting artist profile complete!');
+    alert('아티스트 프로필 설정을 완료하였습니다.');
+    window.location.replace('/my_artist');
+    return;
   };
 
   return {

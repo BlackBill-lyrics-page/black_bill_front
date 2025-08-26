@@ -44,7 +44,7 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-[min(640px,95vw)] rounded-xl bg-white p-4 shadow-xl">
+      <div className="w-[min(640px,95vw)] rounded-xl bg-white p-4 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold">
             {isEdit ? "곡 정보 수정" : "새 곡 업로드"}

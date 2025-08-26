@@ -29,7 +29,7 @@ const SignInPage = () => {
       }
       alert(msg)
     } else {
-      navigate(redirect)
+      navigate('/home')
     }
   }
 

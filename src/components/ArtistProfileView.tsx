@@ -55,6 +55,7 @@ type Artist = {
 type Props = {
   artist: Artist;
   isOwner?: boolean;
+  authReady? : boolean; // 프로필 편집 후 스위처 /팔로워 팔로워로 뜨는 오류 해결 위해 추가
   onEditProfile?: () => void;
   onAddSong?: () => void;
   onAddBook?: () => void;
@@ -93,6 +94,7 @@ const MelonIcon = makeImgIcon(melonPng, "Melon");
 export default function ArtistProfileView({
   artist,
   isOwner = false,
+  authReady=true,
   onEditProfile,
   onAddSong,
   onAddBook,
@@ -458,19 +460,23 @@ export default function ArtistProfileView({
           </span>
         </div>
 
-        {rightExtra}
 
-        {!isOwner && (
-          <button
-            type="button"
-            onClick={onToggleFollow}
-            disabled={followLoading}
-            className={`px-3 py-1.5 rounded-full text-sm border ${following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
-              }`}
-          >
-            {following ? "팔로잉" : "팔로우"}
-          </button>
-        )}
+        {authReady && (
+            isOwner
+              ? rightExtra                      // 스위처
+              : (
+                <button
+                  type="button"
+                  onClick={onToggleFollow}
+                  disabled={followLoading}
+                  className={`px-3 py-1.5 rounded-full text-sm border ${
+                    following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
+                  }`}
+                >
+                  {following ? "팔로잉" : "팔로우"}
+                </button>
+              )
+          )}
       </div>
 
       {/* 상세 */}
