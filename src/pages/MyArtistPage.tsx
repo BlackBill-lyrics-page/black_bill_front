@@ -1,6 +1,6 @@
-// MyArtistPage.tsx (발췌 + 수정)
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// MyArtistPage.tsx
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom"; // [NEW]
 import { supabase } from "../lib/supabaseClient";
 import { useMyArtistVM } from "../viewmodels/useMyArtistVM";
 import { useArtistStore } from "../store/useArtistStore";
@@ -14,6 +14,9 @@ import UploadAndEditStageModal from "../components/stage/UploadAndEditStageModal
 import type { StageFormValues } from "../components/stage/StageForm";
 import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
 
+// [NEW] QR 버튼 & 공개 URL 유틸
+import QRDownloadButton from "../components/QRDownloadButton";
+import { buildArtistAlbumPublicUrl } from "../utility/buildArtistAlbumPublicUrl";
 
 // title -> albumname 으로 교체
 type AlbumLite = { id: number; albumname?: string | null; created_at?: string | null };
@@ -23,6 +26,7 @@ export default function MyArtistPage() {
   const sArtist = useArtistStore((s) => s.artist);
   const finalArtist = sArtist?.id ? sArtist : vmArtist;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams(); // [NEW]
 
   const [activeTab, setActiveTab] = useState<"songs" | "books" | "stages">("songs");
 
@@ -61,14 +65,13 @@ export default function MyArtistPage() {
 
   const isOwner = !!(finalArtist && userId && (finalArtist as any).userId === userId);
 
-  //  가사집(앨범) 목록 & 선택 상태
+  //  가사집(앨범) 목록 & 선택 상태 (Stages 탭용 셀렉터)
   const [albums, setAlbums] = useState<AlbumLite[]>([]);
   const [selectedAlbumId, setSelectedAlbumId] = useState<number | "">("");
 
   useEffect(() => {
     (async () => {
       if (!finalArtist?.id) return;
-      // 🔧 SELECT 수정: id, albumname, created_at
       const { data, error } = await supabase
         .from("albums")
         .select("id, albumname, created_at")
@@ -89,6 +92,19 @@ export default function MyArtistPage() {
       }
     })();
   }, [finalArtist?.id]);
+
+  // [NEW] 현재 ArtistProfileView(가사집 탭)에서 선택된 가사집 id는 URL 쿼리로 옴(?album=)
+  const openedAlbumIdFromURL = searchParams.get("album");
+
+  // [NEW] 관객용 ArtistPage에서 해당 가사집이 자동 오픈되는 공개 링크 생성
+  const qrPublicUrl = useMemo(() => {
+    if (!finalArtist?.id || !openedAlbumIdFromURL) return "";
+    return buildArtistAlbumPublicUrl({
+      artistId: finalArtist.id,
+      albumId: openedAlbumIdFromURL,
+      utm: { src: "qr", medium: "offline" }, // (옵션)
+    });
+  }, [finalArtist?.id, openedAlbumIdFromURL]);
 
   if (loading) return <div className="p-6">로딩중...</div>;
 
@@ -156,21 +172,39 @@ export default function MyArtistPage() {
         }}
         onAddStage={() => {
           if (!isOwner) return;
-          if (!selectedAlbumId) {                    //  가사집 미선택 보호
+          if (!selectedAlbumId) {
             alert("무대를 연결할 가사집을 먼저 선택해주세요.");
             setActiveTab("stages");
             return;
           }
-          openCreateStage();           //  탭 전환 + 모달 오픈
+          openCreateStage();
         }}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-
-        rightExtra={
-          <div className="pl-2">
-            <RoleSwitcher align="right" label="아티스트" />
-          </div>
-        }
+        // // [NEW] 우측 상단에 QR 다운로드 버튼 추가 (가사집 탭에서, 특정 가사집이 열려 있을 때만)
+        // rightExtra={
+        //   <div className="pl-2 flex items-center gap-2">
+        //     <RoleSwitcher align="right" label="아티스트" />
+        //     {activeTab === "books" && isOwner && (
+        //       openedAlbumIdFromURL ? (
+        //         <QRDownloadButton
+        //           url={qrPublicUrl}
+        //           filename={`artist_${finalArtist.id}_album_${openedAlbumIdFromURL}_qr.png`}
+        //           label="QR 다운로드"
+        //         />
+        //       ) : (
+        //         <button
+        //           type="button"
+        //           className="px-3 py-2 rounded-xl border text-sm text-gray-500"
+        //           title="가사집을 선택하면 QR을 받을 수 있어요"
+        //           disabled
+        //         >
+        //           QR 다운로드
+        //         </button>
+        //       )
+        //     )}
+        //   </div>
+        // }
       />
 
       {/* === Stages 탭 콘텐츠 === */}
@@ -178,15 +212,14 @@ export default function MyArtistPage() {
         <div
           className="
             p-4 flex flex-col gap-4
-            w-full max-w-[700px] mx-auto                    /* ✅ 공연 탭 가로 700px 제한 + 중앙정렬 */
-            [@media(max-width:375px)]:p-3                   /* ✅ 375px에서 패딩 살짝 줄이기 */
+            w-full max-w-[700px] mx-auto
+            [@media(max-width:375px)]:p-3
           "
         >
-          {/*  가사집 선택 셀렉터 추가 (무대 생성 시 albumId로 사용) */}
           <div
             className="
-              flex flex-wrap items-center gap-2             /* ✅ 375px일 때 줄바꿈 허용 */
-              [@media(max-width:375px)]:gap-1               /* ✅ 간격 더 압축 */
+              flex flex-wrap items-center gap-2
+              [@media(max-width:375px)]:gap-1
             "
           >
             <label className="text-sm text-gray-600 [@media(max-width:375px)]:text-xs">
@@ -198,7 +231,7 @@ export default function MyArtistPage() {
                 border rounded-lg px-2 py-1
                 min-w-[160px]
                 [@media(max-width:375px)]:text-sm
-                [@media(max-width:375px)]:flex-1            /* ✅ 아주 좁은 화면에서 가로폭 유연하게 */
+                [@media(max-width:375px)]:flex-1
               "
               value={selectedAlbumId}
               onChange={(e) =>
@@ -217,22 +250,22 @@ export default function MyArtistPage() {
               <button
                 className="
                   ml-auto px-3 py-2 rounded-xl border
-                  [@media(max-width:375px)]:ml-0             /* ✅ 작은 화면에서 밀림 방지 */
-                  [@media(max-width:375px)]:w-full           /* ✅ 버튼 한 줄 차지 */
+                  [@media(max-width:375px)]:ml-0
+                  [@media(max-width:375px)]:w-full
                 "
                 onClick={() => {
                   if (!selectedAlbumId) {
                     alert("무대를 연결할 가사집을 먼저 선택해주세요.");
                     return;
                   }
-                  openCreateStage();                 //  셀렉터 옆의 '무대 추가' 빠르게
+                  openCreateStage();
                 }}
               >
                 무대 추가 +
               </button>
             )}
           </div>
-          
+
           <ArtistStagesCalendar
             key={calendarBump}
             artistId={finalArtist.id}
@@ -244,15 +277,11 @@ export default function MyArtistPage() {
                 alert("무대를 연결할 가사집을 먼저 선택해주세요.");
                 return;
               }
-              openCreateStage(dateStr);               //  선택 날짜로 초기화
+              openCreateStage(dateStr);
             }}
-          // onItemClick={(s) => {                   // (옵션) 오너가 아닐 때 클릭 동작
-          //   if (!isOwner && s.promotion_url) window.open(s.promotion_url, "_blank");
-          // }}
           />
         </div>
       )}
-
 
       {/* === 기존 모달들 === */}
       {isModalOpen && (
@@ -292,8 +321,6 @@ export default function MyArtistPage() {
           initialForm={stageInitial ?? undefined}
         />
       )}
-
-
     </>
   );
 }
