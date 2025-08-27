@@ -5,6 +5,14 @@ import { useUserStore } from "../store/useUserStore";
 
 type Errors = { nickname?: string; password?: string };
 
+function toHumanAuthMessage(err: unknown) { // password error handling
+  const raw = (err as { message?: string })?.message || "";
+  if (/New password should be different/i.test(raw)) {
+    return "이전 비밀번호와 다른 비밀번호를 입력하세요.";
+  }
+  return "비밀번호 변경에 실패했습니다. 다시 시도해 주세요.";
+} 
+
 export function useProfileModalVM({
   open,
   userId,
@@ -118,6 +126,7 @@ export function useProfileModalVM({
   const handleSubmit = async () => {
     if (errors.nickname || errors.password) return;
 
+
     try {
       setLoading(true);
       let photo_url: string | null = null;
@@ -141,7 +150,10 @@ export function useProfileModalVM({
 
       if (password) {
         const { error: pwError } = await supabase.auth.updateUser({ password });
-        if (pwError) throw pwError;
+        if (pwError) {
+          setErrors(prev => ({ ...prev, password: toHumanAuthMessage(pwError) }));
+          return false; // 여기서 종료하면 catch로 가지 않음(알림창 안 뜸)
+        }
       }
 
       setUser({

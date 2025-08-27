@@ -298,17 +298,18 @@ export default function MyAudiencePage() {
         </div>
         </div>
 
-        <div className="ml-auto">
-          <RoleSwitcher align="right" label="관객" />
-        </div>
+      </div>
+
+      <div className="flex justify-end mt-3 px-2">
+        <RoleSwitcher align="right" label="관객" />
       </div>
 
       {/* 탭 */}
       <div className="px-6 mt-6">
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          <div className="flex gap-4 text-sm whitespace-nowrap">
-            <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="좋아하는 곡" />
+          <div className="flex w-full justify-between text-sm">
             <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="좋아하는 가사집" />
+            <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="좋아하는 곡" />
             <TabButton active={activeTab === "artists"} onClick={() => setActiveTab("artists")} label="내 아티스트" />
             <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="무대" />
           </div>

@@ -426,7 +426,7 @@ export default function LikedAlbumDetail({
                   </div>
                 )}
 
-                <div className="text-sm text-gray-700 whitespace-pre-wrap">
+                <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
                   {c.content}
                 </div>
 

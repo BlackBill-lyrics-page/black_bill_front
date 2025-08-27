@@ -66,7 +66,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
                 alt={c.users?.username || "user"}
                 className="w-6 h-6 rounded-full"
               />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium text-gray-800">{c.users?.username ?? "익명"}</span>
 
@@ -90,7 +90,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
 
                 {/* 본문: 보기 vs 편집 */}
                 {!isEditing ? (
-                  <p className="text-sm whitespace-pre-wrap text-gray-800">{c.comment}</p>
+                  <p className="text-sm break-words whitespace-pre-wrap text-gray-800">{c.comment}</p>
                 ) : (
                   <textarea
                     value={editingText}

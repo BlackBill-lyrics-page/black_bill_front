@@ -459,11 +459,12 @@ export default function ArtistProfileView({
             {followerCount} <span className="text-gray-400">팔로워</span>
           </span>
         </div>
+      </div>
 
-
+      <div className="flex justify-end px-2 mb-2">
         {authReady && (
           isOwner
-            ? rightExtra                      // 스위처
+            ? rightExtra                      // roleswitcher
             : (
               <button
                 type="button"
@@ -543,7 +544,7 @@ export default function ArtistProfileView({
                 <button
                   type="button"
                   onClick={() => navigator.clipboard.writeText(selectedSNS.url).then(() => alert("복사되었습니다"))}
-                  className="p-1 rounded hover:bg-gray-200 flex items-center justify-center"
+                  className="p-1 pr-10 rounded hover:bg-gray-200 flex items-center justify-center"
                   title="링크 복사"
                 >
                   <FiCopy className="w-4 h-4 relative -translate-y-[10px]" />
@@ -558,27 +559,33 @@ export default function ArtistProfileView({
 
       {/* 탭 + (오너만) 추가 버튼 */}
       <div className="px-6 mt-6">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-4 text-sm flex-1 min-w-0 whitespace-nowrap">
+        
+          <div className="flex justify-between text-sm flex-1 min-w-0 w-full px-6">
             <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="가사집" />
             <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
             <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
           </div>
 
           {isOwner && (
-            <button
-              className="ml-auto -mr-5 shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
-              onClick={() => {
-                if (activeTab === "songs") onAddSong?.();
-                else if (activeTab === "books") onAddBook?.();
-                else onAddStage?.();
-              }}
-            >
-              <FiPlus />
-              {activeTab === "songs" ? "곡 추가하기" : activeTab === "books" ? "가사집 추가하기" : "무대 추가하기"}
-            </button>
+            <div className="flex justify-end mt-3">
+              <button
+                className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
+                onClick={() => {
+                  if (activeTab === "songs") onAddSong?.();
+                  else if (activeTab === "books") onAddBook?.();
+                  else onAddStage?.();
+                }}
+              >
+                <FiPlus />
+                {activeTab === "songs"
+                  ? "곡 추가하기"
+                  : activeTab === "books"
+                  ? "가사집 추가하기"
+                  : "무대 추가하기"}
+              </button>
+            </div>
           )}
-        </div>
+        
 
         {/* 리스트 영역 */}
         <div className="py-8 text-sm text-gray-400">
@@ -665,7 +672,7 @@ export default function ArtistProfileView({
 
                   {/* 앨범 안에 곡 리스트 섹션 */}
                   <div className="mt-2">
-                    <span className="text-sm font-semibold block mb-2">곡 리스트</span>ㅔ
+                    <span className="text-sm font-semibold block mb-2">곡 리스트</span>
                     
                     <div className="bg-white rounded-xl p-4">
                       <AlbumTracksPanel
@@ -675,7 +682,6 @@ export default function ArtistProfileView({
                     </div>
                   </div>
 
-// handle open song 이후
                   {(openLoading || openSong) ? (
                     songDetailJSX
                   ) : (
@@ -813,7 +819,7 @@ export default function ArtistProfileView({
                                 </div>
                               )}
 
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap">{c.content}</div>
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">{c.content}</div> 
 
                               <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
                                 삭제
@@ -922,7 +928,7 @@ function SongCommentsInline({ songId }: { songId: number }) {
                 alt={c.users?.username || "user"}
                 className="w-6 h-6 rounded-full"
               />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">{c.users?.username ?? "익명"}</span>
 
@@ -948,7 +954,7 @@ function SongCommentsInline({ songId }: { songId: number }) {
 
                 {/* 본문: 보기 vs 편집 */}
                 {!isEditing ? (
-                  <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
+                  <p className="text-sm break-words whitespace-pre-wrap">{c.comment}</p>
                 ) : (
                   <textarea
                     value={editingText}

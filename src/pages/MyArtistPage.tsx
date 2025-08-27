@@ -140,7 +140,7 @@ export default function MyArtistPage() {
   return (
     <>
       <ArtistProfileView
-        key={profileBump}   // ✅ bump로 강제 리렌더
+        key={profileBump}   // bump로 강제 리렌더
         artist={finalArtist}
         isOwner={true}
         authReady={authReady}

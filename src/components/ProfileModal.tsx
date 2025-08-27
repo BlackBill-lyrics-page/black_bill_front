@@ -119,7 +119,7 @@ export default function ProfileModal({
         {/* 비밀번호 */}
         {provider !== "google" && (
           <>
-            <label className="text-sm font-medium">비밀번호 입력</label>
+            <label className="text-sm font-medium">비밀번호 변경</label>
             <input
               type="password"
               value={password}
