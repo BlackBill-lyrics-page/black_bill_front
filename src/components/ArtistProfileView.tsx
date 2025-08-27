@@ -451,7 +451,7 @@ export default function ArtistProfileView({
 
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-semibold">{artist.name}</h2>
-          {isOwner && <FiSettings className="w-6 h-6 text-gray-500 cursor-pointer mt-2 mx-5" onClick={onEditProfile} />}
+          {isOwner && <FiSettings className="w-5 h-5 text-gray-500 cursor-pointer items-center justify-center" onClick={onEditProfile} />}
         </div>
 
         <div className="ml-auto flex items-center gap-3">
@@ -535,7 +535,7 @@ export default function ArtistProfileView({
                   href={selectedSNS.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-800 hover:underline"
+                  className="text-sm text-gray-800 hover:underline max-w-[150px] truncate"
                   title={selectedSNS.url}
                 >
                   {selectedSNS.url}
@@ -543,12 +543,17 @@ export default function ArtistProfileView({
 
                 <button
                   type="button"
-                  onClick={() => navigator.clipboard.writeText(selectedSNS.url).then(() => alert("복사되었습니다"))}
-                  className="p-1 pr-10 rounded hover:bg-gray-200 flex items-center justify-center"
+                  onClick={() =>
+                    navigator.clipboard.writeText(selectedSNS.url).then(() =>
+                      alert("복사되었습니다")
+                    )
+                  }
+                  className="w-8 h-8 rounded hover:bg-gray-200 flex items-center justify-center"
                   title="링크 복사"
                 >
-                  <FiCopy className="w-4 h-4 relative -translate-y-[10px]" />
+                  <FiCopy className="w-4 h-4 text-gray-600" />
                 </button>
+
               </div>
             )}
           </div>
