@@ -482,21 +482,8 @@ export default function HomePage() {
           <div className="text-gray-400 px-5 mt-2">이번 주, 관객이 가장 좋아한 가사집이에요</div>
 
           <div
-            className="
-              mt-4 grid gap-3 sm:gap-4
-              grid-cols-3 sm:grid-cols-4 md:grid-cols-5
-
-              [&>*]:block
-              [&>*:nth-child(4)]:hidden
-              [&>*:nth-child(5)]:hidden
-
-              sm:[&>*:nth-child(4)]:block
-              sm:[&>*:nth-child(5)]:hidden
-
-              md:[&>*:nth-child(5)]:block
-            "
-          >
-            {albums.slice(0,5).map((a) => (
+            className="mt-4 grid gap-3 sm:gap-4 grid-cols-3 sm:grid-cols-4 md:grid-cols-5">
+            {albums.map((a) => (
               <button
                 key={a.album_id}
                 onClick={() =>
