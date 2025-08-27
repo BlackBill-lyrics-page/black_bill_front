@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
+import TextareaAutosize from "react-textarea-autosize";
+import { FiArrowUpRight } from "react-icons/fi";
+
 
 export default function SongCommentsInline({ songId }: { songId: number }) {
   const { comments, loading, addComment, editComment, deleteComment } = useSongCommentVM(songId);
@@ -38,18 +41,43 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
   };
 
   return (
-    <div className="mt-4 w-full">
+    <div className="w-full">
       {/* 입력창 */}
-      <div className="flex gap-2 mb-3">
-        <input
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="댓글을 입력하세요"
-          className="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-300"
-        />
-        <button onClick={handleAdd} className="px-3 py-1 bg-black text-white rounded text-sm">
-          등록
-        </button>
+      <div className="flex gap-2 mb-10">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await handleAdd();
+          }}
+          className="w-full mt-1 flex items-center gap-2 bg-white border rounded-3xl px-1"
+        >
+          <TextareaAutosize
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="댓글을 입력하세요"
+            className="flex-1 resize-none rounded-3xl px-3 py-2 text-sm leading-5 outline-none placeholder:text-gray-400"
+            minRows={1}
+            maxRows={6}
+            onKeyDown={(e) => {
+              // IME(한글 조합) 중에는 submit 금지
+              // @ts-ignore
+              if (e.nativeEvent?.isComposing || e.key === "Process" || (e as any).keyCode === 229) return;
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                (e.currentTarget.form as HTMLFormElement).requestSubmit();
+              }
+            }}
+          />
+
+          <button
+            type="submit"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white mr-1"
+            aria-label="댓글 등록"
+            title="댓글 등록"
+          >
+            <FiArrowUpRight className="w-5 h-5" />
+          </button>
+        </form>
       </div>
 
       {loading && <p className="text-xs text-gray-500">불러오는 중…</p>}
