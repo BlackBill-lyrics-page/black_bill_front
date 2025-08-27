@@ -1,4 +1,4 @@
-import { FiChevronRight } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import SongLikeButton from "./SongLikeButton";
 
 type SongDetail = {
@@ -49,20 +49,20 @@ export default function SongDetailPanel({
   return (
     <div ref={panelRef} className="mt-6 rounded-xl bg-white">
       {/* 헤더 */}
-      <div className="flex items-center gap-3 p-4">
+      <div className="flex items-center gap-3 p-4 pl-3">
+        <button
+          type="button"
+          className=" text-gray-400 hover:text-black"
+          onClick={onClose}
+          aria-label="닫기"
+        >
+          <FiChevronLeft className="w-5 h-5" />
+        </button>
         <div className="min-w-0 flex-1">
           {!!openSong?.bio && (
             <div className="text-xs text-gray-500 mt-0.5">{openSong.bio}</div>
           )}
         </div>
-        <button
-          type="button"
-          className="ml-2 text-gray-400 hover:text-black"
-          onClick={onClose}
-          aria-label="닫기"
-        >
-          <FiChevronRight className="w-5 h-5" />
-        </button>
       </div>
 
       {/* 본문 */}
