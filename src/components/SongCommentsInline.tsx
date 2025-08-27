@@ -45,7 +45,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="댓글을 입력하세요"
-          className="flex-1 border rounded px-2 py-1 text-sm"
+          className="flex-1 border rounded px-2 py-1 text-sm focus:outline-none focus:border-gray-300"
         />
         <button onClick={handleAdd} className="px-3 py-1 bg-black text-white rounded text-sm">
           등록

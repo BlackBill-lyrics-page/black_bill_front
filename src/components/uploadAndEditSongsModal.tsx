@@ -84,7 +84,7 @@ export default function UploadAndEditSongsModal({
         <form onSubmit={onSubmit} className="space-y-5 sm:space-y-6">
           {/* 가사집 이미지 */}
           <div>
-            <p className="mb-2 text-xs font-medium text-gray-800 sm:text-sm">가사집 이미지</p>
+            <p className="mb-2 text-xs font-medium text-gray-800 sm:text-sm">곡 이미지</p>
             <label className="flex h-28 w-28 cursor-pointer items-center justify-center rounded-xl bg-gray-100 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 sm:h-32 sm:w-32">
               {songPhoto || initialSong?.song_photo ? (
                 <img
@@ -177,14 +177,11 @@ export default function UploadAndEditSongsModal({
                   disabled={loading}
                   className="bg-gray-100 px-3 py-2 rounded-2xl text-sm ring-1 ring-inset ring-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900"
                 >
-                  <option value="instagram">Instagram</option>
                   <option value="youtube">YouTube</option>
                   <option value="youtubemusic">YT Music</option>
-                  <option value="soundcloud">SoundCloud</option>
-                  <option value="bandcamp">Bandcamp</option>
-                  <option value="tiktok">TikTok</option>
-                  <option value="x">X</option>
                   <option value="spotify">Spotify</option>
+                  <option value="apple">Apple Music</option>
+                  <option value="soundcloud">SoundCloud</option>
                   <option value="melon">Melon</option>
                 </select>
 
@@ -193,7 +190,10 @@ export default function UploadAndEditSongsModal({
                   type="url"
                   placeholder="링크 입력"
                   value={l.url}
-                  onChange={(e) => updateLink(i, { url: e.target.value })}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    updateLink(i, { url: v === "" ? "https://" : v});
+                  }}
                   disabled={loading}
                   className="flex-1 px-4 py-2 rounded-2xl bg-gray-100 text-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900"
                 />
