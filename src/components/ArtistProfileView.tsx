@@ -595,7 +595,7 @@ export default function ArtistProfileView({
                 // 목록 뷰
                 <AlbumsList
                   albums={albums}
-                  pageType="profile_artist"     // ✅ 프리뷰 노출
+                  pageType="artist"     // ✅ 프리뷰 노출
                   readOnly={!isOwner}
                   artistNameOverride={artist?.name ?? ""}
                   onEdit={onEditBook}
@@ -663,9 +663,10 @@ export default function ArtistProfileView({
 
                   <div className="w-full h-px bg-gray-200" />
 
-                  {/* 곡 리스트 섹션 */}
+                  {/* 앨범 안에 곡 리스트 섹션 */}
                   <div className="mt-2">
-                    <span className="text-sm font-semibold block mb-2">곡 리스트</span>
+                    <span className="text-sm font-semibold block mb-2">곡 리스트</span>ㅔ
+                    
                     <div className="bg-white rounded-xl p-4">
                       <AlbumTracksPanel
                         albumId={Number(selectedAlbum.id)}
@@ -674,6 +675,7 @@ export default function ArtistProfileView({
                     </div>
                   </div>
 
+// handle open song 이후
                   {(openLoading || openSong) ? (
                     songDetailJSX
                   ) : (
