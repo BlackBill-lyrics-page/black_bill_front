@@ -74,20 +74,23 @@ const SignInPage = () => {
           
             <button
               type="submit"   
-              className="bg-gray-200 text-black py-3 font-semibold cursor-pointer"
+              className="bg-gray-200 text-black py-3 font-semibold cursor-pointer w-full"
             >
               로그인하기
             </button>
           </form>
 
-           <div className='mt-4 justify-between flex items-center w-full max-w-xs'>
-             <div className=" text-sm text-gray-500">
-               처음 오셨나요?{' '}  
-             </div>
-             <button onClick={() => navigate('/sign-up')} className="text-black cursor-pointer text-sm">
-               회원가입하기
-             </button>
-           </div>
+          <div className="w-full px-4 mt-4">
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>처음 오셨나요?</span>
+              <button
+                onClick={() => navigate('/sign-up')}
+                className="text-black cursor-pointer"
+              >
+                회원가입하기
+              </button>
+            </div>
+          </div>
 
 
            <div className="w-full max-w-xs my-6 flex items-center">
