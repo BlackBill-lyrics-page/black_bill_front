@@ -67,8 +67,9 @@ const fetchFullSongById = async (songId: number) => {
 // 🔧 Changed: 두 번째 인자로 watchKey 옵션 추가
 export const useUploadSongsVM = (
     song: Songs | null,
-    opts?: { watchKey?: any } // ✅ Added: 외부 트리거(예: 모달 open 상태)를 전달해서 동기화 보장
+    opts?: { watchKey?: any; onChanged?: (kind: "created" | "updated" | "deleted", payload?: any) => void }
 ) => {
+    const onChanged = opts?.onChanged;
     const [title, setTitle] = useState(song?.title || "");
     const [lyrics, setLyrics] = useState(song?.lyrics || "");
     const [bio, setBio] = useState(song?.bio || "");
@@ -167,6 +168,7 @@ export const useUploadSongsVM = (
             removeSongFromStore?.(song.id);
 
             alert("곡이 삭제되었습니다.");
+            onChanged?.("deleted", { id: song.id });
             return true;
         } finally {
             setLoading(false);
@@ -245,6 +247,7 @@ export const useUploadSongsVM = (
 
                 targetSongId = inserted.id as number;
                 addSongToStore?.(inserted);
+                onChanged?.("created", inserted);  
             } else {
                 // 수정
                 const updatePayload = {
@@ -268,6 +271,7 @@ export const useUploadSongsVM = (
                 }
 
                 updateSongInStore?.(updated);
+                onChanged?.("updated", updated); 
             }
 
             // 링크 동기화

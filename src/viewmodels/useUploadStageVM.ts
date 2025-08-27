@@ -35,9 +35,10 @@ export type UseUploadStageVMArgs = {
       formatted_address: string | null;
     } | null;
   } | null;
+  onChanged?: (kind: "created" | "updated" | "deleted", payload?: any) => void;
 };
 
-export function useUploadStageVM({ albumId }: UseUploadStageVMArgs) {
+export function useUploadStageVM({ albumId, onChanged }: UseUploadStageVMArgs) {
   const [submitting, setSubmitting] = useState(false);
 
   const toIsoUtc = (date: string, time: string): string => {
@@ -59,6 +60,7 @@ export function useUploadStageVM({ albumId }: UseUploadStageVMArgs) {
         promotion_url: v.promotion_url?.trim() || undefined,
         address_detail: v.address_detail?.trim() || undefined,
       });
+      onChanged?.("created");
     } finally {
       setSubmitting(false);
     }
@@ -81,20 +83,22 @@ export function useUploadStageVM({ albumId }: UseUploadStageVMArgs) {
       if (venueId !== undefined) patch.venue_id = venueId;
 
       await updateStage(stageId, patch);
+      onChanged?.("updated"); 
     } finally {
       setSubmitting(false);
     }
-  }, []);
+  }, [onChanged]);
 
   // stage_info삭제 시 연동되어있던 venue테이블은 supabase의 onDelete 규칙으로 자동 삭제됨
   const handleDelete = useCallback(async (stageId: number) => {
     setSubmitting(true);
     try {
       await deleteStage(stageId);
+      onChanged?.("deleted", { id: stageId });
     } finally {
       setSubmitting(false);
     }
-  }, []);
+  }, [onChanged]);
 
   return { submitting, handleCreate, handleUpdate, handleDelete } as const;
 }

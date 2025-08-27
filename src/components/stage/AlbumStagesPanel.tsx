@@ -1,27 +1,39 @@
 // src/components/stage/AlbumStagesPanel.tsx
-// venue/type을 느슨하게 받고, 리스트 행 onClick으로 이벤트가 전파되지 않도록 처리
-
+// 스샷 톤앤매너: 담백한 토글 라인 + 3열(장소/날짜/시간) 리스트
 import { useState } from "react";
+import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 
 type Mode = "audience" | "artist";
 
 // 문자열 venue 또는 {name} 객체 모두 허용
 type VenueLike = string | { name?: string | null } | null | undefined;
 
-// UIStage / UIStageLite를 모두 수용하는 느슨한 타입
+// 느슨한 스테이지 타입 (end_at도 있으면 시간범위 표시)
 export type StageLike = {
   id: number;
   title?: string | null;
   start_at?: string | null;
+  end_at?: string | null;
+  startAt?: string | null; // 안전 처리용
+  endAt?: string | null;   // 안전 처리용
   venue?: VenueLike;
 };
 
 export default function AlbumStagesPanel({
   stages,
   mode,
+  className,
+  rowClassName,
+  leftClassName,
+  rightClassName,
 }: {
   stages?: StageLike[] | null;
   mode: Mode;
+  // 화면마다 톤을 더 맞추고 싶을 때 외부에서 스타일 주입 가능
+  className?: string;
+  rowClassName?: string;
+  leftClassName?: string;   // 장소 영역
+  rightClassName?: string;  // 날짜/시간 래퍼
 }) {
   const [open, setOpen] = useState(false);
 
@@ -41,45 +53,99 @@ export default function AlbumStagesPanel({
     return v.name ?? "-";
   };
 
-  const label = mode === "artist" ? "연동무대정보 보기" : "무대 정보 더보기";
+  const toDate = (iso?: string | null) => (iso ? new Date(iso) : null);
 
-  // ✅ 빈 상태: 버튼 없이 메시지 **그대로** 노출
+  const fmtDateDot = (d: Date | null) => {
+    if (!d) return "-";
+    // 2025. 07. 11 형식
+    const y = d.getFullYear();
+    const m = `${d.getMonth() + 1}`.padStart(2, "0");
+    const day = `${d.getDate()}`.padStart(2, "0");
+    return `${y}. ${m}. ${day}`;
+  };
+
+  const fmtTime = (d: Date | null) => {
+    if (!d) return "-";
+    const hh = `${d.getHours()}`.padStart(2, "0");
+    const mm = `${d.getMinutes()}`.padStart(2, "0");
+    return `${hh}:${mm}`;
+  };
+
+  const fmtRange = (start?: string | null, end?: string | null) => {
+    const s = toDate(start || null);
+    const e = toDate(end || null);
+    const left = fmtTime(s);
+    if (e) return `${left} – ${fmtTime(e)}`;
+    return left;
+  };
+
+  const label = mode === "artist" ? "연동 무대 정보 보기" : "무대 정보 더보기";
+
+  // 빈 상태: 버튼 없이 메시지 노출 (상위 클릭 전파 방지)
   if (!stages || stages.length === 0) {
     return (
       <div
         className="mt-1 text-xs text-gray-500"
-        onClick={(e) => e.stopPropagation()} // 메시지 클릭해도 상위로 안 올라가도록
+        onClick={(e) => e.stopPropagation()}
       >
         (연동된 무대 정보가 없습니다)
       </div>
     );
   }
 
-  // ✅ 스테이지가 있을 때만 토글 버튼/패널 표시
+  // 스테이지가 있을 때만 토글 버튼/패널 표시
   return (
     <div className="mt-1">
+      {/* 토글 라인 (밑줄 X, 얌전한 텍스트 + 아이콘) */}
       <button
         type="button"
         onClick={handleToggle}
-        className="text-xs text-gray-600 underline underline-offset-2"
+        className="w-full flex items-center justify-between py-2 text-sm text-gray-700"
       >
-        {label}
+        <span>{label}</span>
+        {open ? (
+          <FiChevronUp className="w-4 h-4 text-gray-400" />
+        ) : (
+          <FiChevronDown className="w-4 h-4 text-gray-400" />
+        )}
       </button>
 
       {open && (
-        <div className="mt-2 rounded-lg border bg-white p-3" onClick={stopBubble}>
-          <ul className="space-y-2 text-sm">
-            {stages.map((s) => (
-              <li key={s.id} className="flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{s.title || `Stage #${s.id}`}</div>
-                  <div className="text-xs text-gray-500 mt-0.5 truncate">
-                    {venueToText(s.venue)} —{" "}
-                    {s.start_at ? new Date(s.start_at).toLocaleString() : "-"}
+        <div
+          className={`rounded-md border border-gray-100 bg-white ${className ?? ""}`}
+          onClick={stopBubble}
+        >
+          <ul className="divide-y divide-gray-100">
+            {stages.map((s) => {
+              const start = s.start_at ?? s.startAt ?? null;
+              const end = s.end_at ?? s.endAt ?? null;
+              const d = toDate(start);
+              return (
+                <li
+                  key={s.id}
+                  className={`flex items-center ${
+                    rowClassName ?? "text-[13px] text-gray-800"
+                  }`}
+                >
+                  {/* 장소(좌측 정렬) */}
+                  <div className={`flex-1 py-3 pl-3 ${leftClassName ?? ""}`}>
+                    <div className="truncate">{venueToText(s.venue)}</div>
                   </div>
-                </div>
-              </li>
-            ))}
+
+                  {/* 날짜/시간(우측 정렬) */}
+                  <div
+                    className={`flex items-center gap-6 pr-3 text-gray-500 ${
+                      rightClassName ?? ""
+                    }`}
+                  >
+                    <span className="whitespace-nowrap">{fmtDateDot(d)}</span>
+                    <span className="whitespace-nowrap">
+                      {fmtRange(start, end)}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

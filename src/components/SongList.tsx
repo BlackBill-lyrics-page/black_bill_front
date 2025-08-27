@@ -1,9 +1,11 @@
+// components/SongList.tsx
 // MyArtistPage에서 아티스트가 업로드한 곡의 리스트를 보여주는 컴포넌트
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
 import SongLikeButton from "./SongLikeButton";
+import { FiEdit2, FiTrash, FiMessageCircle } from "react-icons/fi";
 
 // 화면(UI)에서 쓸 가벼운 타입 (외부 파일 의존 X)
 export type UISong = {
@@ -12,8 +14,8 @@ export type UISong = {
     photoUrl?: string | null;
     createdAt?: string | null;
     artistName?: string | null;
-    likeCount? : number;
-    commentCount? : number;
+    likeCount?: number;
+    commentCount?: number;
 };
 
 export default function SongList({
@@ -25,11 +27,19 @@ export default function SongList({
     artistId: string | number;
     onEdit?: (song: UISong) => void;
     onOpen?: (song: UISong) => void;
-    readOnly? : boolean;
+    readOnly?: boolean;
 }) {
     const [songs, setSongs] = useState<UISong[]>([]);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
+
+    // 체크보드 플레이스홀더 (썸네일 없을 때)
+    const Placeholder = () => (
+        <div
+            aria-hidden
+            className="w-24 h-24 rounded-xl border border-gray-200 bg-[length:12px_12px] bg-[linear-gradient(45deg,#f0f0f0_25%,transparent_25%),linear-gradient(-45deg,#f0f0f0_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f0f0_75%),linear-gradient(-45deg,transparent_75%,#f0f0f0_75%)] bg-[position:0_0,0_6px,6px_-6px,-6px_0]"
+        />
+    );
 
     // ── Row 전용 액션: 삭제/수정 버튼 묶음 ─────────────────────────────
     function RowActions({
@@ -41,7 +51,7 @@ export default function SongList({
         item: UISong;
         onEdit?: (song: UISong) => void;
         onDeleted: (id: string) => void;
-        readOnly?:boolean;
+        readOnly?: boolean;
     }) {
         // useUploadSongsVM은 최소 필드만 줘도 내부에서 보완 fetch 가능
         const vm = useUploadSongsVM({
@@ -72,23 +82,27 @@ export default function SongList({
         };
 
         return (
-            <div className="flex items-center gap-2">
+            <div className="shrink-0 flex items-start gap-3">
                 {onEdit && (
                     <button
-                        onClick={() => onEdit(item)}
-                        className="px-2 py-1 text-sm rounded border hover:bg-gray-50"
-                        disabled={vm.loading || deleting}
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                        aria-label="곡 수정"
+                        title="수정"
+                        // 🔥 불필요한 배경/둥근 테두리 제거
+                        className="p-0 m-0 bg-transparent border-0 hover:opacity-70 transition"
                     >
-                        수정
+                        <FiEdit2 className="w-5 h-5 text-gray-600" />
                     </button>
                 )}
                 <button
-                    onClick={handleDelete}
-                    className="px-2 py-1 text-sm rounded border text-red-600 hover:bg-red-50"
-                    disabled={vm.loading || deleting}
-                    title="이 곡을 삭제합니다"
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                    aria-label="곡 삭제"
+                    title="삭제"
+                    className="p-0 m-0 bg-transparent border-0 hover:opacity-70 transition"
                 >
-                    {vm.loading || deleting ? "삭제 중…" : "삭제"}
+                    <FiTrash className="w-5 h-5 text-gray-600" />
                 </button>
             </div>
         );
@@ -106,9 +120,9 @@ export default function SongList({
             const { data, error } = await supabase
                 .from("songs")
                 .select(`id,title,song_photo,created_at,artist_id, 
-                        like_count:song_liked!song_liked_song_id_fkey(count), 
-                        comment_count:song_comment!song_comment_song_id_fkey(count)
-                      `)
+                 like_count:song_liked!song_liked_song_id_fkey(count), 
+                 comment_count:song_comment!song_comment_song_id_fkey(count)
+        `)
                 .eq("artist_id", artistId)
                 .order("created_at", { ascending: false });
 
@@ -118,17 +132,17 @@ export default function SongList({
                 setErr(error.message);
                 setLoading(false);
                 return;
-            } 
-            
-            const base = (data ?? []).map((r:any)=>({
+            }
+
+            const base = (data ?? []).map((r: any) => ({
                 id: String(r.id),
                 title: r.title ?? "",
                 photoUrl: r.song_photo ?? null,
                 createdAt: r.created_at ?? null,
-                likeCount : r.like_count?.[0]?.count?? 0,
-                commentCount : r.comment_count?.[0]?.count ?? 0,
+                likeCount: r.like_count?.[0]?.count ?? 0,
+                commentCount: r.comment_count?.[0]?.count ?? 0,
             })) as UISong[];
-            
+
             setSongs(base);
             setLoading(false);
         }
@@ -141,53 +155,76 @@ export default function SongList({
 
     if (loading) return <div className="py-6 text-sm text-gray-500">불러오는 중…</div>;
     if (err) return <div className="py-6 text-sm text-red-500">{err}</div>;
-    if (songs.length === 0) return <div className="py-6 text-sm text-gray-400">아직 등록된 곡이 없어요.</div>;
+    if (songs.length === 0)
+        return <div className="py-6 text-sm text-gray-400">아직 등록된 곡이 없어요.</div>;
 
     return (
-        <ul className="mt-4 grid gap-3">
+        <ul className="mt-2 divide-y divide-gray-100">
             {songs.map((s) => (
-                <li key={s.id} 
-                    className="flex items-center justify-between border-b p-3 cursor-pointer hover:bg-gray-50"
-                    onClick={()=>onOpen?.(s)}
+                <li
+                    key={s.id}
+                    className="group flex items-start justify-between gap-4 py-4 cursor-pointer hover:bg-gray-50"
+                    onClick={() => onOpen?.(s)}
                 >
-                    {/* 왼쪽: 사진 + 제목/날짜 */}
-                    <div className="flex items-center min-w-0 gap-3">
-                        {s.photoUrl && (
+                    {/* 왼쪽: 사진 + 텍스트 */}
+                    <div className="flex items-start gap-4 min-w-0">
+                        {s.photoUrl ? (
                             <img
                                 src={s.photoUrl}
                                 alt={s.title || "cover"}
-                                className="w-12 h-12 object-cover rounded-md flex-shrink-0"
+                                className="w-24 h-24 object-cover rounded-xl border border-gray-200"
                             />
+                        ) : (
+                            <Placeholder />
                         )}
+
                         <div className="min-w-0">
-                            <div className="font-medium truncate">{s.title || "(제목 없음)"}</div>
-                            {s.createdAt && (
-                                <div className="text-xs text-gray-500 mt-0.5">
-                                    {new Date(s.createdAt).toLocaleDateString()}
-                                </div>
-                            )}
+                            <div className="text-[17px] font-semibold text-gray-900 truncate">
+                                {s.title || "(곡 제목)"}
+                            </div>
+                            <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
+                                <span>좋아요 {s.likeCount ?? 0}</span>
+                                <span>댓글 {s.commentCount ?? 0}</span>
+                            </div>
                         </div>
                     </div>
 
                     {/* 오른쪽: 관객/본인 뷰 분기 */}
                     {readOnly ? (
-                      // 관객 뷰: 좋아요 + 댓글 수
-                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                        <SongLikeButton mode="vm" songId={Number(s.id)} />
-                        <span className="text-xs text-gray-500">댓글({s.commentCount ?? 0})</span>
-                      </div>
+                        <div
+                            className="shrink-0 self-start flex items-center gap-3 pr-1"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* 좋아요 버튼 */}
+                            <SongLikeButton mode="vm" songId={Number(s.id)} />
+
+                            {/* 댓글 버튼 + 개수 */}
+                            <button
+                                type="button"
+                                onClick={() => onOpen?.(s)}   // 곡 열기(=댓글 보기)
+                                aria-label="댓글 보기"
+                                title="댓글"
+                                className="flex items-center gap-1 p-0 bg-transparent border-0 hover:opacity-80 transition"
+                            >
+                                <FiMessageCircle className="w-5 h-5 text-gray-500" />
+                                <span className="text-sm text-gray-500">
+                                    {s.commentCount ?? 0}
+                                </span>
+                            </button>
+                        </div>
                     ) : (
-                      // 본인 뷰: 수정/삭제
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <RowActions
-                          item={s}
-                          onEdit={onEdit}
-                          onDeleted={(id) => setSongs((prev) => prev.filter((x) => x.id !== id))}
-                          readOnly={readOnly}
-                        />
-                      </div>
+                        <div className="self-start" onClick={(e) => e.stopPropagation()}>
+                            <RowActions
+                                item={s}
+                                onEdit={onEdit}
+                                onDeleted={(id) => setSongs((prev) => prev.filter((x) => x.id !== id))}
+                                readOnly={readOnly}
+                            />
+                        </div>
                     )}
-                  </li>
+
+
+                </li>
             ))}
         </ul>
     );

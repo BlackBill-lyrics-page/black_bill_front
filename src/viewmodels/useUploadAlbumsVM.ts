@@ -5,6 +5,8 @@ import { uploadAlbumCoverPhoto } from "../utility/uploadAlbumCoverPhoto";
 import { useAlbumStore } from "../store/useAlbumStore";
 
 const MAX_SONGS = 10;
+type ChangeKind = "created" | "updated" | "deleted";
+type UseUploadAlbumsVMOptions = { onChanged?: (kind: ChangeKind, payload?: any) => void };
 
 export type SongLite = {
     id: number;
@@ -55,7 +57,8 @@ const emptyForm: AlbumForm = {
     selectedSongIds: [],
 };
 
-export function useUploadAlbumsVM() {
+export function useUploadAlbumsVM(opts?: UseUploadAlbumsVMOptions) {
+    const onChanged = opts?.onChanged;
     const albumStore = useAlbumStore(); // 선택: 목록 리프레시용
     const [mode, setMode] = useState<VMMode>("create");
     const [artistId, setArtistId] = useState<number | null>(null);
@@ -248,6 +251,8 @@ export function useUploadAlbumsVM() {
 
             // 4) 목록 리프레시(있으면)
             if (albumStore?.loadAlbums) await albumStore.loadAlbums(artistId);
+            onChanged?.("created", album);
+
 
             // 5) 폼 초기화
             resetForm();
@@ -293,6 +298,7 @@ export function useUploadAlbumsVM() {
 
             // 4) 목록 리프레시(있으면)
             if (albumStore?.loadAlbums) await albumStore.loadAlbums(artistId);
+            onChanged?.("updated", updated);
 
             return updated as AlbumDetail;
         } finally {
@@ -301,25 +307,86 @@ export function useUploadAlbumsVM() {
     }
 
     /** ------ 삭제 ------ */
+    // useUploadAlbumsVM.ts 내에 넣을 removeAlbum() 전체 구현
     async function removeAlbum() {
         if (!artistId || !albumId) throw new Error("artistId/albumId is not set");
+
+        const ok = confirm(
+            "정말 가사집을 삭제하시겠어요?\n삭제하시면, 연동되어 있던 무대 정보들도 전부 사라집니다.\n이 작업은 되돌릴 수 없습니다."
+        );
+        if (!ok) return;
+
         setSubmitting(true);
         try {
-            // album_songs는 FK on delete cascade 가정
-            const { error } = await supabase.from("albums").delete().eq("id", albumId);
-            if (error) throw error;
+            // 1) 이 앨범에 연결된 공연(stage_info) id들 조회
+            const { data: stageRows, error: stageIdsErr } = await supabase
+                .from("stage_info")
+                .select("id")
+                .eq("album_id", albumId);
 
+            if (stageIdsErr) throw stageIdsErr;
+            const stageIds = (stageRows ?? []).map((r: { id: number }) => r.id);
+
+            // 2) 공연 댓글(stage_comments) 먼저 삭제 (참조 FK 때문에 선삭제 필요)
+            if (stageIds.length > 0) {
+                const { error: delCommentsErr } = await supabase
+                    .from("stage_comments")
+                    .delete()
+                    .in("stage_id", stageIds);
+                if (delCommentsErr) throw delCommentsErr;
+            }
+
+            // 3) 공연(stage_info) 삭제
+            if (stageIds.length > 0) {
+                const { error: delStagesErr } = await supabase
+                    .from("stage_info")
+                    .delete()
+                    .in("id", stageIds);
+                if (delStagesErr) throw delStagesErr;
+            }
+
+            // 4) 앨범-곡 매핑(album_songs) 삭제
+            {
+                const { error: delMappingsErr } = await supabase
+                    .from("album_songs")
+                    .delete()
+                    .eq("album_id", albumId);
+                if (delMappingsErr) throw delMappingsErr;
+            }
+
+            // 5) 최종 앨범(albums) 삭제
+            {
+                const { error: delAlbumErr } = await supabase
+                    .from("albums")
+                    .delete()
+                    .eq("id", albumId);
+                if (delAlbumErr) throw delAlbumErr;
+            }
+
+            // 6) 목록 새로고침 및 폼 리셋
             if (albumStore?.loadAlbums) await albumStore.loadAlbums(artistId);
-
-            // 초기화
+            onChanged?.("deleted", { id: albumId });
             setAlbumId(null);
             setMode("create");
             resetForm();
             return true;
+        } catch (e: any) {
+            // 친화적인 에러 처리
+            if (e?.code === "42501") {
+                alert("삭제 권한이 없어요. (RLS/정책을 확인해 주세요)");
+            } else if (e?.code === "23503" || e?.code === "23502") {
+                alert("연동된 데이터 제약으로 삭제가 막혔습니다. 무대/댓글/매핑 삭제 권한을 확인하세요.");
+            } else {
+                console.error(e);
+                alert(`삭제 중 오류가 발생했습니다.${e?.message ? "\n" + e.message : ""}`);
+            }
+            return false;
         } finally {
             setSubmitting(false);
         }
     }
+
+
 
     /** ------ 곡 검색/필터 (옵션) ------ */
     const [query, setQuery] = useState("");

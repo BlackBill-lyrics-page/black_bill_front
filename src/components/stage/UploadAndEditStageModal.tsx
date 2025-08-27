@@ -32,6 +32,7 @@ export type UploadAndEditStageModalProps = {
     } | null;
   } | null;
   initialForm?: Partial<StageFormValues>;
+  onChanged?: (kind: "created" | "updated" | "deleted", payload?: any) => void;
 };
 
 function toKakaoPlace(v?: {
@@ -51,19 +52,10 @@ function toKakaoPlace(v?: {
   } as unknown as KakaoPlace;
 }
 
-export default function UploadAndEditStageModal({
-  open,
-  onClose,
-  mode,
-  albumId,
-  artistId,
-  initialStage,
-  initialForm,
-}: UploadAndEditStageModalProps) {
+export default function UploadAndEditStageModal(props: UploadAndEditStageModalProps) {
+  const { open, onClose, mode, albumId, artistId, initialStage, initialForm, onChanged } = props;
   const { submitting, handleCreate, handleUpdate, handleDelete } = useUploadStageVM({
-    albumId,
-    artistId,
-    initialStage,
+    albumId, artistId, initialStage, onChanged,
   });
 
   const fromInitialStage: Partial<StageFormValues> | undefined = useMemo(() => {
@@ -87,29 +79,25 @@ export default function UploadAndEditStageModal({
     };
   }, [initialStage]);
 
-  const mergedInitial: Partial<StageFormValues> | undefined = useMemo(() => {
-    return { ...(fromInitialStage ?? {}), ...(initialForm ?? {}) };
-  }, [fromInitialStage, initialForm]);
+  const mergedInitial = useMemo(
+    () => ({ ...(fromInitialStage ?? {}), ...(initialForm ?? {}) }),
+    [fromInitialStage, initialForm]
+  );
 
   if (!open) return null;
 
   const onSubmit = async (values: StageFormValues) => {
-    if (mode === "create") {
-      await handleCreate(values);
-    } else {
-      if (!initialStage?.id) return;
-      await handleUpdate(initialStage.id, values);
-    }
+    if (mode === "create") await handleCreate(values);
+    else if (initialStage?.id) await handleUpdate(initialStage.id, values);
     onClose();
   };
 
-  // ✅ 삭제 버튼 동작
   const onClickDelete = async () => {
     if (!initialStage?.id) return;
     if (!window.confirm("정말 삭제할까요? 이 동작은 되돌릴 수 없습니다.")) return;
     try {
       await handleDelete(initialStage.id);
-      onClose(); // 필요 시 여기에서 상위 상태 무효화/갱신을 트리거
+      onClose();
     } catch (e: any) {
       alert(e?.message ?? "삭제에 실패했습니다.");
     }
@@ -117,14 +105,12 @@ export default function UploadAndEditStageModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto"> {/* ★ 스크롤 */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">
-            {mode === "create" ? "무대 등록" : "무대 수정"}
+            {mode === "create" ? "공연 추가하기" : "공연 수정하기"}
           </h2>
-
           <div className="flex items-center gap-2">
-            {/* ✅ 편집 모드에서만 삭제 버튼 표시 */}
             {mode === "edit" && initialStage?.id ? (
               <button
                 onClick={onClickDelete}
@@ -134,9 +120,7 @@ export default function UploadAndEditStageModal({
                 삭제
               </button>
             ) : null}
-            <button onClick={onClose} className="px-3 py-1 rounded-xl border">
-              닫기
-            </button>
+            <button onClick={onClose} className="px-3 py-1 rounded-xl border">닫기</button>
           </div>
         </div>
 
@@ -147,6 +131,7 @@ export default function UploadAndEditStageModal({
           onSubmit={onSubmit}
           onCancel={onClose}
           submitting={submitting}
+          onClickAddAlbum={() => alert("가사집 추가하기를 연결하세요.")}
         />
       </div>
     </div>

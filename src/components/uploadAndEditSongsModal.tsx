@@ -1,25 +1,32 @@
 // components/uploadAndEditSongsModal.tsx
 import type { FormEvent } from "react";
+import { FiTrash } from "react-icons/fi";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
 import type { Songs as VmSong } from "../viewmodels/useUploadSongsVM";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  initialSong?: VmSong | null; // 수정 모드일 때만 넘겨줌
+  initialSong?: VmSong | null;
+  onChanged?: (kind: "created" | "updated" | "deleted", payload?: any) => void;
 };
 
-export default function UploadSongsModal({ isOpen, onClose, initialSong = null }: Props) {
+const MAX_DESC = 500;
+const MAX_LYRICS = 1000;
+
+export default function UploadAndEditSongsModal({
+  isOpen,
+  onClose,
+  initialSong = null,
+  onChanged,
+}: Props) {
   const {
     title, setTitle,
     lyrics, setLyrics,
     bio, setBio,
 
-    songLink, setSongLink,
-
     songPhoto,
     setSongPhoto,
-    songPhotoFile,
     setSongPhotoFile,
 
     links,
@@ -29,9 +36,10 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
 
     loading,
     handleSubmit,
-    // deleteCurrentSong, // 필요 시 노출
-    // 🔧 Changed: VM 호출 시 watchKey로 isOpen 전달 → 열릴 때마다 동기화 보장
-  } = useUploadSongsVM(initialSong ?? null, { watchKey: isOpen }); // ✅ Added
+  } = useUploadSongsVM(initialSong ?? null, {
+  watchKey: isOpen,              // 기존 동기화 유지
+  onChanged, // 부모로 릴레이
+});
 
   if (!isOpen) return null;
   const isEdit = !!initialSong?.id;
@@ -42,174 +50,178 @@ export default function UploadSongsModal({ isOpen, onClose, initialSong = null }
     if (ok) onClose();
   };
 
+  const onPickImage = (file: File | null) => {
+    setSongPhotoFile(file);
+    if (!file) {
+      setSongPhoto(initialSong?.song_photo ?? "");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setSongPhoto(url);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-[min(640px,95vw)] rounded-xl bg-white p-4 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">
-            {isEdit ? "곡 정보 수정" : "새 곡 업로드"}
+      <div className="w-[min(600px,96vw)] max-h-[94vh] overflow-y-auto rounded-2xl bg-white shadow-2xl px-4 pb-5 sm:px-6 sm:pb-6">
+        {/* 헤더 */}
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white/90 backdrop-blur px-1 py-4 sm:px-0">
+          <h3 className="text-lg font-semibold sm:text-xl">
+            {isEdit ? "곡 수정하기" : "곡 추가하기"}
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-full p-1.5 hover:bg-gray-100"
             disabled={loading}
+            aria-label="닫기"
           >
-            닫기
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          {/* 곡 제목 */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium">곡 제목</label>
-            <input
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="ex) 새벽 두 시"
-              required
-            />
+        <form onSubmit={onSubmit} className="space-y-5 sm:space-y-6">
+          {/* 가사집 이미지 */}
+          <div>
+            <p className="mb-2 text-xs font-medium text-gray-800 sm:text-sm">가사집 이미지</p>
+            <label className="flex h-28 w-28 cursor-pointer items-center justify-center rounded-xl bg-gray-100 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 sm:h-32 sm:w-32">
+              {songPhoto || initialSong?.song_photo ? (
+                <img
+                  src={songPhoto || (initialSong?.song_photo as string)}
+                  alt="cover preview"
+                  className="h-full w-full rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7h3l1.5-2h7L17 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                  </svg>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
+                disabled={loading}
+              />
+            </label>
           </div>
 
-          {/* 가사 */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium">가사</label>
-            <textarea
-              className="w-full min-h-[100px] rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900"
-              value={lyrics}
-              onChange={(e) => setLyrics(e.target.value)}
-              placeholder="가사를 입력하세요"
+          {/* 곡 제목 */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-800">곡 제목</label>
+            <input
+              className="w-full rounded-2xl bg-gray-100 px-4 py-3 text-sm outline-none ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900 sm:text-base"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="가사집 제목 입력"
               required
             />
           </div>
 
           {/* 곡 설명 */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium">곡 설명</label>
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-800">곡 설명</label>
+              <span className="text-xs text-gray-400">{`${bio?.length ?? 0}/${MAX_DESC}`}</span>
+            </div>
             <textarea
-              className="w-full min-h-[80px] rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900"
+              className="w-full min-h-[92px] rounded-2xl bg-gray-100 px-4 py-3 text-sm outline-none ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900 sm:min-h-[110px] sm:text-base"
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="곡 소개/에피소드"
+              onChange={(e) => setBio(e.target.value.slice(0, MAX_DESC))}
+              placeholder="곡 설명 입력"
+              maxLength={MAX_DESC}
               required
             />
           </div>
 
-          {/* 곡 사진 업로드 + 미리보기 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">곡 사진 (커버/썸네일)</label>
-            <div className="flex items-center gap-3">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
-                {songPhoto ? (
-                  <img
-                    src={songPhoto}
-                    alt="song preview"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-                    미리보기
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] ?? null;
-                    setSongPhotoFile(f);
-                    // 🔧 Changed: 파일이 해제되면 기존 initialSong 사진 유지하도록 보정
-                    if (!f) setSongPhoto(initialSong?.song_photo ?? "");
-                  }}
-                  className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-black"
-                  disabled={loading}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  JPG/PNG 등 이미지 파일. 선택 시 즉시 미리보기가 표시됩니다.
-                </p>
-              </div>
+          {/* 곡 가사 */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-800">곡 가사</label>
+              <span className="text-xs text-gray-400">{`${lyrics?.length ?? 0}/${MAX_LYRICS}`}</span>
             </div>
+            <textarea
+              className="w-full min-h-[180px] rounded-2xl bg-gray-100 px-4 py-3 text-sm outline-none ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900 sm:min-h-[220px] sm:text-base"
+              value={lyrics}
+              onChange={(e) => setLyrics(e.target.value.slice(0, MAX_LYRICS))}
+              placeholder="가사 입력"
+              maxLength={MAX_LYRICS}
+              required
+            />
           </div>
 
           {/* 음원 링크 */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">음원 링크</label>
+              <label className="text-sm font-medium text-gray-800">음원 링크</label>
               <button
                 type="button"
                 onClick={addLink}
-                className="rounded-md border border-gray-200 px-2.5 py-1 text-xs hover:bg-gray-50"
+                className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs hover:bg-gray-50"
                 disabled={loading}
               >
                 + 링크 추가
               </button>
             </div>
 
-            <div className="space-y-2">
-              {links.map((l, i) => (
-                <div
-                  key={i}
-                  className="flex gap-2 rounded-md border border-gray-200 p-2"
+            {links.map((l, i) => (
+              <div key={i} className="flex items-center gap-2">
+                {/* 플랫폼 선택 */}
+                <select
+                  value={l.platform}
+                  onChange={(e) => updateLink(i, { platform: e.target.value })}
+                  disabled={loading}
+                  className="bg-gray-100 px-3 py-2 rounded-2xl text-sm ring-1 ring-inset ring-gray-200 focus:bg-white focus:ring-2 focus:ring-gray-900"
                 >
-                  <select
-                    className="w-36 rounded-md border border-gray-200 px-2 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900"
-                    value={l.platform}
-                    onChange={(e) => updateLink(i, { platform: e.target.value })}
-                    disabled={loading}
-                  >
-                    <option>YouTube</option>
-                    <option>YouTube Music</option>
-                    <option>Spotify</option>
-                    <option>SoundCloud</option>
-                    <option>Apple Music</option>
-                    <option>Melon</option>
-                    <option>Link</option>
-                  </select>
+                  <option value="instagram">Instagram</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="youtubemusic">YT Music</option>
+                  <option value="soundcloud">SoundCloud</option>
+                  <option value="bandcamp">Bandcamp</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="x">X</option>
+                  <option value="spotify">Spotify</option>
+                  <option value="melon">Melon</option>
+                </select>
 
-                  <input
-                    className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-900"
-                    type="url"
-                    placeholder="https://..."
-                    value={l.url}
-                    onChange={(e) => updateLink(i, { url: e.target.value })}
-                    disabled={loading}
-                  />
+                {/* URL 입력 */}
+                <input
+                  type="url"
+                  placeholder="링크 입력"
+                  value={l.url}
+                  onChange={(e) => updateLink(i, { url: e.target.value })}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 rounded-2xl bg-gray-100 text-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900"
+                />
 
-                  <button
-                    type="button"
-                    onClick={() => removeLink(i)}
-                    className="rounded-md border border-gray-200 px-2.5 py-2 text-xs hover:bg-gray-50"
-                    disabled={loading}
-                    aria-label="링크 삭제"
-                    title="링크 삭제"
-                  >
-                    삭제
-                  </button>
-                </div>
-              ))}
-            </div>
+                {/* 삭제 버튼 */}
+                <button
+                  type="button"
+                  onClick={() => removeLink(i)}
+                  disabled={loading}
+                  title="삭제"
+                  className="text-gray-400 hover:text-red-500"
+                >
+                  <FiTrash className="w-7 h-7 p-1 bg-white rounded-full border border-gray-200" />
+                </button>
+              </div>
+            ))}
           </div>
 
-          {/* 버튼들 */}
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-gray-200 px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
-              disabled={loading}
-            >
-              취소
-            </button>
+          {/* 하단 버튼 */}
+          <div className="pt-1 sm:pt-2">
             <button
               type="submit"
-              className={`rounded-md px-4 py-2 text-sm text-white ${loading ? "bg-gray-700" : "bg-gray-900 hover:bg-black"
-                } disabled:opacity-60`}
+              className={`w-full rounded-2xl px-5 py-3 text-sm font-semibold ${
+                loading ? "bg-gray-200 text-gray-400" : "bg-gray-900 text-white hover:bg-black"
+              } disabled:opacity-60 sm:text-base sm:py-3.5`}
               disabled={loading}
             >
-              {loading ? "저장 중..." : isEdit ? "수정하기" : "업로드"}
+              {loading ? "저장 중..." : isEdit ? "수정하기" : "추가하기"}
             </button>
           </div>
         </form>
