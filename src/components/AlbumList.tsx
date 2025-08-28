@@ -133,7 +133,7 @@ export default function AlbumsList({
 
                 {/* 오른쪽: 좋아요/댓글 (viewer) 또는 수정 버튼 (owner) */}
                 <div className="shrink-0 flex items-center gap-3 ml-3">
-                  {isViewer && (
+                  
                     <>
                       <span
                         className="inline-flex items-center gap-1"
@@ -154,7 +154,7 @@ export default function AlbumsList({
                         <span className="text-sm">({commentCount})</span>
                       </button>
                     </>
-                  )}
+                  
 
                   {isOwner && !readOnly && onEdit && (
                     <button
