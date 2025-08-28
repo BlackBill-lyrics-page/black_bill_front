@@ -1,11 +1,11 @@
-// components/stage/UploadAndEditStageModal.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import StageForm, { type StageFormValues } from "./StageForm";
 import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import tz from "dayjs/plugin/timezone";
 import type { KakaoPlace } from "../../hooks/stage/stageService";
+import { X } from "lucide-react";
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -18,7 +18,6 @@ export type UploadAndEditStageModalProps = {
   artistId: number;
   initialStage?: {
     id?: number;
-    title?: string | null;
     start_at?: string;
     duration_hours?: number;
     promotion_url?: string | null;
@@ -68,7 +67,7 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
       time = kst.format("HH:mm");
     }
     return {
-      title: initialStage.title ?? "",
+      // title은 더 이상 사용하지 않음
       duration_hours: initialStage.duration_hours ?? 1,
       promotion_url: initialStage.promotion_url ?? undefined,
       address_detail: initialStage.address_detail ?? undefined,
@@ -83,6 +82,8 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
     () => ({ ...(fromInitialStage ?? {}), ...(initialForm ?? {}) }),
     [fromInitialStage, initialForm]
   );
+
+  const [headerNote, setHeaderNote] = useState<string>("");
 
   if (!open) return null;
 
@@ -104,35 +105,47 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5 max-h-[85vh] overflow-y-auto"> {/* ★ 스크롤 */}
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">
+    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-[1px] grid place-items-center p-4">
+      <div className="w-full max-w-xl md:max-w-2xl rounded-[28px] bg-white shadow-2xl overflow-hidden">
+        {/* 헤더(단일 표시) */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <h2 className="text-2xl font-semibold tracking-tight">
             {mode === "create" ? "공연 추가하기" : "공연 수정하기"}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {headerNote && <div className="text-sm text-gray-500 hidden sm:block">{headerNote}</div>}
             {mode === "edit" && initialStage?.id ? (
               <button
                 onClick={onClickDelete}
                 disabled={submitting}
-                className="px-3 py-1 rounded-xl border text-red-600 border-red-200 disabled:opacity-60"
+                className="px-3 py-1.5 rounded-full border text-red-600 border-red-200 hover:bg-red-50 disabled:opacity-60"
               >
                 삭제
               </button>
             ) : null}
-            <button onClick={onClose} className="px-3 py-1 rounded-xl border">닫기</button>
+            <button
+              onClick={onClose}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100"
+              aria-label="닫기"
+            >
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
           </div>
         </div>
 
-        <StageForm
-          mode={mode}
-          artistId={artistId}
-          initial={mergedInitial}
-          onSubmit={onSubmit}
-          onCancel={onClose}
-          submitting={submitting}
-          onClickAddAlbum={() => alert("가사집 추가하기를 연결하세요.")}
-        />
+        {/* 본문: 흰 배경 유지, 인풋만 연회색 */}
+        <div className="max-h-[75vh] overflow-y-auto px-6 py-5 bg-white">
+          <StageForm
+            mode={mode}
+            artistId={artistId}
+            initial={mergedInitial}
+            onSubmit={onSubmit}
+            onCancel={onClose}
+            submitting={submitting}
+            onClickAddAlbum={() => alert("가사집 추가하기를 연결하세요.")}
+            onDatePrettyChange={(pretty) => setHeaderNote(pretty)}
+          />
+        </div>
       </div>
     </div>
   );

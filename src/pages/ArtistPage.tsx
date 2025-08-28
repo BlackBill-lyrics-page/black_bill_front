@@ -271,8 +271,10 @@ export default function ArtistPage() {
       />
 
       {/* (옵션) 탭이 stages일 때 캘린더 표시 */}
+      {/* (옵션) 탭이 stages일 때 캘린더 표시 */}
       {activeTab === "stages" && (
-        <div className="p-4">
+        // ⬇️ 여기 래퍼만 MyArtistPage와 동일하게 교체
+        <div className="pt-2 pb-0 px-0 flex flex-col gap-2 w-full max-w-[700px] mx-auto min-w-0 [@media(max-width:375px)]:pt-1 [@media(max-width:375px)]:px-0">
           <ArtistStagesCalendar
             artistId={artist.id}
             artistName={artist.name}
@@ -284,6 +286,7 @@ export default function ArtistPage() {
           />
         </div>
       )}
+
     </>
   );
 }

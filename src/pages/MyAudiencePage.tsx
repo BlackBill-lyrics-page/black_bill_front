@@ -234,68 +234,68 @@ export default function MyAudiencePage() {
           <img src={displayPhoto} alt="프로필" className="w-full h-full object-cover" />
         </div>
 
-        
+
 
         {/* 설정 아이콘 + 드롭다운 */}
         <div className="flex items-center gap-2">
           <span className="text-xl font-semibold">{displayName}님의 서랍장</span>
-                  <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-9 w-9 items-center justify-center p-0 leading-none rounded cursor-pointer"
-          >
-            <FiSettings className="block w-5 h-5 text-gray-500 translate-y-[2px]" />
-          </button>
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 z-50 mt-5 w-[120px] rounded-xl border border-gray-300 bg-gray-100 shadow-lg p-0 py-2 px-3 space-y-2"
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex h-9 w-9 items-center justify-center p-0 leading-none rounded cursor-pointer"
             >
-              <button
-                role="menuitem"
-                className="w-full text-left rounded-lg hover:bg-gray-200"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setIsModalOpen(true);
-                }}
+              <FiSettings className="block w-5 h-5 text-gray-500 translate-y-[2px]" />
+            </button>
+            {menuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 z-50 mt-5 w-[120px] rounded-xl border border-gray-300 bg-gray-100 shadow-lg p-0 py-2 px-3 space-y-2"
               >
-                <div className="text-gray-400">프로필 수정</div>
-              </button>
-              <hr className="border-gray-300 mx-2" />
-              <button
-                role="menuitem"
-                className="w-full text-left rounded-lg hover:bg-gray-200"
-                onClick={async () => {
-                  setMenuOpen(false);
-                  await signOut();
-                }}
-              >
-                <div className="text-gray-400">로그아웃</div>
-              </button>
-              <hr className="border-gray-300 mx-2" />
-              <button
-                role="menuitem"
-                className="w-full text-left rounded-lg hover:bg-gray-200 text-red-600"
-                onClick={async () => {
-                  setMenuOpen(false);
-                  const ok = window.confirm(
-                    "정말로 계정을 탈퇴하시겠습니까?\n" +
-                    "작성하신 댓글, 좋아요 등 일부 기록은 '탈퇴한 사용자'로 남으며,\n" +
-                    "계정은 복구할 수 없습니다."
-                  );
-                  if (!ok) return;
-                
-                  await deleteAccount();
-                }}
-              >
-                탈퇴하기
-              </button>
-            </div>
-          )}
-        </div>
+                <button
+                  role="menuitem"
+                  className="w-full text-left rounded-lg hover:bg-gray-200"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <div className="text-gray-400">프로필 수정</div>
+                </button>
+                <hr className="border-gray-300 mx-2" />
+                <button
+                  role="menuitem"
+                  className="w-full text-left rounded-lg hover:bg-gray-200"
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    await signOut();
+                  }}
+                >
+                  <div className="text-gray-400">로그아웃</div>
+                </button>
+                <hr className="border-gray-300 mx-2" />
+                <button
+                  role="menuitem"
+                  className="w-full text-left rounded-lg hover:bg-gray-200 text-red-600"
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    const ok = window.confirm(
+                      "정말로 계정을 탈퇴하시겠습니까?\n" +
+                      "작성하신 댓글, 좋아요 등 일부 기록은 '탈퇴한 사용자'로 남으며,\n" +
+                      "계정은 복구할 수 없습니다."
+                    );
+                    if (!ok) return;
+
+                    await deleteAccount();
+                  }}
+                >
+                  탈퇴하기
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
@@ -316,7 +316,7 @@ export default function MyAudiencePage() {
         </div>
 
         {/* 콘텐츠 영역 */}
-        <div className="py-8 text-sm text-gray-400">
+        <div className={`${activeTab === "stages" ? "pt-2 pb-0" : "py-8"} text-sm text-gray-400`}>
           {activeTab === "songs" &&
             (!songDetail.openSong ? (
               <LikedSongsList songs={likedSongs} onOpen={(s) => songDetail.open(Number(s.id))} />

@@ -1,6 +1,7 @@
 // components/venue/VenueSearchModal.tsx
 import React, { useState } from "react";
 import type { KakaoPlace } from "../../hooks/stage/stageService";
+import VenueAutocomplete from "./VenueAutoComplete";
 
 export default function VenueSearchModal({
   open,
@@ -13,32 +14,34 @@ export default function VenueSearchModal({
   onSelect: (p: KakaoPlace) => void;
   initial?: KakaoPlace;
 }) {
-  const [text, setText] = useState<string>(
-    initial?.place_name ||
-      initial?.road_address_name ||
-      initial?.address_name ||
-      ""
-  );
-
+  const [picked, setPicked] = useState<KakaoPlace | null>(initial ?? null);
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 grid place-items-center p-4">
       <div className="w-full max-w-lg rounded-3xl bg-white shadow-xl p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">장소 찾기</h3>
+          <h3 className="text-2xl font-bold">장소 찾기</h3>
           <button onClick={onClose} className="px-3 py-1 rounded-xl border">닫기</button>
         </div>
 
         <div className="grid gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">공연 장소</span>
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+          <label className="flex flex-col gap-2">
+            <span className="text-base font-bold">공연 장소</span>
+
+            <VenueAutocomplete
+              value={picked}
+              onChange={setPicked}
               placeholder="장소 검색하기"
-              className="border rounded-2xl px-4 py-3 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
+              autoFocus
+              // ✅ input에 직접 적용될 클래스
+              inputClassName="
+    w-full px-4 py-3
+    bg-[#F3F4F6] text-gray-800 placeholder-gray-400
+    border-0 outline-none ring-0 focus:ring-0 focus:outline-none
+    shadow-none appearance-none
+    rounded-md
+  "
             />
           </label>
 
@@ -52,23 +55,19 @@ export default function VenueSearchModal({
           </div>
         </div>
 
-        <div className="flex justify-end mt-5">
+        <div className="flex gap-2 mt-5">
           <button
-            className="w-full px-4 py-3 rounded-xl bg-black text-white disabled:opacity-30"
-            disabled={!text.trim()}
+            className="
+              flex-1 h-12 px-4
+              rounded-none                      /* 각진 버튼 */
+              text-gray-800
+              disabled:opacity-30 disabled:cursor-not-allowed
+            "
+            style={{ backgroundColor: "#F3F4F6" }}  // 고정 색상
+            disabled={!picked}
             onClick={() => {
-              // ★ 자유 입력을 KakaoPlace 호환 객체로 래핑해서 돌려줌
-              const t = text.trim();
-              const fakePlace: KakaoPlace = {
-                id: String(Date.now()),
-                place_name: t,
-                // 사용자가 보통 주소 전체를 입력하므로 address_name 로도 채움
-                address_name: t,
-                road_address_name: t,
-                x: undefined as any,
-                y: undefined as any,
-              } as unknown as KakaoPlace;
-              onSelect(fakePlace); // 부모(StageForm)로 전달
+              if (!picked) return;
+              onSelect(picked);
               onClose();
             }}
           >
