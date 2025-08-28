@@ -200,35 +200,8 @@ export default function MyArtistPage() {
 
       {/* === Stages 탭 콘텐츠 === */}
       {activeTab === "stages" && (
-        <div className="p-4 flex flex-col gap-4 w-full max-w-[700px] mx-auto [@media(max-width:375px)]:p-3">
-          <div className="flex flex-wrap items-center gap-2 [@media(max-width:375px)]:gap-1">
-            <label className="text-sm text-gray-600 [@media(max-width:375px)]:text-xs">무대 연결 가사집</label>
-
-            <select
-              className="border rounded-lg px-2 py-1 min-w-[160px] [@media(max-width:375px)]:text-sm [@media(max-width:375px)]:flex-1"
-              value={selectedAlbumId}
-              onChange={(e) => setSelectedAlbumId(e.target.value ? Number(e.target.value) : "")}
-            >
-              <option value="">선택하세요</option>
-              {albums.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.albumname ?? `가사집 #${a.id}`}
-                </option>
-              ))}
-            </select>
-
-            {isOwner && (
-              <button
-                className="ml-auto px-3 py-2 rounded-xl border [@media(max-width:375px)]:ml-0 [@media(max-width:375px)]:w-full"
-                onClick={() => {
-                  if (!selectedAlbumId) return alert("무대를 연결할 가사집을 먼저 선택해주세요.");
-                  openCreateStage();
-                }}
-              >
-                무대 추가 +
-              </button>
-            )}
-          </div>
+        <div className="pt-2 pb-0 px-0 flex flex-col gap-2 w-full max-w-[700px] mx-auto [@media(max-width:375px)]:pt-1 [@media(max-width:375px)]:px-0">
+          
 
           <ArtistStagesCalendar
             key={calendarBump}

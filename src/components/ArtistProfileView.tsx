@@ -594,7 +594,7 @@ export default function ArtistProfileView({
         
 
         {/* 리스트 영역 */}
-        <div className="py-8 text-sm text-gray-400">
+        <div className={`${activeTab === "stages" ? "pt-2 pb-0" : "py-8"} text-sm text-gray-400`}>
           {activeTab === "songs" && (
             <div className="text-gray-900">
               <SongList artistId={artist.id} readOnly={!isOwner} onEdit={onEditSong} onOpen={handleOpenSong} />
