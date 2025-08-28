@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { MagnifyingGlassIcon, UserIcon } from "@heroicons/react/24/outline";
+import logo from "../assets/BlackBillLogoImage.png"
 
 export default function Header() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ export default function Header() {
         className="text-xl font-bold cursor-pointer"
         onClick={() => navigate("/home")}
       >
-        LOGO
+        <img src={logo} alt="logo" className="w-[174px] h-[40px] object-contain"/>
       </span>
 
       {/* 오른쪽 버튼들 */}

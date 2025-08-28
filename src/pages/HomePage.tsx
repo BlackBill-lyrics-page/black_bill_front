@@ -430,6 +430,7 @@ import { useHomeVM } from "../viewmodels/useHomeVM";
 import { useNavigate } from "react-router-dom";
 import { useUpcomingStagesVM } from "../viewmodels/useUpcomingStages";
 import UpcomingStageCard from "../components/home/UpcomingStageCard";
+import logo from "../assets/HomeLogo.png"
 
 function getWeekInfo(date = new Date()) {
   const month = date.getMonth() + 1;
@@ -575,8 +576,8 @@ export default function HomePage() {
       {view === "home" && (
         <>
           <div className="items-center flex pb-2">
-            <div className="w-60 h-60 bg-gray-200 flex items-center justify-center mt-10" />
-            <div>ddddd</div>
+            <img src={logo} alt="logo" className="w-[300px] h-[300px] object-contain"/>
+            <div className="ml-2">문구 예정</div>
           </div>
 
           <div className="justify-between flex mt-50 mb-4">
