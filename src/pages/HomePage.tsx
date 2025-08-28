@@ -522,7 +522,7 @@ export default function HomePage() {
       )}
 
       {view === "stage" && (
-        <div>
+        <div className="pb-2">
           <div className="flex items-center gap-2">
             <button onClick={() => setView("home")}>
               <IoIosArrowBack />
@@ -574,7 +574,7 @@ export default function HomePage() {
 
       {view === "home" && (
         <>
-          <div className="items-center flex">
+          <div className="items-center flex pb-2">
             <div className="w-60 h-60 bg-gray-200 flex items-center justify-center mt-10" />
             <div>ddddd</div>
           </div>
