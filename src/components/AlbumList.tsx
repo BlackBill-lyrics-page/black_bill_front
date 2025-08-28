@@ -150,8 +150,8 @@ export default function AlbumsList({
                         className="inline-flex items-center gap-1 hover:text-gray-800"
                         title="댓글 보기"
                       >
-                        <FiMessage className="w-4 h-4" />
-                        <span className="text-sm">댓글({commentCount})</span>
+                        <FiMessage className="w-5 h-5" />
+                        <span className="text-sm">({commentCount})</span>
                       </button>
                     </>
                   )}

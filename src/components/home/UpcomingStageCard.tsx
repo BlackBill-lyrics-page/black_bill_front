@@ -14,7 +14,7 @@ export default function UpcomingStageCard({
 
   // [NEW] 날짜 + 시간 → 좌상단 배지에 함께 노출
   const dateTime = useMemo(
-    () => dayjs(stage.start_at).format("YY. MM. DD · HH:mm"),
+    () => dayjs(stage.start_at).format("MM. DD · HH:mm"),
     [stage?.start_at]
   );
 

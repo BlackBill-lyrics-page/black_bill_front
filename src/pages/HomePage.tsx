@@ -479,7 +479,7 @@ export default function HomePage() {
             </button>
             <div>{month}월 {weekNumber}번째 주 가사집</div>
           </div>
-          <div className="text-gray-400 px-5 mt-2">이번 주, 관객이 가장 좋아한 가사집이에요</div>
+          <div className="text-gray-400 px-5 mt-2">이번 주, 관객이 좋아한 가사집이에요</div>
 
           <div
             className="mt-4 grid gap-3 sm:gap-4 grid-cols-3 sm:grid-cols-4 md:grid-cols-5">

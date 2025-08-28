@@ -1,6 +1,6 @@
 import type { UISong } from "./SongList";
 import SongLikeButton from "./SongLikeButton";
-
+import { MessageCircle as FiMessage } from "lucide-react";
 
 export default function LikedSongsList({
   songs,
@@ -48,15 +48,20 @@ export default function LikedSongsList({
             </div>
           </button>
 
-          {/* 오른쪽: 좋아요 + 댓글 */}
+        {/* 오른쪽: 좋아요 + 댓글 */}
           <div
             className="shrink-0 flex items-center gap-3 ml-3"
             onClick={(e) => e.stopPropagation()}
           >
             <SongLikeButton mode="vm" songId={Number(s.id)} />
-            <span className="text-sm text-gray-500">
-              댓글({s.commentCount ?? 0})
-            </span>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 hover:text-gray-800"
+              title="댓글 보기"
+            >
+              <FiMessage className="w-5 h-5" />
+              <span className="text-sm">({s.commentCount ?? 0})</span>
+            </button>
           </div>
         </div>
       </div>
