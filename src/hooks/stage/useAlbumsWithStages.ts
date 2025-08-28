@@ -33,6 +33,7 @@ export type UIAlbum = {
   commentCount?: number;
   latestStage?: UIStage | null;
   stages?: UIStage[];
+  artistName?:string |null;
 };
 
 type Options =
@@ -50,6 +51,7 @@ export function useAlbumsWithStages(opts: Options = {}) {
       .from("albums")
       .select(`
         id, name:albumname, photo_url, created_at,
+        artist:artists ( name ),  
         latest:stage_info(
           id, title, start_at, end_at, duration_hours, promotion_url,
           venue:venue_id ( id, name, road_address, formatted_address )
@@ -87,6 +89,7 @@ export function useAlbumsWithStages(opts: Options = {}) {
         commentCount: 0, // 필요 시 외부에서 합산해도 됨
         latestStage: (r.latest?.[0] ?? null) as UIStage | null,
         stages: (r.stages ?? []) as UIStage[],
+        artistName: r.artist?.name ?? null,
       }));
 
       setData(mapped);

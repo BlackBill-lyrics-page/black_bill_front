@@ -69,6 +69,8 @@ export default function AlbumsList({
   return (
     <ul className="mt-2">
       {albums.map((a) => {
+          console.log("album keys", a);
+
         const active = String(selectedId ?? "") === String(a.id);
 
         const stages: StageLike[] | undefined = Array.isArray((a as any).stages)
@@ -169,7 +171,6 @@ export default function AlbumsList({
                   )}
                 </div>
               </div>
-
             </div>
 
             {/* ───────────── 최신 무대 1줄 + 패널(내부 토글) ───────────── */}
