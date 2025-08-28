@@ -13,41 +13,55 @@ export default function LikedSongsList({
 
 
   return (
-    <ul className="mt-4 grid gap-3">
-      {songs.map((s) => (
-        <li
-          key={s.id}
-          className="flex items-center justify-between border-b p-3 cursor-pointer hover:bg-gray-50"
-          onClick={() => onOpen?.(s)}
-        >
-          {/* 왼쪽: 커버 + 제목 + 아티스트 */}
-          <div className="flex items-center min-w-0 gap-3">
-            {s.photoUrl && (
-              <img
-                src={s.photoUrl}
-                alt={s.title || "cover"}
-                className="w-12 h-12 object-cover rounded-md flex-shrink-0"
-              />
-            )}
-            <div className="min-w-0">
-              <div className="font-medium truncate">{s.title || "(제목 없음)"}</div>
-              <div className="text-xs text-gray-500 truncate">
-                {s.artistName ?? "(아티스트 미상)"}
-              </div>
+<ul>
+  {songs.map((s) => (
+    <li
+      key={s.id}
+      className="px-2 sm:px-0 select-none"
+      onClick={() => onOpen?.(s)}
+    >
+      <div className="flex items-start gap-3 py-3 border-b border-gray-100">
+        {/* 썸네일 */}
+        <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-gray-100">
+          {s.photoUrl && (
+            <img
+              src={s.photoUrl}
+              alt={s.title || "cover"}
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+
+        {/* 제목/아티스트 + 액션 영역 (좌/우 배치) */}
+        <div className="flex-1 min-w-0 flex items-start justify-between">
+          {/* 왼쪽: 제목 + 아티스트 */}
+          <button
+            type="button"
+            onClick={() => onOpen?.(s)}
+            className="text-left flex-1 min-w-0"
+          >
+            <div className="font-semibold text-[17px] text-gray-800 truncate">
+              {s.title || "(제목 없음)"}
             </div>
-          </div>
-          {/* 오른쪽: 좋아요 + 댓글수 */}
+            <div className="mt-0.5 text-sm text-gray-500 truncate">
+              {s.artistName ?? "(아티스트 미상)"}
+            </div>
+          </button>
+
+          {/* 오른쪽: 좋아요 + 댓글 */}
           <div
-            className="flex items-center gap-3"
-            onClick={(e) => e.stopPropagation()} // 카드 클릭과 분리
+            className="shrink-0 flex items-center gap-3 ml-3"
+            onClick={(e) => e.stopPropagation()}
           >
             <SongLikeButton mode="vm" songId={Number(s.id)} />
-            <span className="text-xs text-gray-500">
+            <span className="text-sm text-gray-500">
               댓글({s.commentCount ?? 0})
             </span>
           </div>
-        </li>
-      ))}
-    </ul>
+        </div>
+      </div>
+    </li>
+  ))}
+</ul>
   );
 }
