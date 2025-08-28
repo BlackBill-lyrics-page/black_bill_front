@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import StageForm, { type StageFormValues } from "./StageForm";
 import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
 import dayjs from "dayjs";
@@ -6,6 +6,8 @@ import utc from "dayjs/plugin/utc";
 import tz from "dayjs/plugin/timezone";
 import type { KakaoPlace } from "../../hooks/stage/stageService";
 import { X } from "lucide-react";
+import { supabase } from "../../lib/supabaseClient";
+import UploadAndEditAlbumsModal from "../uploadAndEditAlbumsModal"; // ✅ 경로 확인
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -57,6 +59,21 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
     albumId, artistId, initialStage, onChanged,
   });
 
+  // ✅ 가사집 모달/동기화 상태
+  const [albumsOpen, setAlbumsOpen] = useState(false);
+  const [albumsRefreshTick, setAlbumsRefreshTick] = useState(0);      // StageForm 앨범 리스트 재조회 트리거
+  const [createdAlbumId, setCreatedAlbumId] = useState<number | undefined>(undefined); // 방금 만든 앨범 자동선택
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // ✅ 모달 열릴 때 유저 ID 확보
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setUserId(data.user?.id ?? null);
+    })();
+  }, [open]);
+
   const fromInitialStage: Partial<StageFormValues> | undefined = useMemo(() => {
     if (!initialStage) return undefined;
     let date: string | undefined;
@@ -78,9 +95,10 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
     };
   }, [initialStage]);
 
+  // ✅ 방금 생성된 가사집이 있으면 그것을 우선 선택
   const mergedInitial = useMemo(
-    () => ({ ...(fromInitialStage ?? {}), ...(initialForm ?? {}) }),
-    [fromInitialStage, initialForm]
+    () => ({ ...(fromInitialStage ?? {}), ...(initialForm ?? {}), ...(createdAlbumId ? { album_id: createdAlbumId } : {}) }),
+    [fromInitialStage, initialForm, createdAlbumId]
   );
 
   const [headerNote, setHeaderNote] = useState<string>("");
@@ -142,11 +160,41 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
             onSubmit={onSubmit}
             onCancel={onClose}
             submitting={submitting}
-            onClickAddAlbum={() => alert("가사집 추가하기를 연결하세요.")}
+            onClickAddAlbum={() => {
+              if (!userId) {
+                alert("로그인 정보를 확인 중입니다. 잠시 후 다시 시도해주세요.");
+                return;
+              }
+              setAlbumsOpen(true);
+            }}
             onDatePrettyChange={(pretty) => setHeaderNote(pretty)}
+            /** ✅ 새 앨범 생성/수정 시 목록 재조회 */
+            refreshAlbumsSignal={albumsRefreshTick}
           />
         </div>
       </div>
+
+      {/* ✅ 가사집 추가/수정 모달 */}
+      {albumsOpen && userId && (
+        <UploadAndEditAlbumsModal
+          isOpen={albumsOpen}
+          onClose={() => setAlbumsOpen(false)}
+          artistId={artistId}
+          userId={userId}
+          onChanged={(kind, payload) => {
+            // StageForm 앨범 리스트 재조회
+            setAlbumsRefreshTick((v) => v + 1);
+            // 방금 만든 앨범 자동 선택
+            if (kind === "created" && payload?.id) {
+              setCreatedAlbumId(Number(payload.id));
+            }
+            // UX: 생성/수정 완료 시 닫기
+            if (kind === "created" || kind === "updated") {
+              setAlbumsOpen(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

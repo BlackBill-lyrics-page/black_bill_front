@@ -25,6 +25,8 @@ export type StageFormProps = {
   submitting?: boolean;
   onClickAddAlbum?: () => void;
   onDatePrettyChange?: (pretty: string) => void;
+  /** ✅ 새 가사집 생성/수정 후 목록 재조회 트리거 */
+  refreshAlbumsSignal?: number;
 };
 
 type AlbumLite = {
@@ -48,6 +50,7 @@ export default function StageForm({
   submitting,
   onClickAddAlbum,
   onDatePrettyChange,
+  refreshAlbumsSignal = 0,
 }: StageFormProps) {
   // 공연 제목 state 제거 (입력칸 없음)
   const [date, setDate] = useState(initial?.date ?? "");
@@ -66,6 +69,7 @@ export default function StageForm({
 
   const [placeModalOpen, setPlaceModalOpen] = useState(false);
 
+  // ✅ 앨범 목록 로드 (새 앨범 생성/수정 시 refreshAlbumsSignal 변경에 반응)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -81,7 +85,11 @@ export default function StageForm({
         if (!alive) return;
         const list = (data ?? []) as AlbumLite[];
         setAlbums(list);
-        if (!initial?.album_id && list.length > 0) setAlbumId(list[0].id);
+
+        // 초기 선택값이 없으면 최신 앨범을 기본 선택
+        if (!initial?.album_id && list.length > 0 && !albumId) {
+          setAlbumId(list[0].id);
+        }
       } catch (e: any) {
         if (!alive) return;
         setAlbumsErr(e?.message ?? "가사집 목록을 불러오지 못했습니다.");
@@ -92,8 +100,9 @@ export default function StageForm({
     return () => {
       alive = false;
     };
-  }, [artistId, initial?.album_id]);
+  }, [artistId, initial?.album_id, refreshAlbumsSignal]); // ✅ 신호 반영
 
+  // ✅ 부모가 initial을 바꿔줄 수 있으므로 동기화 유지
   useEffect(() => {
     setDate(initial?.date ?? "");
     setTime(initial?.time ?? "");
@@ -310,12 +319,11 @@ export default function StageForm({
               type="url"
               value={promotionUrl}
               onChange={(e) => setPromotionUrl(e.target.value)}
-              placeholder="https://www.instagram.com/"  
+              placeholder="https://www.instagram.com/"
               className="w-full border border-gray-200 rounded-2xl px-4 py-3 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-black/10"
             />
           </label>
         </section>
-
 
         {err && <div className="text-sm text-red-600">{err}</div>}
 
