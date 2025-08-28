@@ -315,6 +315,8 @@ export default function MyAudiencePage() {
           </div>
         </div>
 
+        <div className="w-full h-px bg-gray-200" />
+
         {/* 콘텐츠 영역 */}
         <div className={`${activeTab === "stages" ? "pt-2 pb-0" : "py-8"} text-sm text-gray-400`}>
           {activeTab === "songs" &&

@@ -572,6 +572,8 @@ export default function ArtistProfileView({
             <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
           </div>
 
+          <div className="w-full h-px bg-gray-200" />
+
           {isOwner && (
             <div className="flex justify-end mt-3">
               <button
