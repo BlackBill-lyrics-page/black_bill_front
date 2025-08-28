@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useProfileModalVM } from "../viewmodels/useProfileModalVM";
 import { useImageCropper } from "../hooks/useImageCropper";
+import { FiPlusCircle } from "react-icons/fi";
 import Cropper from "react-easy-crop";
 
 export default function ProfileModal({
@@ -82,12 +83,15 @@ export default function ProfileModal({
               alt="프로필 미리보기"
               className="w-24 h-24 rounded-full object-cover border"
             />
+            
             <label
-              htmlFor="file-upload"
-              className="absolute bottom-0 right-0 w-8 h-8 bg-white border rounded-full flex items-center justify-center cursor-pointer shadow"
+              htmlFor="photo-upload"
+              className="absolute bottom-0 right-0 cursor-pointer"
+              title="프로필 사진 업로드"
             >
-              +
+              <FiPlusCircle className="w-7 h-7 text-gray-400 bg-white rounded-full border-gray-100" />
             </label>
+            
             <input
               id="file-upload"
               type="file"
