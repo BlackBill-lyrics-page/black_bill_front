@@ -20,6 +20,8 @@ import { useStageCommentVM } from "../viewmodels/useStageCommentVM";
 import { useAlbumLikeVM } from "../viewmodels/useAlbumLikeVM";
 import SongCommentsInline from "./SongCommentsInline";
 
+import centerLogo from "../assets/address_img.png";
+
 import {
   FiChevronDown,
   FiCopy,
@@ -565,35 +567,35 @@ export default function ArtistProfileView({
 
       {/* 탭 + (오너만) 추가 버튼 */}
       <div className="px-6 mt-6">
-        
-          <div className="flex justify-between text-sm flex-1 min-w-0 w-full px-6">
-            <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="가사집" />
-            <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
-            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
-          </div>
 
-          <div className="w-full h-px bg-gray-200" />
+        <div className="flex justify-between text-sm flex-1 min-w-0 w-full px-6">
+          <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="가사집" />
+          <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
+          <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
+        </div>
 
-          {isOwner && (
-            <div className="flex justify-end mt-3">
-              <button
-                className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
-                onClick={() => {
-                  if (activeTab === "songs") onAddSong?.();
-                  else if (activeTab === "books") onAddBook?.();
-                  else onAddStage?.();
-                }}
-              >
-                <FiPlus />
-                {activeTab === "songs"
-                  ? "곡 추가하기"
-                  : activeTab === "books"
+        <div className="w-full h-px bg-gray-200" />
+
+        {isOwner && (
+          <div className="flex justify-end mt-3">
+            <button
+              className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-full bg-black text-white hover:opacity-90"
+              onClick={() => {
+                if (activeTab === "songs") onAddSong?.();
+                else if (activeTab === "books") onAddBook?.();
+                else onAddStage?.();
+              }}
+            >
+              <FiPlus />
+              {activeTab === "songs"
+                ? "곡 추가하기"
+                : activeTab === "books"
                   ? "가사집 추가하기"
                   : "무대 추가하기"}
-              </button>
-            </div>
-          )}
-        
+            </button>
+          </div>
+        )}
+
 
         {/* 리스트 영역 */}
         <div className={`${activeTab === "stages" ? "pt-2 pb-0" : "py-8"} text-sm text-gray-400`}>
@@ -664,13 +666,21 @@ export default function ArtistProfileView({
                     {isOwner && selectedAlbum && (
                       <QRDownloadButtonBB
                         url={publicAlbumUrl}
-                        filename={`artist_${artist.id}_album_${selectedAlbum.id}_qr`}
-                        size={96}
-                        mode="in"           // ← 중앙 로고 / "below"로 바꾸면 하단 프레임 로고
-                        margin={2}
-                        lightColor="#ffffff"
-                        darkColor="#000000"
-                        className="shrink-0"
+                        label="QR 다운로드"
+                        size={768}
+                        background="#ffffff"
+                        foreground="#000000"
+                        dotType="dots"          // 둥근 점
+                        eyeType="extra-rounded"       // 라운드 코너
+                        // gradient={{
+                        //   type: "linear",
+                        //   rotation: 0.2,
+                        //   colors: [{ offset: 0, color: "#111" }, { offset: 1, color: "#000" }]
+                        // }}
+                        centerImageSrc={centerLogo}
+                        logoSizeRatio={0.20}    // 0.15~0.22 권장
+                        logoPadding={8}
+                        errorCorrectionLevel="H"
                       />
                     )}
                   </div>
@@ -681,7 +691,7 @@ export default function ArtistProfileView({
                   {/* 앨범 안에 곡 리스트 섹션 */}
                   <div className="mt-2">
                     <span className="text-sm font-semibold block mb-2">곡 리스트</span>
-                    
+
                     <div className="bg-white rounded-xl p-4">
                       <AlbumTracksPanel
                         albumId={Number(selectedAlbum.id)}
@@ -827,7 +837,7 @@ export default function ArtistProfileView({
                                 </div>
                               )}
 
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">{c.content}</div> 
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">{c.content}</div>
 
                               <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
                                 삭제
