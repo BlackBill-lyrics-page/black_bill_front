@@ -5,7 +5,7 @@ const Footer = () => {
       <div>
         © 2025 BlackBill. All rights reserved.
         <br />
-        Contact :{" "}
+        Contact :{" "} 
         <a
           href="mailto:devblackbill@gmail.com"
           // className="text-blue-500 hover:underline"

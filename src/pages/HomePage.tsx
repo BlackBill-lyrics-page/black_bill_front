@@ -214,7 +214,7 @@ export default function HomePage() {
 
       {view === "home" && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(220px,36%)] gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(220px,36%)] gap-4 items-start md:items-center">
             {/* 로고: 모바일에서 살짝 톤 다운 → 텍스트가 주인공 */}
             <img
               src={logo}
@@ -255,7 +255,7 @@ export default function HomePage() {
               </p>
 
               {/* 바이라인 */}
-              <div className="mt-2 text-xs text-gray-500">- BlackBill</div>
+              <div className="mt-2 text-sm text-gray-500">- BlackBill</div>
             </div>
           </div>
 

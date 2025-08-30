@@ -90,9 +90,9 @@ export default function SongList({
                         aria-label="곡 수정"
                         title="수정"
                         // 🔥 불필요한 배경/둥근 테두리 제거
-                        className="p-0 m-0 bg-transparent border-0 hover:opacity-70 transition"
+                        className="p-1 rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600"
                     >
-                        <FiEdit2 className="w-5 h-5 text-gray-600" />
+                        <FiEdit2 className="w-4 h-4" />
                     </button>
                 )}
                 <button
@@ -100,9 +100,9 @@ export default function SongList({
                     onClick={(e) => { e.stopPropagation(); handleDelete(); }}
                     aria-label="곡 삭제"
                     title="삭제"
-                    className="p-0 m-0 bg-transparent border-0 hover:opacity-70 transition"
+                    className="p-1 rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600"
                 >
-                    <FiTrash className="w-5 h-5 text-gray-600" />
+                    <FiTrash className="w-4 h-4" />
                 </button>
             </div>
         );

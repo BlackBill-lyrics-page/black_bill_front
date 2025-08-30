@@ -9,7 +9,9 @@ import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
 import AlbumLikeButton from "../AlbumLikeButton";
 import { useStageCommentVM } from "../../viewmodels/useStageCommentVM";
 import TextareaAutosize from "react-textarea-autosize";
-import { FiPlus, FiArrowUpRight } from "react-icons/fi";
+import { FiPlus, FiArrowUpRight, FiTrash } from "react-icons/fi";
+import { MessageCircle as FiMessage } from "lucide-react"; // 댓글 아이콘(선택: lucide)
+
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -473,29 +475,40 @@ export default function ArtistStagesCalendar({
                       <div className="text-sm text-gray-600">{timeLabel}</div>
                       <AlbumLikeButton mode="vm" albumId={s.album_id} showCount size="md" />
                       <button
-                        type="button"
-                        className="px-2 py-1 text-sm rounded-lg border hover:bg-gray-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const next = isExpanded ? null : s.id;
-                          setExpandedStageId(next);
-                          setCmtText("");
-                          setCmtFile(undefined);
-                        }}
-                        title="댓글 보기/숨기기"
-                      >
-                        댓글 {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
-                      </button>
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    const next = isExpanded ? null : s.id;
+    setExpandedStageId(next);
+    setCmtText("");
+    setCmtFile(undefined);
+  }}
+  title="댓글 보기/숨기기"
+  aria-label="댓글 보기/숨기기"
+  className="p-1 rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600"
+>
+  <div className="flex items-center gap-1">
+    <FiMessage className="w-4 h-4" />
+    <span className="text-xs text-gray-500">
+      {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
+    </span>
+  </div>
+</button>
                       {canEdit && (
                         <button
                           type="button"
-                          className="ml-2 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
-                          onClick={(e) => { e.stopPropagation(); void handleDelete(s); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDelete(s);
+                          }}
                           disabled={deletingId === s.id || submitting}
                           aria-label="공연 삭제"
                           title="공연 삭제"
+                          className="p-1 rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                         >
-                          {deletingId === s.id ? "삭제중..." : "삭제"}
+                          {deletingId === s.id
+                            ? <span className="text-xs text-red-500">삭제중...</span>
+                            : <FiTrash className="w-4 h-4" />}
                         </button>
                       )}
                     </div>
