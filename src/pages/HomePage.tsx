@@ -6,6 +6,7 @@ import { useUpcomingStagesVM } from "../viewmodels/useUpcomingStages";
 import UpcomingStageCard from "../components/home/UpcomingStageCard";
 import logo from "../assets/HomeLogo.png"
 import { pickHeroCopy } from "../contents/heroCopy";
+import dayjs from "dayjs";
 
 function NoWrapFit({
   text,
@@ -391,9 +392,14 @@ export default function HomePage() {
                     key={s.id}
                     stage={s}
                     onClick={() => {
-                      const albumId = s.album?.id;
-                      if (albumId) navigate(`/artist/${s.artist?.id}?tab=books&album=${albumId}`);
-                      else navigate(`/artist/${s.artist?.id}?tab=books`);
+                      const artistId = s.artist?.id;
+                      const focusDate = dayjs(s.start_at).format("YYYY-MM-DD");
+                      const params = new URLSearchParams({
+                        tab: "stages",
+                        focusDate,                 // 달력이 이 날짜의 "월"을 보이도록
+                        stageId: String(s.id),     // (선택) 해당 스테이지 강조
+                      });
+                      navigate(`/artist/${artistId}?${params.toString()}`);
                     }}
                   />
                 ))}

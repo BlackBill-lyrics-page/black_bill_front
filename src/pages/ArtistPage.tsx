@@ -142,6 +142,7 @@ import { supabase } from "../lib/supabaseClient";
 import ArtistProfileView from "../components/ArtistProfileView";
 import { useArtistFollowVM } from "../viewmodels/useArtistFollowVM";
 import ArtistStagesCalendar from "../components/stage/ArtistStagesCalendar";
+import dayjs from "dayjs";
 
 type Link = { platform: string; url: string };
 type Genre = { id: number; name: string };
@@ -176,6 +177,13 @@ export default function ArtistPage() {
   // [CHANGED] 기본값 songs → URL 기반(books 기본)
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   useEffect(() => setActiveTab(initialTab), [initialTab]); // 뒤로가기 등 URL 변경 반영
+
+  const focusDateParam = searchParams.get("focusDate") ?? undefined; // "YYYY-MM-DD"
+  const stageIdParam = searchParams.get("stageId");
+  const highlightStageId = stageIdParam ? Number(stageIdParam) : undefined;
+  const initialDate = focusDateParam && dayjs(focusDateParam).isValid()
+    ? focusDateParam
+    : undefined;
 
   const artistIdNum = id ? Number(id) : undefined;
   const {
@@ -280,6 +288,9 @@ export default function ArtistPage() {
             artistName={artist.name}
             mode="viewer"
             canEdit={false}
+            initialDate={initialDate}            // ✅ 추가
+            highlightStageId={highlightStageId}  // ✅ (선택) 추가
+
             onItemClick={(s) => {
               if (s.promotion_url) window.open(s.promotion_url, "_blank");
             }}
