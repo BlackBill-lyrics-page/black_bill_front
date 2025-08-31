@@ -258,41 +258,36 @@ export default function UploadAndEditAlbumsModal({
         </form>
 
         {/* Footer */}
-        <div className="sticky bottom-0 z-10 bg-white/95 backdrop-blur border-t px-6 py-4 flex items-center justify-between">
-          {vm.mode === "edit" ? (
-            <button
-              type="button"
-              onClick={async () => {
-                if (!confirm("가사집을 삭제할까요? 이 작업은 되돌릴 수 없습니다.")) return;
-                try {
-                  await vm.removeAlbum();
-                  onClose();
-                } catch (err) {
-                  console.error(err);
-                }
-              }}
-              className="px-4 py-2 text-sm rounded-xl border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
-              disabled={vm.submitting}
-            >
-              가사집 삭제
-            </button>
-          ) : (
-            <div />
-          )}
-
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-3 sm:py-2 text-sm rounded-xl border hover:bg-gray-50 disabled:opacity-50"
-              disabled={vm.submitting}
-            >
-              취소
-            </button>
+        <div className="sticky bottom-0 z-10 bg-white/95 backdrop-blur border-t px-6 py-4">
+          <div className="flex gap-2 w-full">
+            {/* 삭제 버튼 */}
+            {vm.mode === "edit" ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!confirm("가사집을 삭제할까요? 이 작업은 되돌릴 수 없습니다.")) return;
+                  try {
+                    await vm.removeAlbum();
+                    onClose();
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="flex-1 basis-1/2 px-4 py-3 sm:py-2 text-sm rounded-xl border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                disabled={vm.submitting}
+              >
+                가사집 삭제
+              </button>
+            ) : (
+              // 편집 모드가 아닐 때 균형 유지를 위한 placeholder
+              <div className="flex-1 basis-1/2" />
+            )}
+        
+            {/* 저장/다음 버튼 */}
             <button
               type="submit"
               form="albumForm"
-              className="flex-1 sm:flex-none px-4 py-3 sm:py-2 text-sm rounded-xl bg-gray-900 text-white hover:opacity-90 disabled:opacity-50"
+              className="flex-1 basis-1/2 px-4 py-3 sm:py-2 text-sm rounded-xl bg-gray-900 text-white hover:opacity-90 disabled:opacity-50"
               disabled={vm.submitting || vm.loadingDetail}
             >
               {vm.mode === "edit" ? "변경사항 저장" : "다음"}
