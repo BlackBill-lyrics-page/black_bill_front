@@ -69,8 +69,6 @@ export default function AlbumsList({
   return (
     <ul className="mt-2">
       {albums.map((a) => {
-          console.log("album keys", a);
-
         const active = String(selectedId ?? "") === String(a.id);
 
         const stages: StageLike[] | undefined = Array.isArray((a as any).stages)
