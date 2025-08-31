@@ -1,5 +1,3 @@
-// components/home/UpcomingPreviewRow.tsx
-// ✅ 변경점: flex → grid, slice(0,6) 적용
 import { useNavigate } from "react-router-dom";
 import UpcomingStageCard from "./UpcomingStageCard";
 import { useUpcomingStagesVM } from "../../viewmodels/useUpcomingStages";

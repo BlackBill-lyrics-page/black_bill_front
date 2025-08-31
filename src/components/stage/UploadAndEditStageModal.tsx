@@ -7,7 +7,7 @@ import tz from "dayjs/plugin/timezone";
 import type { KakaoPlace } from "../../hooks/stage/stageService";
 import { X } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
-import UploadAndEditAlbumsModal from "../uploadAndEditAlbumsModal"; // ✅ 경로 확인
+import UploadAndEditAlbumsModal from "../uploadAndEditAlbumsModal"; 
 
 dayjs.extend(utc);
 dayjs.extend(tz);

@@ -25,7 +25,7 @@ export type StageFormProps = {
   submitting?: boolean;
   onClickAddAlbum?: () => void;
   onDatePrettyChange?: (pretty: string) => void;
-  /** ✅ 새 가사집 생성/수정 후 목록 재조회 트리거 */
+  /** 새 가사집 생성/수정 후 목록 재조회 트리거 */
   refreshAlbumsSignal?: number;
 };
 
@@ -69,7 +69,7 @@ export default function StageForm({
 
   const [placeModalOpen, setPlaceModalOpen] = useState(false);
 
-  // ✅ 앨범 목록 로드 (새 앨범 생성/수정 시 refreshAlbumsSignal 변경에 반응)
+  // 앨범 목록 로드 (새 앨범 생성/수정 시 refreshAlbumsSignal 변경에 반응)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -100,9 +100,9 @@ export default function StageForm({
     return () => {
       alive = false;
     };
-  }, [artistId, initial?.album_id, refreshAlbumsSignal]); // ✅ 신호 반영
+  }, [artistId, initial?.album_id, refreshAlbumsSignal]); // 신호 반영
 
-  // ✅ 부모가 initial을 바꿔줄 수 있으므로 동기화 유지
+  // 부모가 initial을 바꿔줄 수 있으므로 동기화 유지
   useEffect(() => {
     setDate(initial?.date ?? "");
     setTime(initial?.time ?? "");

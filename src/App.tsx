@@ -1,4 +1,3 @@
-// App.tsx
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import EmailSignUpPage from './pages/EmailSignUpPage'
 import SignUpPage from './pages/SignUpPage'

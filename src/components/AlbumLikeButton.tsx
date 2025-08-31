@@ -1,4 +1,3 @@
-// src/components/AlbumLikeButton.tsx
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { useAlbumLikeVM } from "../viewmodels/useAlbumLikeVM";
 

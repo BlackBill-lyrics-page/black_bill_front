@@ -32,16 +32,16 @@ export async function uploadArtistPhoto(file: File, userId: string) {
   const fileExt = file.name.split('.').pop() || 'bin';
   const filePath = `${userId}/${Date.now()}.${fileExt}`;
 
-  console.group('[uploadArtistPhoto] debug');
-  console.log('hasSession:', !!session);
-  console.log('authUid:', authUid);
-  console.log('param userId:', userId);
-  console.log('file.name:', file.name);
-  console.log('fileExt:', fileExt);
-  console.log('bucket:', 'artist-photos');
-  console.log('filePath:', filePath);
-  console.log('pathStartsWithAuthUid:', authUid ? filePath.startsWith(`${authUid}/`) : false);
-  console.groupEnd();
+  // console.group('[uploadArtistPhoto] debug');
+  // console.log('hasSession:', !!session);
+  // console.log('authUid:', authUid);
+  // console.log('param userId:', userId);
+  // console.log('file.name:', file.name);
+  // console.log('fileExt:', fileExt);
+  // console.log('bucket:', 'artist-photos');
+  // console.log('filePath:', filePath);
+  // console.log('pathStartsWithAuthUid:', authUid ? filePath.startsWith(`${authUid}/`) : false);
+  // console.groupEnd();
 
 
   const { data, error } = await supabase
