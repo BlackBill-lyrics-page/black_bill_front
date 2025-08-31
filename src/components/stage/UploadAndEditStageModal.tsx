@@ -141,13 +141,13 @@ export default function UploadAndEditStageModal(props: UploadAndEditStageModalPr
                 삭제
               </button>
             ) : null}
-            <button
+            {/* <button
               onClick={onClose}
               className="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100"
               aria-label="닫기"
             >
               <X className="w-5 h-5 text-gray-600" />
-            </button>
+            </button> */}
           </div>
         </div>
 
