@@ -21,10 +21,10 @@ export default function SignUpPage() {
         <AuthHeader title="BlackBill" />
 
         <div className="flex-1 px-6">
-          <div className="pt-12" />
-          <div className="flex-1" />
+          {/* <div className="pt-12" /> */}
+          {/* <div className="flex-1" /> */}
 
-          <div className="w-full space-y-3 pb-6 mt-80">
+          <div className="w-full space-y-3 pb-6 mt-40">
             <button
               onClick={() => navigate("/sign-up_email")}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 py-3 text-sm font-medium "
