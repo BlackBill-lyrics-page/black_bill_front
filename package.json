@@ -18,6 +18,7 @@
     "dayjs": "^1.11.13",
     "gestalt": "^177.0.0",
     "lucide-react": "^0.542.0",
+    "qr-code-styling": "^1.9.2",
     "qrcode": "^1.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.0",

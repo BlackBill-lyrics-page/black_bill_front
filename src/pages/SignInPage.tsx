@@ -47,14 +47,14 @@ const SignInPage = () => {
     <AuthShell>
       <AuthCard>
         <AuthHeader title="BlackBill"/>
-        <div className='flex flex-1 flex-col justify-center items-center'>
+        <div className='flex flex-col items-center w-full px-4'>
 
           <form
             onSubmit={(e) => {
               e.preventDefault()
               handleEmailSignIn()
             }}
-            className="w-full px-4 flex flex-col gap-3 mt-40"
+            className="w-full px-4 flex flex-col gap-3 mt-30"
           >
             <input
               type="email"

@@ -1,175 +1,114 @@
-import { useEffect, useMemo, useRef } from "react";
-import QRCode from "qrcode";
-import blackBillLogo from "../assets/blackBillLogo.png"; // ★ 하드코딩된 로고
-
-type Mode = "in" | "below";
+import { useMemo } from "react";
+import QRCodeStyling from "qr-code-styling";
 
 type Props = {
   url: string;
   filename?: string;
-  size?: number;            // 미리보기 QR 한 변(px)
-  label?: string;           // 버튼 라벨
+  size?: number;           // 결과 정사각형(px)
+  label?: string;
   className?: string;
 
-  mode?: Mode;              // "in"=QR 중앙 로고, "below"=하단 프레임
-  lightColor?: string;      // QR 배경색
-  darkColor?: string;       // QR 모듈색
-  margin?: number;          // quiet zone
+  // 색/스타일
+  background?: string;     // 배경색
+  foreground?: string;     // 점(모듈) 단색
+  dotType?: "dots" | "rounded" | "classy" | "classy-rounded" | "square" | "extra-rounded";
+  eyeType?: "dot" | "rounded" | "square" | "extra-rounded";
+  gradient?: {
+    type?: "linear" | "radial";
+    rotation?: number;     // 0~1 (linear일 때)
+    colors: { offset: number; color: string }[];
+  } | null;
+
+  // 중앙 로고
+  centerImageSrc?: string; // PNG/SVG 경로
+  logoSizeRatio?: number;  // QR 한 변 대비 로고 비율(0.12~0.28 권장)
+  logoPadding?: number;    // 로고 주변 투명 패딩(px)
+
+  // QR 내부 마진/에러보정
+  errorCorrectionLevel?: "L" | "M" | "Q" | "H";
 };
 
 export default function QRDownloadButtonBB({
   url,
   filename = "qr_blackbill",
-  size = 96,
+  size = 768,
   label = "QR 다운로드",
   className = "",
-  mode = "in",
-  lightColor = "#ffffff",
-  darkColor = "#000000",
-  margin = 2,
+
+  background = "#ffffff",
+  foreground = "#000000",
+  dotType = "dots",
+  eyeType = "rounded",
+  gradient = null,
+
+  centerImageSrc,
+  logoSizeRatio = 0.20,
+  logoPadding = 8,
+
+  errorCorrectionLevel = "H",
 }: Props) {
-  const canMake = useMemo(() => Boolean(url && url.startsWith("http")), [url]);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canMake = useMemo(() => /^https?:\/\//.test(url), [url]);
 
-  useEffect(() => {
-    (async () => {
-      if (!canvasRef.current || !canMake) return;
+  const handleDownload = async () => {
+    if (!canMake) return;
 
-      const frameH = mode === "below" ? 36 : 0; // 하단 프레임 높이
-      const W = size;
-      const H = size + frameH;
+    const options: any = {
+      width: size,
+      height: size,
+      type: "png",
+      data: url,
+      backgroundOptions: { color: background },
+      qrOptions: { errorCorrectionLevel }, // 로고 넣을 때 H 권장
+      // 점(모듈)
+      dotsOptions: gradient
+        ? { type: dotType, gradient }
+        : { type: dotType, color: foreground },
+      // 코너(eye)
+      cornersSquareOptions: { type: eyeType, color: foreground },
+      cornersDotOptions: { type: "dot", color: foreground },
+      // 중앙 로고
+      image: centerImageSrc ?? undefined,
+      imageOptions: {
+        crossOrigin: "anonymous",
+        hideBackgroundDots: true,          // 로고 아래 점 제거
+        margin: logoPadding,               // 로고 주변 투명 패딩
+        imageSize: Math.max(0.12, Math.min(logoSizeRatio, 0.28)), // 안전 범위
+      },
+    };
 
-      const canvas = canvasRef.current;
-      canvas.width = W;
-      canvas.height = H;
+    const qr = new QRCodeStyling(options);
+    // const blob: Blob = await qr.getRawData("png");  ❌ 이 부분 대신
+    const data = await qr.getRawData("png");
+    if (!data) return; // null일 경우 그냥 종료
 
-      const ctx = canvas.getContext("2d")!;
-      // 전체 배경
-      ctx.fillStyle = lightColor;
-      ctx.fillRect(0, 0, W, H);
-
-      // 내부 QR만 그릴 임시 캔버스
-      const qrCanvas = document.createElement("canvas");
-      qrCanvas.width = size;
-      qrCanvas.height = size;
-
-      // ✅ QR을 원하는 색으로 직접 렌더(패턴 손상 X)
-      await QRCode.toCanvas(qrCanvas, url, {
-        width: size,
-        margin,
-        color: { dark: darkColor, light: lightColor },
-        errorCorrectionLevel: "H",
-      });
-
-      // QR 붙이기
-      ctx.drawImage(qrCanvas, 0, 0);
-
-      // 로고/프레임 합성
-      const logo = await loadImage(blackBillLogo);
-
-      if (mode === "in") {
-        // ◯ 중앙 로고(흰 원판 + 로고)
-        const ratio = 0.22;                 // QR 대비 로고 변 비율
-        const side = Math.round(size * ratio);
-        const pad = Math.round(side * 0.18);
-        const board = side + pad * 2;
-        const x = (size - board) / 2;
-        const y = (size - board) / 2;
-
-        // 흰 원판
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(x + board / 2, y + board / 2, board / 2, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.fill();
-
-        // 로고(살짝 라운드 사각형 느낌)
-        const lx = x + pad;
-        const ly = y + pad;
-        roundRect(ctx, lx, ly, side, side, Math.min(10, side / 4));
-        ctx.clip();
-        ctx.drawImage(logo, lx, ly, side, side);
-        ctx.restore();
-      } else {
-        // ▭ 하단 프레임(바 + 로고 + 텍스트)
-        const barH = frameH;
-        const barY = size;
-
-        // 바 배경
-        ctx.fillStyle = "#f8fafc"; // 연한 회색
-        ctx.fillRect(0, barY, size, barH);
-
-        // 로고
-        const side = 20;
-        const padX = 10;
-        const padY = Math.round((barH - side) / 2);
-        ctx.save();
-        roundRect(ctx, padX, barY + padY, side, side, 6);
-        ctx.clip();
-        ctx.drawImage(logo, padX, barY + padY, side, side);
-        ctx.restore();
-
-        // 라벨 텍스트
-        ctx.fillStyle = "#111827"; // gray-900
-        ctx.font = `600 13px ui-sans-serif, system-ui, -apple-system`;
-        ctx.textBaseline = "middle";
-        ctx.fillText("BlackBill · 가사집", padX + side + 8, barY + barH / 2);
-      }
-    })();
-  }, [url, size, canMake, lightColor, darkColor, margin, mode]);
-
-  const handleDownload = () => {
-    if (!canvasRef.current || !canMake) return;
-    const a = document.createElement("a");
-    a.download = `${filename}${mode === "below" ? "_frame" : "_in"}.png`;
-    a.href = canvasRef.current.toDataURL("image/png");
-    a.click();
+    const blob = data as Blob; // png일 때는 Blob만 오니까 단언
+    const ab = document.createElement("a");
+    ab.download = `${filename}_fancy.png`;
+    ab.href = URL.createObjectURL(blob);
+    ab.click();
+    URL.revokeObjectURL(ab.href);
+    URL.revokeObjectURL(ab.href);
   };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <div
-        className="border rounded-lg overflow-hidden bg-white"
-        style={{ width: size, height: size + (mode === "below" ? 36 : 0) }}
-        aria-label="QR 미리보기"
-      >
-        <canvas ref={canvasRef} width={size} height={size + (mode === "below" ? 36 : 0)} />
-      </div>
-      <button
-        type="button"
-        onClick={handleDownload}
-        disabled={!canMake}
-        className={`px-3 py-2 rounded-full text-sm ${
-          canMake ? "bg-black text-white hover:opacity-90" : "bg-gray-200 text-gray-400 cursor-not-allowed"
-        }`}
-        title={canMake ? url : "유효한 URL이 없습니다"}
-      >
-        {label}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={!canMake}
+      className={`px-4 py-2 rounded-full flex items-center gap-2 text-sm ${canMake ? "bg-black text-white hover:opacity-90" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+        } ${className}`}
+      title={canMake ? url : "유효한 URL이 없습니다"}
+    >
+      <span className="text-white">{label}</span>
+      {/* 다운로드 아이콘 */}
+      <svg width="20" height="20" viewBox="0 0 25 24" fill="none" aria-hidden>
+        <path d="M21.5 15V19C21.5 19.5304 21.2893 20.0391 20.9142 20.4142C20.5391 20.7893 20.0304 21 19.5 21H5.5C4.96957 21 4.46086 20.7893 4.08579 20.4142C3.71071 20.0391 3.5 19.5304 3.5 19V15"
+          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7.5 10L12.5 15L17.5 10"
+          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M12.5 15V3"
+          stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
   );
-}
-
-/** utils */
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, w: number, h: number, r = 12
-) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
-}
-function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((res, rej) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => res(img);
-    img.onerror = rej;
-    img.src = src;
-  });
 }

@@ -9,7 +9,9 @@ import { useUploadStageVM } from "../../viewmodels/useUploadStageVM";
 import AlbumLikeButton from "../AlbumLikeButton";
 import { useStageCommentVM } from "../../viewmodels/useStageCommentVM";
 import TextareaAutosize from "react-textarea-autosize";
-import { FiPlus, FiArrowUpRight } from "react-icons/fi";
+import { FiPlus, FiArrowUpRight, FiTrash } from "react-icons/fi";
+import { MessageCircle as FiMessage } from "lucide-react"; // 댓글 아이콘(선택: lucide)
+
 
 dayjs.extend(utc);
 dayjs.extend(tz);
@@ -62,6 +64,8 @@ export default function ArtistStagesCalendar({
   mode = "owner",
   canEdit = mode === "owner",
   onItemClick,
+  initialDate,
+  highlightStageId,
 }: {
   artistId?: number;
   artistIds?: number[];
@@ -71,12 +75,36 @@ export default function ArtistStagesCalendar({
   mode?: "owner" | "viewer";
   canEdit?: boolean;
   onItemClick?: (s: StageRow) => void;
+  initialDate?: string;        // "YYYY-MM-DD" (KST 기준)
+  highlightStageId?: number;   // 특정 stage 강조
 }) {
   // 기준 월/선택 날짜
-  const [cursor, setCursor] = useState(dayjs().tz("Asia/Seoul").startOf("month"));
-  const [selectedDate, setSelectedDate] = useState(
-    dayjs().tz("Asia/Seoul").format("YYYY-MM-DD")
-  );
+  // const [cursor, setCursor] = useState(dayjs().tz("Asia/Seoul").startOf("month"));
+  // const [selectedDate, setSelectedDate] = useState(
+  //   dayjs().tz("Asia/Seoul").format("YYYY-MM-DD")
+  // );
+
+  const initialKst = useMemo(() => {
+    if (initialDate && dayjs(initialDate).isValid()) {
+      // YYYY-MM-DD 로 들어오므로 KST로 간주
+      return dayjs(initialDate).tz("Asia/Seoul");
+    }
+    return dayjs().tz("Asia/Seoul");
+  }, [initialDate]);
+  const [cursor, setCursor] = useState(initialKst.startOf("month"));
+  const [selectedDate, setSelectedDate] = useState(initialKst.format("YYYY-MM-DD"));
+
+  // NEW: initialDate가 바뀌면 달/선택일 동기화
+  useEffect(() => {
+    if (initialDate && dayjs(initialDate).isValid()) {
+      const kst = dayjs(initialDate).tz("Asia/Seoul");
+      setCursor(kst.startOf("month"));
+      setSelectedDate(kst.format("YYYY-MM-DD"));
+    }
+  }, [initialDate]);
+
+
+
 
   // 재조회 트리거
   const [reloadKey, setReloadKey] = useState(0);
@@ -102,6 +130,25 @@ export default function ArtistStagesCalendar({
     albumId: 0,
     artistId: artistId ?? 0,
   });
+
+
+
+  // NEW: 하이라이트 스테이지 날짜로 선택/달 이동
+  useEffect(() => {
+    if (!highlightStageId) return;
+    // 이번 달에 로드된 데이터 안에서만 찾는다.
+    const target = monthStages.find(s => s.id === highlightStageId);
+    if (!target) return;
+
+    const kstStr = dayjs(target.start_at).tz("Asia/Seoul").format("YYYY-MM-DD");
+    const kstMonth = dayjs(kstStr).tz("Asia/Seoul").startOf("month");
+
+    // 다른 달이면 달 이동
+    if (!kstMonth.isSame(cursor, "month")) {
+      setCursor(kstMonth);
+    }
+    setSelectedDate(kstStr);
+  }, [highlightStageId, monthStages]); // cursor는 내부에서 읽기만
 
   // 펼침 댓글 상태
   const [expandedStageId, setExpandedStageId] = useState<number | null>(null);
@@ -147,8 +194,8 @@ export default function ArtistStagesCalendar({
           artistIds && artistIds.length
             ? new Set(artistIds.map(Number))
             : artistId
-            ? new Set([Number(artistId)])
-            : null;
+              ? new Set([Number(artistId)])
+              : null;
 
         const rows = (data ?? [])
           .filter((r: any) => (idSet ? idSet.has(Number(r.albums?.artist_id)) : true))
@@ -165,11 +212,11 @@ export default function ArtistStagesCalendar({
             address_detail: r.address_detail ?? null,
             venue: r.venue
               ? {
-                  id: r.venue.id ?? undefined,
-                  name: r.venue.name ?? null,
-                  road_address: r.venue.road_address ?? null,
-                  formatted_address: r.venue.formatted_address ?? null,
-                }
+                id: r.venue.id ?? undefined,
+                name: r.venue.name ?? null,
+                road_address: r.venue.road_address ?? null,
+                formatted_address: r.venue.formatted_address ?? null,
+              }
               : null,
           })) as StageRow[];
 
@@ -304,7 +351,7 @@ export default function ArtistStagesCalendar({
         <table className="w-full table-fixed">
           <thead className="text-sm text-gray-400">
             <tr>
-              {["일","월","화","수","목","금","토"].map((w) => (
+              {["일", "월", "화", "수", "목", "금", "토"].map((w) => (
                 <th key={w} className="py-2 font-normal">{w}</th>
               ))}
             </tr>
@@ -319,6 +366,9 @@ export default function ArtistStagesCalendar({
                   const isSelected = dStr === selectedDate;
                   const inMonth = !!cell && cell.month() === cursor.month();
                   const count = dStr ? stagesByDay.get(dStr)?.length ?? 0 : 0;
+                  const hasHighlighted =
+                    !!dStr && !!highlightStageId &&
+                    (stagesByDay.get(dStr)?.some(s => s.id === highlightStageId) ?? false);
 
                   return (
                     <td key={dStr ?? `empty-${wi}-${di}`} className="align-top">
@@ -331,6 +381,7 @@ export default function ArtistStagesCalendar({
                             inMonth ? "" : "bg-gray-50 text-gray-300",
                             isSelected ? "bg-gray-900 text-white" : "",
                             !isSelected && isToday ? "ring-1 ring-gray-400/40" : "",
+                            !isSelected && hasHighlighted ? "ring-2 ring-gray-800/60" : "",
                           ].join(" ")}
                         >
                           {/* 공연 있는 날 체크무늬 오버레이 */}
@@ -424,29 +475,40 @@ export default function ArtistStagesCalendar({
                       <div className="text-sm text-gray-600">{timeLabel}</div>
                       <AlbumLikeButton mode="vm" albumId={s.album_id} showCount size="md" />
                       <button
-                        type="button"
-                        className="px-2 py-1 text-sm rounded-lg border hover:bg-gray-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const next = isExpanded ? null : s.id;
-                          setExpandedStageId(next);
-                          setCmtText("");
-                          setCmtFile(undefined);
-                        }}
-                        title="댓글 보기/숨기기"
-                      >
-                        댓글 {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
-                      </button>
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    const next = isExpanded ? null : s.id;
+    setExpandedStageId(next);
+    setCmtText("");
+    setCmtFile(undefined);
+  }}
+  title="댓글 보기/숨기기"
+  aria-label="댓글 보기/숨기기"
+  className="p-1 rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600"
+>
+  <div className="flex items-center gap-1">
+    <FiMessage className="w-4 h-4" />
+    <span className="text-xs text-gray-500">
+      {isExpanded ? (stageCommentCount ?? 0) : (meta?.commentCount ?? 0)}
+    </span>
+  </div>
+</button>
                       {canEdit && (
                         <button
                           type="button"
-                          className="ml-2 px-3 py-2 rounded-lg border text-red-600 hover:bg-red-50 disabled:opacity-50"
-                          onClick={(e) => { e.stopPropagation(); void handleDelete(s); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDelete(s);
+                          }}
                           disabled={deletingId === s.id || submitting}
                           aria-label="공연 삭제"
                           title="공연 삭제"
+                          className="p-1 rounded hover:bg-gray-50 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                         >
-                          {deletingId === s.id ? "삭제중..." : "삭제"}
+                          {deletingId === s.id
+                            ? <span className="text-xs text-red-500">삭제중...</span>
+                            : <FiTrash className="w-4 h-4" />}
                         </button>
                       )}
                     </div>
