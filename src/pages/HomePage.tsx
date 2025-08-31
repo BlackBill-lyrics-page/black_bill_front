@@ -60,19 +60,10 @@ function NoWrapFit({
   );
 }
 
-function getWeekInfo(date = new Date()) {
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-  const firstDayWeek = firstDay.getDay();
-  const weekNumber = Math.ceil((day + firstDayWeek) / 7);
-  return { month, weekNumber };
-}
 
 export default function HomePage() {
   const [view, setView] = useState<"home" | "album" | "stage">("home");
-  const { month, weekNumber } = getWeekInfo();
-  const { albums } = useHomeVM();
+  const { albums, weekLabel } = useHomeVM();
   const navigate = useNavigate();
 
   // [ADDED] 뷰포트 폭에 맞춰 안전한 히어로 카피 선택
@@ -117,7 +108,7 @@ export default function HomePage() {
             <button onClick={() => setView("home")}>
               <IoIosArrowBack />
             </button>
-            <div>{month}월 {weekNumber}번째 주 가사집</div>
+             <div>{weekLabel} 가사집</div>
           </div>
           <div className="text-gray-400 px-5 mt-2">이번 주, 관객이 좋아한 가사집이에요</div>
 
@@ -277,7 +268,7 @@ export default function HomePage() {
          after:h-[2px] after:w-full after:bg-gray-900
        "
               >
-                {month}월 {weekNumber}번째 주 가사집
+                {weekLabel} 가사집
               </h2>
               <button
                 className="cursor-pointer inline-flex items-center gap-1

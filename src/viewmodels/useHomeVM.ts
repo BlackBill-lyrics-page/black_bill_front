@@ -9,20 +9,39 @@ export type TopAlbum = {
   artist_id : string | null;
 };
 
+// 주차 계산 유틸 (일요일 기준)
+function weekIndexInMonthSundayStart(d: Date) {
+  const y = d.getFullYear();
+  const m = d.getMonth(); // 0=Jan
+  const first = new Date(y, m, 1);
+  const firstDow = first.getDay(); // 0=Sun
+  const offset = firstDow;
+  return Math.floor((d.getDate() + offset - 1) / 7) + 1;
+}
+
+function formatWeekLabel(start: Date, end: Date) {
+  const crossMonth = start.getMonth() !== end.getMonth();
+  const labelDate = crossMonth ? end : start; // 걸치면 다음 달 기준
+  const month = labelDate.getMonth() + 1;
+  const week = crossMonth ? 1 : weekIndexInMonthSundayStart(labelDate);
+  return `${month}월 ${week}번째 주`;
+}
+
 export function useHomeVM() {
   const [albums, setAlbums] = useState<TopAlbum[]>([]);
   const [loading, setLoading] = useState(true);
+  const [weekLabel, setWeekLabel] = useState("");
 
-  useEffect(() => {
+
+   useEffect(() => {
     (async () => {
       setLoading(true);
 
-      // 이번 주 시작/끝 계산
+      // 이번 주 시작/끝 계산 (일요일 기준)
       const now = new Date();
-      const day = now.getDay(); // 0=일요일
-      const diffToMonday = (day + 6) % 7; // 월요일 기준
+      const diffToSunday = now.getDay(); // 0=일
       const start = new Date(now);
-      start.setDate(now.getDate() - diffToMonday);
+      start.setDate(now.getDate() - diffToSunday);
       start.setHours(0, 0, 0, 0);
 
       const end = new Date(start);
@@ -41,9 +60,12 @@ export function useHomeVM() {
         setAlbums(data || []);
       }
 
+      // 주차 라벨 세팅
+      setWeekLabel(formatWeekLabel(start, end));
+
       setLoading(false);
     })();
   }, []);
 
-  return { albums, loading };
+  return { albums, loading, weekLabel };
 }
