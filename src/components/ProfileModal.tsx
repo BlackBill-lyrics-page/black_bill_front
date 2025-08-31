@@ -85,7 +85,7 @@ export default function ProfileModal({
             />
             
             <label
-              htmlFor="photo-upload"
+              htmlFor="file-upload"
               className="absolute bottom-0 right-0 cursor-pointer"
               title="프로필 사진 업로드"
             >
