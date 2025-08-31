@@ -169,7 +169,7 @@ export default function UploadAndEditSongsModal({
             </div>
 
             {links.map((l, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-1.5 w-full">
                 {/* 플랫폼 선택 */}
                 <select
                   value={l.platform}
@@ -195,7 +195,7 @@ export default function UploadAndEditSongsModal({
                     updateLink(i, { url: v === "" ? "https://" : v});
                   }}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 rounded-2xl bg-gray-100 text-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900"
+                  className="flex-1 px-2 py-2 rounded-2xl bg-gray-100 text-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900"
                 />
 
                 {/* 삭제 버튼 */}
