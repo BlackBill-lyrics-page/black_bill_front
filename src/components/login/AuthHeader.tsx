@@ -7,15 +7,19 @@ type Props = { title?: string }
 export default function AuthHeader({ title = "BlackBill" }: Props) {
   const navigate = useNavigate();
   return (
-    <div className="h-[88px] px-6 pt-6">
-      <button onClick={()=>navigate('/home')}>
+    <div className="h-[120px] px-6 pt-6 flex flex-col items-center">
+      <button onClick={() => navigate('/home')}>
         <img
           src={HomeLogo}
           alt="logo"
-          className="w-[88.55px] h-[88.55px] object-contain"
+          className="w-[120px] h-[120px] object-contain"
         />
       </button>
-      <img src={blackBillLogo} className="w-[128.81px] h-[29.43px]"/>
+      <img
+        src={blackBillLogo}
+        className="w-[180px] h-[40px] mt-2"  // 아래쪽에 살짝 여백
+      />
     </div>
+
   )
 }
