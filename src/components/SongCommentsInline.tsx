@@ -3,10 +3,24 @@ import { supabase } from "../lib/supabaseClient";
 import { useSongCommentVM } from "../viewmodels/useSongCommentVM";
 import TextareaAutosize from "react-textarea-autosize";
 import { FiArrowUpRight } from "react-icons/fi";
+import ContentImage from "./ContentImage";
 
 
-export default function SongCommentsInline({ songId }: { songId: number }) {
-  const { comments, loading, addComment, editComment, deleteComment } = useSongCommentVM(songId);
+export default function SongCommentsInline({
+  songId,
+  albumId,
+  albumScoped = false,
+  placeholder = "댓글을 입력하세요",
+}: {
+  songId: number;
+  albumId?: number | null;
+  albumScoped?: boolean;
+  placeholder?: string;
+}) {
+  const { comments, loading, addComment, editComment, deleteComment } = useSongCommentVM(songId, {
+    albumId,
+    albumScoped,
+  });
   const [newComment, setNewComment] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -54,7 +68,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
           <TextareaAutosize
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="댓글을 입력하세요"
+            placeholder={placeholder}
             className="flex-1 resize-none rounded-3xl px-3 py-2 text-sm leading-5 outline-none placeholder:text-gray-400"
             minRows={1}
             maxRows={6}
@@ -89,10 +103,12 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
           const mine = meId != null && String(c.user_id) === String(meId);
           return (
             <li key={c.id} className="flex gap-2 items-start">
-              <img
-                src={c.users?.photo_url || "/default-profile.svg"}
+              <ContentImage
+                src={c.users?.photo_url}
                 alt={c.users?.username || "user"}
-                className="w-6 h-6 rounded-full"
+                kind="artist"
+                title={c.users?.username}
+                className="w-6 h-6 rounded-full object-cover"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between">
@@ -132,6 +148,11 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
                 <span className="text-xs text-gray-400">
                   {new Date(c.updated_at).toLocaleDateString()}
                 </span>
+                {c.albums?.albumname && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    from {c.albums.albumname}
+                  </span>
+                )}
               </div>
             </li>
           );

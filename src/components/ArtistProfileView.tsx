@@ -647,7 +647,6 @@ export default function ArtistProfileView({
                       albumName={selectedAlbum?.name ?? "(제목 없음)"}
                       albumPhotoUrl={selectedAlbum?.photoUrl}
                       artistName={artist.name}
-                      commentCount={stageCommentCount ?? 0}
                       onBack={() => {
                         setSelectedAlbum(null);
                         const next = new URLSearchParams(searchParams);
@@ -655,109 +654,14 @@ export default function ArtistProfileView({
                         setSearchParams(next, { replace: true });
                       }}
                     >
-                      {stages.length > 0 ? (
-                        <div className="mb-3 flex items-center gap-2">
-                          <span className="text-sm text-gray-500">무대:</span>
-                          <select
-                            value={selectedStageId ?? ""}
-                            onChange={(e) => setSelectedStageId(Number(e.target.value))}
-                            className="text-sm border rounded px-2 py-1"
-                          >
-                            {stages.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {(s.title || `Stage #${s.id}`) +
-                                  (s.start_at ? ` - ${new Date(s.start_at).toLocaleDateString()}` : "")}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : (
-                        <div className="mb-3 text-sm text-gray-500">이 가사집에 연결된 무대가 없습니다.</div>
+                      {(track) => (
+                        <SongCommentsInline
+                          songId={track.id}
+                          albumId={Number(selectedAlbum.id)}
+                          albumScoped
+                          placeholder="이 곡에 대한 감상을 남겨주세요."
+                        />
                       )}
-
-                      {selectedStageId && (
-                        <form
-                          onSubmit={handleSubmitStageComment}
-                          className="flex items-center gap-2 rounded-3xl border bg-white px-1"
-                        >
-                          <label className="mx-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gray-800 text-white">
-                            <FiPlus className="h-5 w-5" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => setCmtFile(e.target.files?.[0])}
-                            />
-                          </label>
-                          {cmtPreview && (
-                            <div className="relative ml-1 shrink-0">
-                              <img src={cmtPreview} alt="preview" className="h-16 w-16 rounded-xl bg-gray-100 object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => setCmtFile(undefined)}
-                                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black text-[10px] leading-none text-white"
-                                aria-label="미리보기 제거"
-                              >
-                                x
-                              </button>
-                            </div>
-                          )}
-                          <TextareaAutosize
-                            value={cmtText}
-                            onChange={(e) => setCmtText(e.target.value)}
-                            placeholder="감상을 남겨주세요."
-                            className="flex-1 rounded px-3 py-2 text-sm"
-                            minRows={1}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                e.currentTarget.form?.requestSubmit();
-                              }
-                            }}
-                          />
-                          <button
-                            type="submit"
-                            className="mr-1 flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white"
-                            aria-label="감상 등록"
-                          >
-                            <FiArrowUpRight className="h-5 w-5" />
-                          </button>
-                        </form>
-                      )}
-
-                      <ul className="mt-6 space-y-3">
-                        {comments.map((c) => {
-                          const canDelete = currentUserId != null && String(c.user_id) === String(currentUserId);
-                          return (
-                            <li key={c.id} className="border-b border-gray-100 pb-4">
-                              <div className="mb-2 flex items-start justify-between">
-                                <div className="flex items-center gap-2">
-                                  <ContentImage
-                                    src={c.users?.photo_url}
-                                    alt={c.users?.username || "user"}
-                                    kind="artist"
-                                    title={c.users?.username}
-                                    className="h-6 w-6 rounded-full object-cover"
-                                  />
-                                  <span className="text-sm font-medium text-gray-800">{c.users?.username ?? ""}</span>
-                                </div>
-                                <span className="text-xs text-gray-400">
-                                  {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
-                                </span>
-                              </div>
-                              {c.photo_url && (
-                                <img src={c.photo_url} alt="첨부 이미지" className="mb-2 max-h-64 rounded-lg object-contain" />
-                              )}
-                              <div className="whitespace-pre-wrap break-words text-sm text-gray-700">{c.content}</div>
-                              {canDelete && (
-                                <button onClick={() => deleteComment(c.id)} className="mt-2 text-xs text-gray-500">
-                                  삭제
-                                </button>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
                     </LyricsBookReader>
                   )}
                   {!isOwner ? null : (
