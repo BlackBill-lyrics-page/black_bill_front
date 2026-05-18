@@ -90,7 +90,7 @@ export default function SongCommentsInline({ songId }: { songId: number }) {
           return (
             <li key={c.id} className="flex gap-2 items-start">
               <img
-                src={c.users?.photo_url || "/default-avatar.png"}
+                src={c.users?.photo_url || "/default-profile.svg"}
                 alt={c.users?.username || "user"}
                 className="w-6 h-6 rounded-full"
               />

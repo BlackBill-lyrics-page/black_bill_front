@@ -84,9 +84,9 @@ export const useUploadSongsVM = (
   const [bio, setBio] = useState(song?.bio || "");
   const [songPhoto, setSongPhoto] = useState(song?.song_photo || "");
   const [songPhotoFile, setSongPhotoFile] = useState<File | null>(null);
-  const [songLink, setSongLink] = useState(song?.song_link || PLACEHOLDER_HTTPS);
+  const [songLink, setSongLink] = useState(song?.song_link || "");
   const [links, setLinks] = useState(
-    song?.links?.length ? song.links : [{ platform: "YouTube", url: PLACEHOLDER_HTTPS }]
+    song?.links?.length ? song.links : []
   );
 
   const [loading, setLoading] = useState(false);
@@ -104,8 +104,8 @@ export const useUploadSongsVM = (
         setLyrics("");
         setBio("");
         setSongPhoto("");
-        setSongLink(PLACEHOLDER_HTTPS);
-        setLinks([{ platform: "YouTube", url: PLACEHOLDER_HTTPS }]);
+        setSongLink("");
+        setLinks([]);
         return;
       }
 
@@ -116,11 +116,11 @@ export const useUploadSongsVM = (
         setLyrics(full.lyrics || "");
         setBio(full.bio || "");
         setSongPhoto(full.song_photo || "");
-        setSongLink(full.song_link?.trim() ? full.song_link! : PLACEHOLDER_HTTPS);
+        setSongLink(full.song_link?.trim() ? full.song_link! : "");
         setLinks(
-          (full.song_links?.length ? full.song_links : [{ platform: "YouTube", url: PLACEHOLDER_HTTPS }]).map(
-            (l) => ({ ...l, url: l.url?.trim() ? l.url : PLACEHOLDER_HTTPS })
-          )
+          (full.song_links ?? [])
+            .filter((l) => l.url?.trim())
+            .map((l) => ({ ...l, url: l.url?.trim() ? l.url : "" }))
         );
         return;
       }
@@ -130,11 +130,11 @@ export const useUploadSongsVM = (
       setLyrics(song.lyrics || "");
       setBio(song.bio || "");
       setSongPhoto(song.song_photo || "");
-      setSongLink(song.song_link?.trim() ? song.song_link : PLACEHOLDER_HTTPS);
+      setSongLink(song.song_link?.trim() ? song.song_link : "");
       setLinks(
-        (song.links?.length ? song.links : [{ platform: "YouTube", url: PLACEHOLDER_HTTPS }]).map((l) => ({
+        (song.links ?? []).filter((l) => l.url?.trim()).map((l) => ({
           ...l,
-          url: l.url?.trim() ? l.url : PLACEHOLDER_HTTPS,
+          url: l.url?.trim() ? l.url : "",
         }))
       );
     })();
@@ -151,7 +151,7 @@ export const useUploadSongsVM = (
 
   // 링크 편집 헬퍼들
   const addLink = () =>
-    setLinks((prev) => [...prev, { platform: "YouTube", url: PLACEHOLDER_HTTPS }]);
+    setLinks((prev) => [...prev, { platform: "YouTube", url: "" }]);
 
   const updateLink = (index: number, patch: Partial<{ platform: string; url: string }>) =>
     setLinks((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)));
@@ -204,9 +204,11 @@ export const useUploadSongsVM = (
         return false;
       }
 
-      if (!title.trim()) return alert("곡 제목을 입력해주세요.") as any;
-      if (!lyrics.trim()) return alert("가사를 입력해주세요.") as any;
-      if (!bio.trim()) return alert("곡 설명을 입력해주세요.") as any;
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) {
+        alert("곡 제목을 입력해주세요.");
+        return false;
+      }
 
       // 대표 링크 검증: 플레이스홀더가 아니면 유효한 URL이어야 함
       if (!isPlaceholderUrl(songLink) && !isValidUrl(songLink)) {
@@ -238,7 +240,7 @@ export const useUploadSongsVM = (
       }
 
       // 대표 링크: 플레이스홀더면 빈 문자열로 저장
-      const normalizedSongLink = isPlaceholderUrl(songLink) ? "" : songLink.trim();
+      const normalizedSongLink = isPlaceholderUrl(songLink) ? null : songLink.trim();
 
       let targetSongId = song?.id ?? null;
 
@@ -246,10 +248,10 @@ export const useUploadSongsVM = (
         // 신규 생성
         const insertPayload = {
           artist_id: artistId,
-          title,
-          lyrics,
-          bio,
-          song_photo: finalSongPhoto,
+          title: trimmedTitle,
+          lyrics: lyrics.trim() || null,
+          bio: bio.trim() || null,
+          song_photo: finalSongPhoto || null,
           song_link: normalizedSongLink,
         };
 
@@ -275,10 +277,10 @@ export const useUploadSongsVM = (
       } else {
         // 수정
         const updatePayload = {
-          title,
-          lyrics,
-          bio,
-          song_photo: finalSongPhoto,
+          title: trimmedTitle,
+          lyrics: lyrics.trim() || null,
+          bio: bio.trim() || null,
+          song_photo: finalSongPhoto || null,
           song_link: normalizedSongLink,
         };
 

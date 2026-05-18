@@ -41,8 +41,6 @@ type VMMode = "create" | "edit";
 
 type ValidationErrors = Partial<{
     albumname: string;
-    bio: string;
-    selectedSongIds: string;
     maxSongError: string;
 }>;
 
@@ -196,8 +194,6 @@ export function useUploadAlbumsVM(opts?: UseUploadAlbumsVMOptions) {
     function validate(): boolean {
         const errs: ValidationErrors = {};
         if (!form.albumname.trim()) errs.albumname = "가사집 제목을 입력해주세요";
-        if (!form.bio.trim()) errs.bio = "가사집 설명을 입력해주세요";
-        if (!form.selectedSongIds.length) errs.selectedSongIds = "최소 한 곡을 선택해주세요";
         if (form.selectedSongIds.length > MAX_SONGS) {
             errs.maxSongError = `최대 ${MAX_SONGS}곡까지 선택할 수 있습니다.`;
         }
@@ -208,6 +204,14 @@ export function useUploadAlbumsVM(opts?: UseUploadAlbumsVMOptions) {
     /** ------ album_songs 교체 ------ */
     async function replaceAlbumSongs(targetAlbumId: number, songIds: number[]) {
         const slice = songIds.slice(0, MAX_SONGS);
+        if (slice.length === 0) {
+            const { error } = await supabase
+                .from("album_songs")
+                .delete()
+                .eq("album_id", targetAlbumId);
+            if (error) throw error;
+            return;
+        }
         // RPC 우선
         const { error: rpcErr } = await supabase.rpc("replace_album_songs", {
             p_album_id: targetAlbumId,
@@ -234,11 +238,11 @@ export function useUploadAlbumsVM(opts?: UseUploadAlbumsVMOptions) {
                 .insert([
                     {
                         artist_id: artistId,
-                        albumname: form.albumname,
-                        bio: form.bio,
+                        albumname: form.albumname.trim(),
+                        bio: form.bio.trim() || null,
                         color: form.color,
                         is_public: form.is_public,
-                        url: form.url,
+                        url: form.url?.trim() || null,
                         photo_url,
                     },
                 ])
@@ -281,11 +285,11 @@ export function useUploadAlbumsVM(opts?: UseUploadAlbumsVMOptions) {
             const { data: updated, error: upErr } = await supabase
                 .from("albums")
                 .update({
-                    albumname: form.albumname,
-                    bio: form.bio,
+                    albumname: form.albumname.trim(),
+                    bio: form.bio.trim() || null,
                     color: form.color,
                     is_public: form.is_public,
-                    url: form.url,
+                    url: form.url?.trim() || null,
                     photo_url,
                 })
                 .eq("id", albumId)

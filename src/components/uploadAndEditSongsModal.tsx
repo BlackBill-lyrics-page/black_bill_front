@@ -82,9 +82,9 @@ export default function UploadAndEditSongsModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 sm:space-y-6">
-          {/* 가사집 이미지 */}
+          {/* 곡 이미지 */}
           <div>
-            <p className="mb-2 text-xs font-medium text-gray-800 sm:text-sm">곡 이미지</p>
+            <p className="mb-2 text-xs font-medium text-gray-800 sm:text-sm">곡 사진 (선택)</p>
             <label className="flex h-28 w-28 cursor-pointer items-center justify-center rounded-xl bg-gray-100 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 sm:h-32 sm:w-32">
               {songPhoto || initialSong?.song_photo ? (
                 <img
@@ -117,7 +117,7 @@ export default function UploadAndEditSongsModal({
               className="w-full rounded-2xl bg-gray-100 px-4 py-3 text-sm outline-none ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900 sm:text-base"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="가사집 제목 입력"
+              placeholder="곡 제목 입력"
               required
             />
           </div>
@@ -125,39 +125,37 @@ export default function UploadAndEditSongsModal({
           {/* 곡 설명 */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-800">곡 설명</label>
+              <label className="block text-sm font-medium text-gray-800">곡 설명 (선택)</label>
               <span className="text-xs text-gray-400">{`${bio?.length ?? 0}/${MAX_DESC}`}</span>
             </div>
             <textarea
               className="w-full min-h-[92px] rounded-2xl bg-gray-100 px-4 py-3 text-sm outline-none ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900 sm:min-h-[110px] sm:text-base"
               value={bio}
               onChange={(e) => setBio(e.target.value.slice(0, MAX_DESC))}
-              placeholder="곡 설명 입력"
+              placeholder="곡 소개/에피소드 (선택)"
               maxLength={MAX_DESC}
-              required
             />
           </div>
 
           {/* 곡 가사 */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-800">곡 가사</label>
+              <label className="block text-sm font-medium text-gray-800">곡 가사 (선택)</label>
               <span className="text-xs text-gray-400">{`${lyrics?.length ?? 0}/${MAX_LYRICS}`}</span>
             </div>
             <textarea
               className="w-full min-h-[180px] rounded-2xl bg-gray-100 px-4 py-3 text-sm outline-none ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900 sm:min-h-[220px] sm:text-base"
               value={lyrics}
               onChange={(e) => setLyrics(e.target.value.slice(0, MAX_LYRICS))}
-              placeholder="가사 입력"
+              placeholder="가사를 입력하세요 (선택)"
               maxLength={MAX_LYRICS}
-              required
             />
           </div>
 
           {/* 음원 링크 */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-800">음원 링크</label>
+              <label className="text-sm font-medium text-gray-800">음원 링크 (선택)</label>
               <button
                 type="button"
                 onClick={addLink}
@@ -167,6 +165,12 @@ export default function UploadAndEditSongsModal({
                 + 링크 추가
               </button>
             </div>
+
+            {links.length === 0 && (
+              <p className="rounded-2xl bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                아직 등록된 링크가 없습니다. 링크 없이도 업로드할 수 있어요.
+              </p>
+            )}
 
             {links.map((l, i) => (
               <div key={i} className="flex items-center gap-1.5 w-full">
@@ -190,10 +194,7 @@ export default function UploadAndEditSongsModal({
                   type="url"
                   placeholder="링크 입력"
                   value={l.url}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    updateLink(i, { url: v === "" ? "https://" : v});
-                  }}
+                  onChange={(e) => updateLink(i, { url: e.target.value })}
                   disabled={loading}
                   className="flex-1 px-2 py-2 rounded-2xl bg-gray-100 text-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-900"
                 />

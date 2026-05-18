@@ -238,7 +238,10 @@ export default function MyAudiencePage() {
 
         {/* 설정 아이콘 + 드롭다운 */}
         <div className="flex items-center gap-2">
-          <span className="text-xl font-semibold">{displayName}님의 서랍장</span>
+          <div>
+            <span className="text-xl font-semibold">{displayName}님의 서랍장</span>
+            <div className="mt-1 text-xs text-gray-500">지금은 관객으로 보고 있어요.</div>
+          </div>
           <div className="relative" ref={menuRef}>
             <button
               type="button"
@@ -301,7 +304,16 @@ export default function MyAudiencePage() {
       </div>
 
       <div className="flex justify-end mt-3 px-2">
-        <RoleSwitcher align="right" label="관객" />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/search")}
+            className="rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            아티스트 찾기
+          </button>
+          <RoleSwitcher align="right" label="관객" />
+        </div>
       </div>
 
       {/* 탭 */}
@@ -311,7 +323,6 @@ export default function MyAudiencePage() {
             <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="좋아하는 가사집" />
             <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="좋아하는 곡" />
             <TabButton active={activeTab === "artists"} onClick={() => setActiveTab("artists")} label="내 아티스트" />
-            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="무대" />
           </div>
         </div>
 

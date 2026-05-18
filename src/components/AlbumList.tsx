@@ -6,6 +6,7 @@ import type { UIAlbum as HookAlbum } from "../hooks/stage/useAlbumsWithStages";
 import StageSummary from "./stage/StageSummary";
 import AlbumStagesPanel from "./stage/AlbumStagesPanel";
 import AlbumLikeButton from "./AlbumLikeButton"; // ★ 좋아요 버튼 복귀
+import ContentImage from "./ContentImage";
 
 // 페이지별 UX 분기
 type PageType = "audience" | "artist" | "profile_artist";
@@ -103,13 +104,14 @@ export default function AlbumsList({
                 onClick={() => onOpen?.(a)}
                 className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-[linear-gradient(45deg,#eee_25%,transparent_25%),linear-gradient(-45deg,#eee_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#eee_75%),linear-gradient(-45deg,transparent_75%,#eee_75%)] bg-[length:12px_12px] bg-[position:0_0,0_6px,6px_-6px,-6px_0]"
               >
-                {a.photoUrl && (
-                  <img
-                    src={a.photoUrl}
-                    alt={a.name || "cover"}
-                    className="w-full h-full object-cover"
-                  />
-                )}
+                <ContentImage
+                  src={a.photoUrl}
+                  alt={a.name || "cover"}
+                  kind="album"
+                  title={a.name}
+                  subtitle={displayArtist}
+                  className="w-full h-full object-cover"
+                />
               </button>
 
               {/* 제목/아티스트 */}

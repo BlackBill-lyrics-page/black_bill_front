@@ -97,7 +97,7 @@ export default function UploadAndEditAlbumsModal({
         >
           {/* 가사집 이미지 */}
           <section>
-            <p className="text-sm font-medium mb-2">가사집 이미지</p>
+            <p className="text-sm font-medium mb-2">가사집 이미지 (선택)</p>
 
             {vm.form.coverPreviewUrl ? (
               <div className="flex items-center gap-4">
@@ -170,20 +170,19 @@ export default function UploadAndEditAlbumsModal({
 
           {/* 가사집 설명 */}
           <section>
-            <p className="text-sm font-medium mb-2">가사집 설명</p>
+            <p className="text-sm font-medium mb-2">가사집 설명 (선택)</p>
             <textarea
               value={vm.form.bio ?? ""}
               onChange={(e) => vm.setField("bio", e.target.value)}
-              placeholder="안녕하세요, 저는 안재홍입니다. 끊임없이 흘러나오는 삶의 이야기들을 기록하고 노래합니다."
+              placeholder="가사집 설명 (선택)"
               className="w-full h-28 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200"
             />
-            {vm.errors?.bio && <p className="mt-1 text-xs text-red-600">{vm.errors.bio}</p>}
           </section>
 
           {/* 곡 구성 */}
           <section>
             <p className="text-sm font-medium mb-1">곡 구성</p>
-            <p className="text-xs text-gray-500 mb-2">가사집을 구성할 곡을 순서대로 선택해주세요.</p>
+            <p className="text-xs text-gray-500 mb-2">곡은 나중에 추가해도 됩니다. 선택하는 경우 최대 10곡까지 순서대로 담을 수 있어요.</p>
 
             <div className="relative mb-3">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -247,8 +246,8 @@ export default function UploadAndEditAlbumsModal({
             </div>
 
             <div className="mt-2 space-y-1">
-              {vm.errors?.selectedSongIds && (
-                <p className="text-xs text-red-600">{vm.errors.selectedSongIds}</p>
+              {vm.form.selectedSongIds.length === 0 && (
+                <p className="text-xs text-gray-500">선택된 곡이 없습니다. 곡 없는 가사집으로 먼저 만들 수 있어요.</p>
               )}
               {vm.errors?.maxSongError && (
                 <p className="text-xs text-red-600">{vm.errors.maxSongError}</p>
@@ -290,7 +289,7 @@ export default function UploadAndEditAlbumsModal({
               className="flex-1 basis-1/2 px-4 py-3 sm:py-2 text-sm rounded-xl bg-gray-900 text-white hover:opacity-90 disabled:opacity-50"
               disabled={vm.submitting || vm.loadingDetail}
             >
-              {vm.mode === "edit" ? "변경사항 저장" : "다음"}
+              {vm.mode === "edit" ? "변경사항 저장" : "가사집 만들기"}
             </button>
           </div>
         </div>

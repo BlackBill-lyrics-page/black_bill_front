@@ -1,6 +1,7 @@
 import { memo } from "react"; 
 import { useAlbumTracksVM } from "../viewmodels/useAlbumTracksVM";
 import SongLikeButton from "./SongLikeButton";
+import ContentImage from "./ContentImage";
 
 type Track = {
   id: number;
@@ -47,9 +48,11 @@ function AlbumTracksPanelBase({ albumId, albumName, onOpen }: Props) {
                   {t.position ?? "-"}
                 </div>
 
-                <img
-                  src={t.song_photo || "/placeholder.png"}
+                <ContentImage
+                  src={t.song_photo}
                   alt={t.title}
+                  kind="song"
+                  title={t.title}
                   className="w-10 h-10 rounded object-cover"
                 />
 

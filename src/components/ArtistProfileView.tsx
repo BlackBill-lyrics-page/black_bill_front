@@ -40,6 +40,8 @@ import StagePhotosModal from "./StagePhotosModal";
 
 import { useSearchParams } from "react-router-dom";
 import QRDownloadButtonBB from "./QRDownloadButtonBB";
+import ContentImage from "./ContentImage";
+import LyricsBookReader from "./LyricsBookReader";
 
 type Link = { platform: string; url: string };
 
@@ -233,6 +235,11 @@ export default function ArtistProfileView({
 
   // stage comment VM
   const { comments, count: stageCommentCount, addComment, deleteComment } = useStageCommentVM(selectedStageId);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
 
   // 사진 업로드 미리보기
   const [cmtText, setCmtText] = useState("");
@@ -445,15 +452,20 @@ export default function ArtistProfileView({
       {/* 상단 프로필 */}
       <div className="flex flex-wrap items-center gap-4 p-6">
         <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-          {artist.photoUrl ? (
-            <img src={artist.photoUrl} alt={artist.name} className="w-full h-full object-cover" />
-          ) : (
-            <span>No Photo</span>
-          )}
+          <ContentImage
+            src={artist.photoUrl}
+            alt={artist.name}
+            kind="artist"
+            title={artist.name}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold">{artist.name}</h2>
+          <div>
+            <h2 className="text-xl font-semibold">{artist.name}</h2>
+            {isOwner && <div className="mt-1 text-xs text-gray-500">아티스트 콘텐츠를 관리하는 스튜디오예요.</div>}
+          </div>
           {isOwner && <FiSettings className="w-5 h-5 text-gray-500 cursor-pointer items-center justify-center" onClick={onEditProfile} />}
         </div>
 
@@ -571,7 +583,9 @@ export default function ArtistProfileView({
         <div className="flex justify-between text-sm flex-1 min-w-0 w-full px-6">
           <TabButton active={activeTab === "books"} onClick={() => setActiveTab("books")} label="가사집" />
           <TabButton active={activeTab === "songs"} onClick={() => setActiveTab("songs")} label="곡" />
-          <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
+          {(isOwner || activeTab === "stages") && (
+            <TabButton active={activeTab === "stages"} onClick={() => setActiveTab("stages")} label="아티스트 공연" />
+          )}
         </div>
 
         <div className="w-full h-px bg-gray-200" />
@@ -627,6 +641,127 @@ export default function ArtistProfileView({
               ) : (
                 // 상세(선택한 가사집 + 곡 리스트) 뷰
                 <div className="mt-4">
+                  {!isOwner && (
+                    <LyricsBookReader
+                      albumId={Number(selectedAlbum.id)}
+                      albumName={selectedAlbum?.name ?? "(제목 없음)"}
+                      albumPhotoUrl={selectedAlbum?.photoUrl}
+                      artistName={artist.name}
+                      commentCount={stageCommentCount ?? 0}
+                      onBack={() => {
+                        setSelectedAlbum(null);
+                        const next = new URLSearchParams(searchParams);
+                        next.delete("album");
+                        setSearchParams(next, { replace: true });
+                      }}
+                    >
+                      {stages.length > 0 ? (
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className="text-sm text-gray-500">무대:</span>
+                          <select
+                            value={selectedStageId ?? ""}
+                            onChange={(e) => setSelectedStageId(Number(e.target.value))}
+                            className="text-sm border rounded px-2 py-1"
+                          >
+                            {stages.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {(s.title || `Stage #${s.id}`) +
+                                  (s.start_at ? ` - ${new Date(s.start_at).toLocaleDateString()}` : "")}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="mb-3 text-sm text-gray-500">이 가사집에 연결된 무대가 없습니다.</div>
+                      )}
+
+                      {selectedStageId && (
+                        <form
+                          onSubmit={handleSubmitStageComment}
+                          className="flex items-center gap-2 rounded-3xl border bg-white px-1"
+                        >
+                          <label className="mx-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gray-800 text-white">
+                            <FiPlus className="h-5 w-5" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => setCmtFile(e.target.files?.[0])}
+                            />
+                          </label>
+                          {cmtPreview && (
+                            <div className="relative ml-1 shrink-0">
+                              <img src={cmtPreview} alt="preview" className="h-16 w-16 rounded-xl bg-gray-100 object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => setCmtFile(undefined)}
+                                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black text-[10px] leading-none text-white"
+                                aria-label="미리보기 제거"
+                              >
+                                x
+                              </button>
+                            </div>
+                          )}
+                          <TextareaAutosize
+                            value={cmtText}
+                            onChange={(e) => setCmtText(e.target.value)}
+                            placeholder="감상을 남겨주세요."
+                            className="flex-1 rounded px-3 py-2 text-sm"
+                            minRows={1}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                e.currentTarget.form?.requestSubmit();
+                              }
+                            }}
+                          />
+                          <button
+                            type="submit"
+                            className="mr-1 flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-white"
+                            aria-label="감상 등록"
+                          >
+                            <FiArrowUpRight className="h-5 w-5" />
+                          </button>
+                        </form>
+                      )}
+
+                      <ul className="mt-6 space-y-3">
+                        {comments.map((c) => {
+                          const canDelete = currentUserId != null && String(c.user_id) === String(currentUserId);
+                          return (
+                            <li key={c.id} className="border-b border-gray-100 pb-4">
+                              <div className="mb-2 flex items-start justify-between">
+                                <div className="flex items-center gap-2">
+                                  <ContentImage
+                                    src={c.users?.photo_url}
+                                    alt={c.users?.username || "user"}
+                                    kind="artist"
+                                    title={c.users?.username}
+                                    className="h-6 w-6 rounded-full object-cover"
+                                  />
+                                  <span className="text-sm font-medium text-gray-800">{c.users?.username ?? ""}</span>
+                                </div>
+                                <span className="text-xs text-gray-400">
+                                  {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
+                                </span>
+                              </div>
+                              {c.photo_url && (
+                                <img src={c.photo_url} alt="첨부 이미지" className="mb-2 max-h-64 rounded-lg object-contain" />
+                              )}
+                              <div className="whitespace-pre-wrap break-words text-sm text-gray-700">{c.content}</div>
+                              {canDelete && (
+                                <button onClick={() => deleteComment(c.id)} className="mt-2 text-xs text-gray-500">
+                                  삭제
+                                </button>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </LyricsBookReader>
+                  )}
+                  {!isOwner ? null : (
+                  <>
                   {/* [REPLACE] 헤더(뒤로가기 + 커버/제목/아티스트) + 우측 QR 버튼 */}
                   <div className="flex items-center justify-between p-3">
                     {/* 왼쪽: 뒤로가기 + 커버/텍스트 */}
@@ -646,13 +781,14 @@ export default function ArtistProfileView({
                       </button>
 
                       <div className="flex items-start gap-3">
-                        {selectedAlbum?.photoUrl && (
-                          <img
-                            src={selectedAlbum.photoUrl}
-                            alt={selectedAlbum.name ?? "album cover"}
-                            className="w-20 h-20 rounded object-cover"
-                          />
-                        )}
+                        <ContentImage
+                          src={selectedAlbum?.photoUrl}
+                          alt={selectedAlbum.name ?? "album cover"}
+                          kind="album"
+                          title={selectedAlbum?.name}
+                          subtitle={artist.name}
+                          className="w-20 h-20 rounded object-cover"
+                        />
                         <div className="min-w-0">
                           <div className="font-semibold leading-tight truncate">
                             {selectedAlbum?.name ?? "(제목 없음)"}
@@ -704,27 +840,6 @@ export default function ArtistProfileView({
                     songDetailJSX
                   ) : (
                     <>
-                      {/* 무대 선택 드롭다운 */}
-                      {stages.length > 0 ? (
-                        <div className="mb-3 flex items-center gap-2 px-1">
-                          <span className="text-sm text-gray-500">무대:</span>
-                          <select
-                            value={selectedStageId ?? ""}
-                            onChange={(e) => setSelectedStageId(Number(e.target.value))}
-                            className="text-sm border rounded px-2 py-1"
-                          >
-                            {stages.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {(s.title || `Stage #${s.id}`) +
-                                  (s.start_at ? ` — ${new Date(s.start_at).toLocaleDateString()}` : "")}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : (
-                        <div className="mb-3 text-sm text-gray-500 px-1">이 가사집에 연결된 무대가 없습니다.</div>
-                      )}
-
                       {/* 좋아요/댓글 카운트 */}
                       <div className="flex items-center gap-4 text-sm text-gray-700 px-1 mb-2">
                         <AlbumLikeButton
@@ -739,114 +854,142 @@ export default function ArtistProfileView({
                         <span>댓글({stageCommentCount ?? 0})</span>
                       </div>
 
-                      <StagePhotoStrip comments={comments} onOpenAll={() => setOpenPhotos(true)} />
+                      <details className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+                        <summary className="cursor-pointer select-none text-sm font-medium text-gray-800">
+                          무대 후기/댓글 보기
+                        </summary>
 
-                      <StagePhotosModal open={openPhotos} onClose={() => setOpenPhotos(false)} groups={photoGroups} />
-
-                      {/* 이미지 업로드 + 댓글 입력 */}
-                      {selectedStageId && (
-                        <form
-                          onSubmit={handleSubmitStageComment}
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            setDragOver(true);
-                          }}
-                          onDragLeave={() => setDragOver(false)}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            setDragOver(false);
-                            const f = Array.from(e.dataTransfer.files || []).find((f) => f.type.startsWith("image/"));
-                            if (f) setCmtFile(f);
-                          }}
-                          className={`flex mt-4 items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""
-                            }`}
-                        >
-                          {/* + 버튼 */}
-                          <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
-                            <FiPlus className="w-5 h-5" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => setCmtFile(e.target.files?.[0])}
-                            />
-                          </label>
-
-                          {/* 미리보기 썸네일 */}
-                          {cmtPreview && (
-                            <div className="relative ml-1 shrink-0">
-                              <img src={cmtPreview} alt="preview" className="w-16 h-16 rounded-xl object-cover bg-gray-100 " />
-                              <button
-                                type="button"
-                                onClick={() => setCmtFile(undefined)}
-                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] leading-none"
-                                aria-label="미리보기 제거"
-                                title="미리보기 제거"
+                        <div className="mt-4">
+                          {stages.length > 0 ? (
+                            <div className="mb-3 flex items-center gap-2 px-1">
+                              <span className="text-sm text-gray-500">무대:</span>
+                              <select
+                                value={selectedStageId ?? ""}
+                                onChange={(e) => setSelectedStageId(Number(e.target.value))}
+                                className="text-sm border rounded px-2 py-1"
                               >
-                                ×
-                              </button>
+                                {stages.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {(s.title || `Stage #${s.id}`) +
+                                      (s.start_at ? ` - ${new Date(s.start_at).toLocaleDateString()}` : "")}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
+                          ) : (
+                            <div className="mb-3 text-sm text-gray-500 px-1">이 가사집에 연결된 무대가 없습니다.</div>
                           )}
 
-                          {/* 입력창 */}
-                          <TextareaAutosize
-                            value={cmtText}
-                            onChange={(e) => setCmtText(e.target.value)}
-                            placeholder="이미지를 드래그, 또는 댓글을 작성해주세요."
-                            className="flex-1 rounded px-3 py-2 text-sm "
-                            minRows={1}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
+                          <StagePhotoStrip comments={comments} onOpenAll={() => setOpenPhotos(true)} />
+                          <StagePhotosModal open={openPhotos} onClose={() => setOpenPhotos(false)} groups={photoGroups} />
+
+                          {selectedStageId && (
+                            <form
+                              onSubmit={handleSubmitStageComment}
+                              onDragOver={(e) => {
                                 e.preventDefault();
-                                e.currentTarget.form?.requestSubmit();
-                              }
-                            }}
-                          />
-                          {/* 전송 버튼 */}
-                          <button
-                            type="submit"
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white mr-1 "
-                          >
-                            <FiArrowUpRight className="w-5 h-5" />
-                          </button>
-                        </form>
-                      )}
+                                setDragOver(true);
+                              }}
+                              onDragLeave={() => setDragOver(false)}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                setDragOver(false);
+                                const f = Array.from(e.dataTransfer.files || []).find((f) => f.type.startsWith("image/"));
+                                if (f) setCmtFile(f);
+                              }}
+                              className={`flex mt-4 items-center gap-2 bg-white border rounded-3xl px-1 ${dragOver ? "ring-2 ring-gray-300" : ""
+                                }`}
+                            >
+                              <label className="mx-1 flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white cursor-pointer">
+                                <FiPlus className="w-5 h-5" />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => setCmtFile(e.target.files?.[0])}
+                                />
+                              </label>
 
-                      {/* 댓글 리스트 */}
-                      <div className="mt-10 space-y-4">
-                        <ul className="space-y-3">
-                          {comments.map((c) => (
-                            <li key={c.id} className="border-b pb-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <img
-                                    src={c.users?.photo_url || ""}
-                                    alt={c.users?.username || "user"}
-                                    className="w-6 h-6 rounded-full object-cover"
-                                  />
-                                  <span className="text-sm font-medium text-gray-800">{c.users?.username ?? ""}</span>
-                                </div>
-                                <span className="text-xs text-gray-400">
-                                  {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
-                                </span>
-                              </div>
-
-                              {c.photo_url && (
-                                <div className="mt-2">
-                                  <img src={c.photo_url} alt="첨부 이미지" className="max-h-64 rounded-lg object-contain" />
+                              {cmtPreview && (
+                                <div className="relative ml-1 shrink-0">
+                                  <img src={cmtPreview} alt="preview" className="w-16 h-16 rounded-xl object-cover bg-gray-100 " />
+                                  <button
+                                    type="button"
+                                    onClick={() => setCmtFile(undefined)}
+                                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] leading-none"
+                                    aria-label="미리보기 제거"
+                                    title="미리보기 제거"
+                                  >
+                                    x
+                                  </button>
                                 </div>
                               )}
 
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">{c.content}</div>
-
-                              <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
-                                삭제
+                              <TextareaAutosize
+                                value={cmtText}
+                                onChange={(e) => setCmtText(e.target.value)}
+                                placeholder="이미지를 드래그, 또는 댓글을 작성해주세요."
+                                className="flex-1 rounded px-3 py-2 text-sm "
+                                minRows={1}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    e.currentTarget.form?.requestSubmit();
+                                  }
+                                }}
+                              />
+                              <button
+                                type="submit"
+                                className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-800 text-white mr-1 "
+                              >
+                                <FiArrowUpRight className="w-5 h-5" />
                               </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                            </form>
+                          )}
+
+                          <div className="mt-8 space-y-4">
+                            <ul className="space-y-3">
+                              {comments.map((c) => {
+                                const canDelete = isOwner || (currentUserId != null && String(c.user_id) === String(currentUserId));
+                                return (
+                                  <li key={c.id} className="border-b pb-4">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <img
+                                          src={c.users?.photo_url || "/default-profile.svg"}
+                                          alt={c.users?.username || "user"}
+                                          className="w-6 h-6 rounded-full object-cover"
+                                        />
+                                        <span className="text-sm font-medium text-gray-800">{c.users?.username ?? ""}</span>
+                                      </div>
+                                      <span className="text-xs text-gray-400">
+                                        {c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}
+                                      </span>
+                                    </div>
+
+                                    {c.photo_url && (
+                                      <div className="mt-2">
+                                        <img src={c.photo_url} alt="첨부 이미지" className="max-h-64 rounded-lg object-contain" />
+                                      </div>
+                                    )}
+
+                                    <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">{c.content}</div>
+
+                                    {canDelete && (
+                                      <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
+                                        삭제
+                                      </button>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        </div>
+                      </details>
                     </>
+                  )}
+                  </>
                   )}
                 </div>
               )}
@@ -872,5 +1015,3 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
     </button>
   );
 }
-
-

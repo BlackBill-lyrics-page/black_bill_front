@@ -159,6 +159,10 @@ export default function ArtistStagesCalendar({
   const [cmtFile, setCmtFile] = useState<File | undefined>();
   const [cmtPreview, setCmtPreview] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
   useEffect(() => {
     if (!cmtFile) { setCmtPreview(null); return; }
     const url = URL.createObjectURL(cmtFile);
@@ -523,12 +527,14 @@ export default function ArtistStagesCalendar({
                         <div className="text-sm text-gray-500 px-1">아직 댓글이 없습니다.</div>
                       ) : (
                         <ul className="space-y-3 mt-2">
-                          {comments.map((c) => (
+                          {comments.map((c) => {
+                            const canDeleteComment = canEdit || (currentUserId != null && String(c.user_id) === String(currentUserId));
+                            return (
                             <li key={c.id} className="border-b pb-3">
                               <div className="flex items-start justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <img
-                                    src={c.users?.photo_url || "/default-avatar.png"}
+                                    src={c.users?.photo_url || "/default-profile.svg"}
                                     alt={c.users?.username || "user"}
                                     className="w-6 h-6 rounded-full object-cover"
                                   />
@@ -549,11 +555,14 @@ export default function ArtistStagesCalendar({
                                 {c.content}
                               </div>
 
-                              <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
-                                삭제
-                              </button>
+                              {canDeleteComment && (
+                                <button onClick={() => deleteComment(c.id)} className="text-xs text-gray-500 mt-2">
+                                  삭제
+                                </button>
+                              )}
                             </li>
-                          ))}
+                            );
+                          })}
                         </ul>
                       )}
 

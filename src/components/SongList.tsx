@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useUploadSongsVM } from "../viewmodels/useUploadSongsVM";
 import SongLikeButton from "./SongLikeButton";
 import { FiEdit2, FiTrash, FiMessageCircle } from "react-icons/fi";
+import ContentImage from "./ContentImage";
 
 // 화면(UI)에서 쓸 가벼운 타입 (외부 파일 의존 X)
 export type UISong = {
@@ -32,14 +33,6 @@ export default function SongList({
     const [songs, setSongs] = useState<UISong[]>([]);
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState<string | null>(null);
-
-    // 체크보드 플레이스홀더 (썸네일 없을 때)
-    const Placeholder = () => (
-        <div
-            aria-hidden
-            className="w-24 h-24 rounded-xl border border-gray-200 bg-[length:12px_12px] bg-[linear-gradient(45deg,#f0f0f0_25%,transparent_25%),linear-gradient(-45deg,#f0f0f0_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f0f0f0_75%),linear-gradient(-45deg,transparent_75%,#f0f0f0_75%)] bg-[position:0_0,0_6px,6px_-6px,-6px_0]"
-        />
-    );
 
     // ── Row 전용 액션: 삭제/수정 버튼 묶음 ─────────────────────────────
     function RowActions({
@@ -168,15 +161,13 @@ export default function SongList({
                 >
                     {/* 왼쪽: 사진 + 텍스트 */}
                     <div className="flex items-start gap-4 min-w-0">
-                        {s.photoUrl ? (
-                            <img
-                                src={s.photoUrl}
-                                alt={s.title || "cover"}
-                                className="w-24 h-24 object-cover rounded-xl border border-gray-200"
-                            />
-                        ) : (
-                            <Placeholder />
-                        )}
+                        <ContentImage
+                            src={s.photoUrl}
+                            alt={s.title || "cover"}
+                            kind="song"
+                            title={s.title}
+                            className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+                        />
 
                         <div className="min-w-0">
                             <div className="text-[17px] font-semibold text-gray-900 truncate">
