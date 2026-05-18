@@ -23,14 +23,12 @@ import SongCommentsInline from "./SongCommentsInline";
 import centerLogo from "../assets/address_img.png";
 
 import {
-  FiChevronDown,
-  FiCopy,
   FiSettings,
   FiPlus,
   FiChevronLeft,
   FiArrowUpRight,
 } from "react-icons/fi";
-import { FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
+import { FaInstagram, FaYoutube, FaSpotify, FaSoundcloud, FaLink } from "react-icons/fa";
 import { SiApplemusic } from "react-icons/si";
 
 import TextareaAutosize from "react-textarea-autosize";
@@ -269,14 +267,6 @@ export default function ArtistProfileView({
     }
   };
 
-  // SNS
-  const [snsOpen, setSnsOpen] = useState(false);
-  const [selectedSNS, setSelectedSNS] = useState<Link | null>(artist.links?.length ? artist.links[0] : null);
-  useEffect(() => {
-    setSelectedSNS(artist.links?.length ? artist.links[0] : null);
-    setSnsOpen(false);
-  }, [artist]);
-
   // 앨범 좋아요
   const albumLike = useAlbumLikeVM(selectedAlbum ? Number(selectedAlbum.id) : undefined);
 
@@ -384,6 +374,16 @@ export default function ArtistProfileView({
     };
   };
 
+  const artistLinkMeta = (p: string) => {
+    const key = (p ?? "").toLowerCase();
+    if (key.includes("instagram")) return { label: "Instagram", Icon: FaInstagram, className: "text-pink-600" };
+    if (key.includes("youtube")) return { label: "YouTube", Icon: FaYoutube, className: "text-red-600" };
+    if (key.includes("spotify")) return { label: "Spotify", Icon: FaSpotify, className: "text-green-700" };
+    if (key.includes("apple")) return { label: "Apple Music", Icon: SiApplemusic, className: "text-gray-900" };
+    if (key.includes("sound")) return { label: "SoundCloud", Icon: FaSoundcloud, className: "text-orange-600" };
+    return { label: p || "Link", Icon: FaLink, className: "text-gray-700" };
+  };
+
   const handleOpenSong = async (ui: UISong) => {
     if (openSong?.id === Number(ui.id)) {
       setOpenSong(null);
@@ -476,104 +476,76 @@ export default function ArtistProfileView({
         </div>
       </div>
 
-      <div className="flex justify-end px-2 mb-2">
-        {authReady && (
-          isOwner
-            ? rightExtra                      // roleswitcher
-            : (
-              <button
-                type="button"
-                onClick={onToggleFollow}
-                disabled={followLoading}
-                className={`px-3 py-1.5 rounded-full text-sm border ${following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
-                  }`}
-              >
-                {following ? "팔로잉" : "팔로우"}
-              </button>
-            )
-        )}
-      </div>
-
-      {/* 상세 */}
-      <div className="px-6 space-y-1 text-gray-600 text-sm">
-        <div>
-          <span className="font-semibold">장르:</span>{" "}
-          {artist.genres?.length ? artist.genres.map((g) => g.name).join(", ") : "-"}
-        </div>
-        <div>
-          <span className="font-semibold">소속사:</span> {artist.label || "-"}
-        </div>
-        <div>
-          <span className="font-semibold">구성:</span> {artist.instruments || "-"}
-        </div>
-        <div>
-          <span className="font-semibold">소개:</span> {artist.bio || "-"}
-        </div>
-      </div>
-
-      {/* SNS 링크 */}
-      <div className="px-6 mt-4">
-        {artist.links?.length ? (
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setSnsOpen((v) => !v)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 text-sm"
-              >
-                {selectedSNS?.platform ?? "SNS"}
-                <FiChevronDown className={`transition-transform ${snsOpen ? "rotate-180" : ""}`} />
-              </button>
-
-              {snsOpen && (
-                <div className="absolute left-0 mt-1 w-44 bg-white border rounded-md shadow-lg z-20">
-                  {artist.links.map((link, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSNS(link);
-                        setSnsOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                    >
-                      {link.platform}
-                    </button>
-                  ))}
-                </div>
+      <div className="px-6">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap gap-2">
+              {artist.genres?.length ? (
+                artist.genres.map((g) => (
+                  <span key={g.id} className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                    {g.name}
+                  </span>
+                ))
+              ) : (
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-500">장르 미등록</span>
+              )}
+              {artist.label && (
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                  {artist.label}
+                </span>
+              )}
+              {artist.instruments && (
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                  {artist.instruments}
+                </span>
               )}
             </div>
 
-            {selectedSNS && (
-              <div className="flex items-center gap-2">
-                <a
-                  href={selectedSNS.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-gray-800 hover:underline max-w-[150px] truncate"
-                  title={selectedSNS.url}
-                >
-                  {selectedSNS.url}
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigator.clipboard.writeText(selectedSNS.url).then(() =>
-                      alert("복사되었습니다")
-                    )
-                  }
-                  className="w-8 h-8 rounded hover:bg-gray-200 flex items-center justify-center"
-                  title="링크 복사"
-                >
-                  <FiCopy className="w-4 h-4 text-gray-600" />
-                </button>
-
-              </div>
+            {artist.bio && (
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                {artist.bio}
+              </p>
             )}
           </div>
-        ) : (
-          <div className="text-sm text-gray-500">등록된 SNS 링크 없음</div>
+
+          {authReady && (
+            isOwner
+              ? rightExtra
+              : (
+                <button
+                  type="button"
+                  onClick={onToggleFollow}
+                  disabled={followLoading}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-sm border ${following ? "bg-gray-100 text-gray-800 border-gray-200" : "bg-black text-white border-black"
+                    }`}
+                >
+                  {following ? "팔로잉" : "팔로우"}
+                </button>
+              )
+          )}
+        </div>
+
+        {!!artist.links?.length && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {artist.links
+              .filter((link) => link.url?.trim())
+              .map((link, idx) => {
+                const { label, Icon, className } = artistLinkMeta(link.platform);
+                return (
+                  <a
+                    key={`${link.platform}-${idx}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={label}
+                    aria-label={label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition hover:bg-gray-50"
+                  >
+                    <Icon className={`h-5 w-5 ${className}`} />
+                  </a>
+                );
+              })}
+          </div>
         )}
       </div>
 
